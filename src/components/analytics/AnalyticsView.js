@@ -185,6 +185,15 @@ export class AnalyticsView {
             this.renderAnalytics();
         } catch (error) {
             console.error('Error loading analytics:', error);
+            console.error('Error details:', {
+                message: error.message,
+                stack: error.stack,
+                summary: summary,
+                clicksByLink: clicksByLink,
+                clicksByDevice: clicksByDevice,
+                recentClicks: recentClicks,
+                pageViews: pageViews
+            });
             this.showError(error.message || 'Failed to load analytics data');
         } finally {
             this.isLoading = false;
