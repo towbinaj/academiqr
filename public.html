@@ -520,7 +520,9 @@
 
             links.forEach(link => {
                 const linkElement = document.createElement('a');
-                linkElement.href = link.url;
+                // Use tracking URL for analytics
+                const baseUrl = window.location.origin;
+                linkElement.href = `${baseUrl}/api/track/${link.id}`;
                 linkElement.target = '_blank';
                 linkElement.rel = 'noopener noreferrer';
                 linkElement.className = 'preview-link';
