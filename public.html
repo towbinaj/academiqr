@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Profile</title>
+    <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/sign/assets/AcademiQR%20logo_small.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wMDIxMjAxMi1mNWMwLTQ1ODMtOGIyZi02ZmE0NGI1NjY1YTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvQWNhZGVtaVFSIGxvZ29fc21hbGwucG5nIiwiaWF0IjoxNzYxNjcyMDM1LCJleHAiOjMzMjY2MTM2MDM1fQ.Aj53elwW_8v65gQ4qtYme2sJGG8TLuFOYvAmUxw0sds">
+    <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/sign/assets/AcademiQR%20logo_small.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wMDIxMjAxMi1mNWMwLTQ1ODMtOGIyZi02ZmE0NGI1NjY1YTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvQWNhZGVtaVFSIGxvZ29fc21hbGwucG5nIiwiaWF0IjoxNzYxNjcyMDM1LCJleHAiOjMzMjY2MTM2MDM1fQ.Aj53elwW_8v65gQ4qtYme2sJGG8TLuFOYvAmUxw0sds">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="AcademiQR">
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* EXACT CSS from mobile preview */
+        .phone-mockup {
+            width: 100%;
+            height: 100%;
+            background: #1e293b;
+            border-radius: 0;
+            padding: 0;
+            box-shadow: none;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            border-radius: 0;
+            overflow: hidden;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        /* Mobile-specific background fixes */
+        .phone-screen.mobile-bg-fix[data-bg-type="solid"] {
+            background-color: var(--mobile-bg-color) !important;
+        }
+        
+        .phone-screen.mobile-bg-fix[data-bg-type="gradient"] {
+            background: var(--mobile-bg-gradient) !important;
+        }
+
+        .preview-header-content {
+            padding: 20px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            flex-shrink: 0; /* Keep header fixed */
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .preview-profile-section {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .preview-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #8b5cf6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            margin: 0;
+            border: 2px solid #e5e7eb;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .preview-avatar img {
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 50% !important;
+            object-fit: cover !important;
+        }
+
+        .preview-name-section {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .preview-name-section h4 {
+            font-size: 1.75rem !important;
+            font-weight: 600;
+            color: #1f2937;
+            margin: 0 0 12px 0;
+            line-height: 1.2;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .preview-social {
+            display: flex;
+            gap: 6px;
+            margin: 0;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .social-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 14px;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .social-icon i {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .social-icon:hover {
+            transform: scale(1.05);
+        }
+
+        .social-icon.instagram {
+            background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+            color: white;
+        }
+
+        .social-icon.facebook {
+            background: #1877f2;
+            color: white;
+        }
+
+        .social-icon.twitter {
+            background: #000000;
+            color: white;
+        }
+
+        .social-icon.linkedin {
+            background: #0077b5;
+            color: white;
+        }
+
+        .social-icon.email {
+            background: #ea4335;
+            color: white;
+        }
+
+        .social-icon.youtube {
+            background: #ff0000;
+            color: white;
+        }
+
+        .social-icon.tiktok {
+            background: #000000;
+            color: white;
+        }
+
+        .social-icon.snapchat {
+            background: #fffc00;
+            color: #000000;
+        }
+
+        .preview-dynamic-info {
+            margin: 0 0 16px 0;
+            padding: 0;
+        }
+
+        .info-field {
+            margin: 0 0 4px 0;
+            font-size: 0.9rem;
+            line-height: 1.3;
+            color: #374151;
+        }
+
+        .info-label {
+            display: none;
+        }
+
+        .info-value {
+            color: #4b5563;
+            font-weight: 400;
+            font-size: 1.125rem !important;
+        }
+
+        .preview-links {
+            flex: 1;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: transparent;
+            overflow-y: auto; /* Enable vertical scrolling */
+            overflow-x: hidden; /* Hide horizontal scrollbar */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        }
+
+        .preview-link {
+            padding: 12px 16px 12px 20px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #1e293b;
+            font-size: 1.125rem;
+            transition: all 0.2s;
+            min-height: 64px;
+            display: flex;
+            align-items: center;
+        }
+
+        .preview-link:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        .preview-link.soft {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .preview-link.solid {
+            background: #4f46e5;
+            border: 1px solid #4f46e5;
+            color: white;
+        }
+
+        .preview-link.outline {
+            background: transparent;
+            border: 2px solid #4f46e5;
+            color: #4f46e5;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- EXACT same structure as mobile preview -->
+    <div class="phone-mockup">
+        <div class="phone-screen">
+            <div class="preview-header-content">
+                <!-- Profile Section -->
+                <div class="preview-profile-section">
+                    <div class="preview-avatar" id="preview-avatar">👤</div>
+                    <div class="preview-name-section">
+                        <h4 id="preview-name">Alex Towbin</h4>
+                        
+                        <!-- Social Media Icons -->
+                        <div class="preview-social" id="preview-social">
+                            <!-- Social links will be populated here -->
+        </div>
+        </div>
+                </div>
+
+                <!-- Dynamic Info Fields -->
+                <div class="preview-dynamic-info" id="preview-dynamic-info">
+                    <div class="info-field" id="preview-info-title" style="display: none;">
+                        <span class="info-label">Title:</span>
+                        <span class="info-value" id="preview-title"></span>
+                    </div>
+                    <div class="info-field" id="preview-info-conference" style="display: none;">
+                        <span class="info-label">Conference:</span>
+                        <span class="info-value" id="preview-conference"></span>
+                    </div>
+                    <div class="info-field" id="preview-info-location" style="display: none;">
+                        <span class="info-label">Location:</span>
+                        <span class="info-value" id="preview-location"></span>
+                    </div>
+                    <div class="info-field" id="preview-info-date" style="display: none;">
+                        <span class="info-label">Date:</span>
+                        <span class="info-value" id="preview-date"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-links" id="preview-links">
+                <!-- Links will be populated here -->
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const supabaseUrl = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const handle = urlParams.get('handle');
+        const collectionSlug = urlParams.get('collection');
+
+        // Load profile and collection data
+        async function loadProfile() {
+            try {
+                
+                // Load collection
+                const { data: collections, error: collectionsError } = await supabase
+                        .from('link_lists')
+                    .select('*')
+                    .eq('slug', collectionSlug);
+
+                    if (collectionsError) {
+                    return;
+                }
+
+                if (!collections || collections.length === 0) {
+                    return;
+                }
+
+                const collection = collections[0];
+
+                // Load links
+                const { data: links, error: linksError } = await supabase
+                    .from('link_items')
+                    .select('*')
+                    .eq('list_id', collection.id);
+
+                if (linksError) {
+                    collection.links = [];
+                } else {
+                    collection.links = links || [];
+                }
+
+
+                // Load profile
+                const { data: profileData, error: profileError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', collection.owner_id)
+                    .single();
+
+                if (profileError) {
+                    return;
+                }
+
+
+                // Render everything
+                renderProfile(profileData);
+                renderLinks(collection.links);
+                loadPresentationInfo(collection, profileData);
+                
+                // Apply theme
+                if (collection.theme) {
+                    console.log('Raw collection theme:', collection.theme);
+                    console.log('Theme type:', typeof collection.theme);
+                    
+                    // Check if theme is a JSON string that needs parsing
+                    let themeToApply = collection.theme;
+                    if (typeof collection.theme === 'string') {
+                        try {
+                            themeToApply = JSON.parse(collection.theme);
+                            console.log('Parsed theme from JSON:', themeToApply);
+                        } catch (e) {
+                            console.log('Failed to parse theme JSON:', e);
+                        }
+                    }
+                    
+                    console.log('Final theme to apply:', themeToApply);
+                    console.log('Theme keys:', Object.keys(themeToApply));
+                    applyTheme(themeToApply);
+                } else {
+                    console.log('No theme found in collection');
+                }
+                
+
+            } catch (error) {
+            }
+        }
+
+        function renderProfile(profile) {
+            // Profile photo
+            const profilePhoto = document.getElementById('preview-avatar');
+            if (profile.profile_photo) {
+                // Apply photo positioning if available
+                let photoStyle = 'width: 100% !important; height: 100% !important; border-radius: 50% !important; object-fit: cover !important; display: block !important;';
+                
+                if (profile.profile_photo_position) {
+                    try {
+                        const position = JSON.parse(profile.profile_photo_position);
+                        const scale = position.scale || 100;
+                        const x = position.x || 50;
+                        const y = position.y || 50;
+                        
+                        // Convert scale percentage to decimal
+                        const scaleValue = scale / 100;
+                        
+                        // Calculate pan values using the same formula as the main editor
+                        const panX = (x - 50) * -1;
+                        const panY = (y - 50) * -1;
+                        
+                        // Apply transform for positioning and scaling
+                        photoStyle += ` transform: translate(${panX}%, ${panY}%) scale(${scaleValue}) !important; transform-origin: center center !important;`;
+                        
+                    } catch (e) {
+('Could not parse profile photo position:', e);
+                    }
+                }
+                
+                profilePhoto.innerHTML = `<img src="${profile.profile_photo}" alt="Profile" style="${photoStyle}">`;
+            } else {
+                profilePhoto.innerHTML = '👤';
+            }
+
+            // Display name
+            const displayName = document.getElementById('preview-name');
+            if (displayName) {
+                let name = 'User';
+                if (profile && profile.display_name && profile.display_name.trim() !== '') {
+                    name = profile.display_name;
+                } else if (profile && profile.handle && profile.handle.trim() !== '') {
+                    name = profile.handle;
+                }
+                displayName.textContent = name;
+            }
+
+            // Social links
+            renderSocialLinks(profile);
+        }
+
+        function renderSocialLinks(profile) {
+            const socialLinksContainer = document.getElementById('preview-social');
+            socialLinksContainer.innerHTML = '';
+
+('Profile social data:', profile);
+('Available social keys:', Object.keys(profile).filter(key => key.startsWith('social_')));
+
+            const socialPlatforms = [
+                { key: 'social_email', icon: 'fas fa-envelope', class: 'email' },
+                { key: 'social_instagram', icon: 'fab fa-instagram', class: 'instagram' },
+                { key: 'social_facebook', icon: 'fab fa-facebook-f', class: 'facebook' },
+                { key: 'social_twitter', icon: 'fab fa-x-twitter', class: 'twitter' },
+                { key: 'social_linkedin', icon: 'fab fa-linkedin-in', class: 'linkedin' },
+                { key: 'social_youtube', icon: 'fab fa-youtube', class: 'youtube' },
+                { key: 'social_tiktok', icon: 'fab fa-tiktok', class: 'tiktok' },
+                { key: 'social_snapchat', icon: 'fab fa-snapchat', class: 'snapchat' }
+            ];
+
+            socialPlatforms.forEach(platform => {
+                if (profile[platform.key]) {
+                    const link = document.createElement('a');
+                    
+                    // Special handling for email - use mailto:
+                    if (platform.key === 'social_email') {
+                        link.href = `mailto:${profile[platform.key]}`;
+                        link.target = '_self';
+                    } else {
+                        link.href = profile[platform.key];
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
+                    }
+                    
+                    link.className = `social-icon ${platform.class}`;
+                    
+                    // Special handling for X/Twitter icon
+                    let iconHtml = `<i class="${platform.icon}"></i>`;
+                    if (platform.key === 'social_twitter') {
+                        iconHtml = `<span style="font-weight: bold; font-size: 16px;">𝕏</span>`;
+                    }
+                    
+                    link.innerHTML = iconHtml;
+                    socialLinksContainer.appendChild(link);
+                }
+            });
+        }
+
+        function renderLinks(links) {
+            const container = document.getElementById('preview-links');
+            container.innerHTML = '';
+
+            if (!links || links.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6c757d;">No links available</p>';
+                return;
+            }
+
+            links.forEach(link => {
+                const linkElement = document.createElement('a');
+                linkElement.href = link.url;
+                linkElement.target = '_blank';
+                linkElement.rel = 'noopener noreferrer';
+                linkElement.className = 'preview-link';
+
+                linkElement.innerHTML = `
+                    <div style="width: 48px; height: 48px; border-radius: 8px; margin-right: 12px; overflow: hidden; background: #e5e7eb; display: flex; align-items: center; justify-content: center;">
+                        ${link.image ? `<img src="${link.image}" alt="Link Icon" style="width: 100%; height: 100%; object-fit: cover;">` : '<i class="fas fa-link" style="color: #6b7280;"></i>'}
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 0.875rem;">${link.title}</div>
+                    </div>
+                `;
+
+                container.appendChild(linkElement);
+            });
+        }
+
+        function loadPresentationInfo(collection, profileData) {
+            if (!collection.presentation_data) return;
+
+            const presentationData = collection.presentation_data;
+            
+            // Check if presentation data contains display name
+            if (presentationData.displayName && presentationData.displayName.trim() !== '') {
+                const displayName = document.getElementById('preview-name');
+                if (displayName) {
+                    displayName.textContent = presentationData.displayName;
+                }
+            }
+            
+            // Title
+            if (presentationData.title && presentationData.displayTitle !== false) {
+                const titleField = document.getElementById('preview-info-title');
+                const titleValue = document.getElementById('preview-title');
+                if (titleField && titleValue) {
+                    titleValue.textContent = presentationData.title;
+                    titleField.style.display = 'block';
+                }
+            }
+            
+            // Conference
+            if (presentationData.conference && presentationData.displayConference !== false) {
+                const conferenceField = document.getElementById('preview-info-conference');
+                const conferenceValue = document.getElementById('preview-conference');
+                if (conferenceField && conferenceValue) {
+                    conferenceValue.textContent = presentationData.conference;
+                    conferenceField.style.display = 'block';
+                }
+            }
+            
+            // Location
+            if (presentationData.location) {
+                const locationField = document.getElementById('preview-info-location');
+                const locationValue = document.getElementById('preview-location');
+                if (locationField && locationValue) {
+                    locationValue.textContent = presentationData.location;
+                    locationField.style.display = 'block';
+                }
+            }
+            
+            // Date
+            if (presentationData.date) {
+                const dateField = document.getElementById('preview-info-date');
+                const dateValue = document.getElementById('preview-date');
+                if (dateField && dateValue) {
+                    dateValue.textContent = presentationData.date;
+                    dateField.style.display = 'block';
+                }
+            }
+        }
+
+        function applyTheme(theme) {
+            console.log('Applying theme:', theme);
+            console.log('All theme keys:', Object.keys(theme));
+            console.log('Border enabled:', theme.gradientBorderEnabled);
+            console.log('Border type:', theme.borderType);
+            console.log('Border color:', theme.borderColor);
+            console.log('Profile text color:', theme.profileTextColor);
+            console.log('Presentation text color:', theme.presentationTextColor);
+            
+            // Apply phone mockup border styling (full screen)
+            const phoneMockup = document.querySelector('.phone-mockup');
+            if (phoneMockup) {
+                // Apply border styling to phone-mockup
+                console.log('Phone mockup element:', phoneMockup);
+                console.log('Border enabled:', theme.gradientBorderEnabled);
+                console.log('Border type:', theme.borderType);
+                console.log('Border color:', theme.borderColor);
+                
+                // Check if border should be enabled (fallback logic)
+                const borderEnabled = theme.gradientBorderEnabled !== false && (theme.borderType || theme.borderColor || theme.borderGradientText);
+                console.log('Border enabled (with fallback):', borderEnabled);
+                console.log('Border gradient text:', theme.borderGradientText);
+                
+                if (borderEnabled) {
+                    const borderWidth = theme.borderWidth && theme.borderWidth !== '0px' ? theme.borderWidth : '8px';
+                    console.log('Border width:', borderWidth);
+                    
+                    if (theme.borderType === 'gradient' || theme.borderGradientText) {
+                        // Gradient border
+                        const gradientBg = theme.borderGradientText || theme.gradientText || 'linear-gradient(45deg, #8b5cf6 0%, #06b6d4 100%)';
+                        console.log('Applying gradient border:', gradientBg);
+                        phoneMockup.style.setProperty('background', gradientBg, 'important');
+                    } else if ((theme.borderType === 'solid' || theme.borderColor) && theme.borderColor) {
+                        // Solid border
+                        console.log('Applying solid border:', theme.borderColor);
+                        phoneMockup.style.setProperty('background', theme.borderColor, 'important');
+                    }
+                    
+                    phoneMockup.style.setProperty('padding', borderWidth, 'important');
+                    phoneMockup.style.setProperty('box-shadow', 'none', 'important');
+                    console.log('Applied border padding:', borderWidth);
+                } else {
+                    console.log('Border disabled, removing border');
+                    phoneMockup.style.setProperty('background', 'transparent', 'important');
+                    phoneMockup.style.setProperty('box-shadow', 'none', 'important');
+                    phoneMockup.style.setProperty('padding', '0', 'important');
+                }
+            }
+            
+            // Apply background
+            const phoneScreen = document.querySelector('.phone-screen');
+            if (phoneScreen) {
+                console.log('Phone screen element:', phoneScreen);
+                console.log('Background type:', theme.backgroundType);
+                console.log('Background color:', theme.backgroundColor);
+                console.log('Gradient text:', theme.gradientText);
+                console.log('Background image:', theme.backgroundImage);
+                
+                // Apply background (border is handled by phone-mockup padding technique)
+                if (theme.backgroundType === 'gradient' && theme.gradientText) {
+                    console.log('Applying gradient background:', theme.gradientText);
+                    phoneScreen.style.setProperty('background', theme.gradientText, 'important');
+                    // Also try direct style setting for mobile compatibility
+                    phoneScreen.style.background = theme.gradientText;
+                } else if (theme.backgroundType === 'solid' && theme.backgroundColor) {
+                    console.log('Applying solid background:', theme.backgroundColor);
+                    phoneScreen.style.setProperty('background', theme.backgroundColor, 'important');
+                    // Also try direct style setting for mobile compatibility
+                    phoneScreen.style.background = theme.backgroundColor;
+                    
+                    // Mobile-specific fixes
+                    phoneScreen.style.setProperty('background-color', theme.backgroundColor, 'important');
+                    phoneScreen.style.backgroundColor = theme.backgroundColor;
+                    
+                    // Force repaint for mobile browsers
+                    phoneScreen.style.display = 'none';
+                    phoneScreen.offsetHeight; // Trigger reflow
+                    phoneScreen.style.display = '';
+                } else if (theme.backgroundType === 'image' && theme.backgroundImage) {
+                    console.log('Applying background image:', theme.backgroundImage);
+                    // Apply background image
+                    phoneScreen.style.setProperty('background-image', `url(${theme.backgroundImage})`, 'important');
+                    phoneScreen.style.setProperty('background-size', 'cover', 'important');
+                    phoneScreen.style.setProperty('background-position', 'center', 'important');
+                    phoneScreen.style.setProperty('background-repeat', 'no-repeat', 'important');
+                    // Also try direct style setting for mobile compatibility
+                    phoneScreen.style.backgroundImage = `url(${theme.backgroundImage})`;
+                    phoneScreen.style.backgroundSize = 'cover';
+                    phoneScreen.style.backgroundPosition = 'center';
+                    phoneScreen.style.backgroundRepeat = 'no-repeat';
+                }
+                
+                // Log final computed style for debugging
+                const computedStyle = window.getComputedStyle(phoneScreen);
+                console.log('Final computed background:', computedStyle.background);
+                console.log('Final computed backgroundColor:', computedStyle.backgroundColor);
+                
+                // Mobile-specific debugging and fixes
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                console.log('Is mobile device:', isMobile);
+                
+                if (isMobile) {
+                    console.log('Applying mobile-specific background fix...');
+                    // Try CSS class approach for mobile
+                    phoneScreen.classList.add('mobile-bg-fix');
+                    phoneScreen.setAttribute('data-bg-color', theme.backgroundColor || '');
+                    phoneScreen.setAttribute('data-bg-type', theme.backgroundType || '');
+                    
+                    // Set CSS custom properties for mobile
+                    if (theme.backgroundType === 'solid' && theme.backgroundColor) {
+                        phoneScreen.style.setProperty('--mobile-bg-color', theme.backgroundColor);
+                    } else if (theme.backgroundType === 'gradient' && theme.gradientText) {
+                        phoneScreen.style.setProperty('--mobile-bg-gradient', theme.gradientText);
+                    }
+                }
+            }
+            
+            // Apply display name color
+            const displayName = document.querySelector('.preview-name-section h4');
+            console.log('Display name element:', displayName);
+            console.log('Profile text color:', theme.profileTextColor);
+            console.log('Presentation color:', theme.presentationColor);
+            console.log('Text color fallback:', theme.textColor);
+            const profileColor = theme.profileTextColor || theme.presentationColor || theme.textColor;
+            if (displayName && profileColor) {
+                displayName.style.setProperty('color', profileColor, 'important');
+                console.log('Applied profile text color:', profileColor);
+            }
+            
+            // Apply presentation text colors
+            const presentationLabels = document.querySelectorAll('.info-label');
+            presentationLabels.forEach(field => {
+                if (theme.profileTextColor) {
+                    field.style.setProperty('color', theme.profileTextColor, 'important');
+                }
+            });
+            
+            const presentationValues = document.querySelectorAll('.info-value');
+            console.log('Presentation values elements:', presentationValues);
+            console.log('Presentation text color:', theme.presentationTextColor);
+            console.log('Text color fallback:', theme.textColor);
+            console.log('Available theme colors:', {
+                textColor: theme.textColor,
+                backgroundColor: theme.backgroundColor,
+                buttonTextColor: theme.buttonTextColor,
+                presentationTextColor: theme.presentationTextColor,
+                presentationColor: theme.presentationColor,
+                profileTextColor: theme.profileTextColor,
+                buttonBgColor: theme.buttonBgColor,
+                buttonBackgroundColor: theme.buttonBackgroundColor
+            });
+            const presentationColor = theme.presentationTextColor || theme.presentationColor || theme.textColor;
+            presentationValues.forEach(field => {
+                if (presentationColor) {
+                    field.style.setProperty('color', presentationColor, 'important');
+                    console.log('Applied presentation text color:', presentationColor, 'to:', field);
+                }
+            });
+            
+            // Apply button styling
+            const buttons = document.querySelectorAll('.preview-link');
+            
+            buttons.forEach(button => {
+                // Apply button style-specific styling
+                if (theme.buttonStyle === 'solid' && theme.buttonBgColor) {
+                    button.style.setProperty('background-color', theme.buttonBgColor, 'important');
+                    button.style.setProperty('border', 'none', 'important');
+                } else if (theme.buttonStyle === 'soft') {
+                    // For soft glass style, use semi-transparent background with blur effect
+                    button.style.setProperty('background', 'rgba(255, 255, 255, 0.1)', 'important');
+                    button.style.setProperty('backdrop-filter', 'blur(10px)', 'important');
+                    button.style.setProperty('border', '1px solid rgba(255, 255, 255, 0.2)', 'important');
+                    button.style.setProperty('box-shadow', '0 4px 15px rgba(0, 0, 0, 0.1)', 'important');
+                } else if (theme.buttonStyle === 'outline' && theme.buttonTextColor) {
+                    button.style.setProperty('background-color', 'transparent', 'important');
+                    button.style.setProperty('border', `2px solid ${theme.buttonTextColor}`, 'important');
+                }
+                
+                // Apply text color to the text element inside the button
+                if (theme.buttonTextColor) {
+                    // Target the text container (second div), then the text element inside it
+                    const textContainer = button.children[1]; // Second child div (text container)
+                    const textElement = textContainer ? textContainer.children[0] : null; // First child of text container
+('Applying color:', theme.buttonTextColor, 'to element:', textElement);
+                    if (textElement) {
+                        textElement.style.setProperty('color', theme.buttonTextColor, 'important');
+('Color applied. Element color is now:', textElement.style.color);
+                    } else {
+('Text element not found!');
+                    }
+                }
+                
+                if (theme.buttonBorderRadius) {
+                    const borderRadius = theme.buttonBorderRadius === '50%' ? '12px' : theme.buttonBorderRadius;
+                    button.style.setProperty('border-radius', borderRadius, 'important');
+                }
+                
+                if (theme.buttonPadding) {
+                    button.style.setProperty('padding', theme.buttonPadding, 'important');
+                }
+                
+                if (theme.buttonFontSize) {
+                    // Apply font size to the text element inside the button
+                    const textContainer = button.children[1]; // Second child div (text container)
+                    const textElement = textContainer ? textContainer.children[0] : null; // First child of text container
+                    if (textElement) {
+                        // Increase font size by adding 4px to make it bigger
+                        const currentSize = parseFloat(theme.buttonFontSize);
+                        const newSize = (currentSize + 4) + 'px';
+                        textElement.style.setProperty('font-size', newSize, 'important');
+                    }
+                }
+                
+                if (theme.buttonFontWeight) {
+                    // Apply font weight to the text element inside the button
+                    const textContainer = button.children[1]; // Second child div (text container)
+                    const textElement = textContainer ? textContainer.children[0] : null; // First child of text container
+                    if (textElement) {
+                        textElement.style.setProperty('font-weight', theme.buttonFontWeight, 'important');
+                    }
+                }
+            });
+        }
+
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            if (handle && collectionSlug) {
+                loadProfile();
+            } else {
+('Missing handle or collection parameter');
+            }
+        });
+    </script>
+</body>
+</html>

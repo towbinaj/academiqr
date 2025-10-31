@@ -1,0 +1,23 @@
+{
+  "name": "biolink-app",
+  "version": "1.0.0",
+  "description": "Custom link-in-bio website builder",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "qrcode": "^1.5.3",
+    "qr-code-styling": "^1.6.0",
+    "chart.js": "^4.4.0",
+    "sortablejs": "^1.15.0",
+    "cropperjs": "^1.5.13",
+    "html2canvas": "^1.4.1"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

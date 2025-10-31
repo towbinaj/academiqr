@@ -1,0 +1,2524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academiq - Custom Link Lists</title>
+    <link rel="stylesheet" href="src/styles/main.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+        <style>
+            @keyframes dragPulse {
+                0%, 100% {
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                }
+                50% {
+                    box-shadow: 0 15px 40px rgba(59, 130, 246, 0.4);
+                }
+            }
+            
+            .link-item {
+                transition: all 0.2s ease-out;
+            }
+            
+            .link-item:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }
+            
+            .drag-handle {
+                transition: all 0.2s ease-out;
+            }
+            
+            .drag-handle:hover {
+                background-color: #e5e7eb;
+                transform: scale(1.05);
+            }
+            
+            /* Force media library images to be small thumbnails */
+            #media-grid {
+                max-width: 100% !important;
+                display: flex !important;
+                flex-wrap: wrap !important;
+                gap: 8px !important;
+            }
+            
+            #media-grid > div {
+                max-width: 150px !important;
+                height: 100px !important;
+                width: auto !important;
+                flex-shrink: 0 !important;
+                border: 2px solid #e5e7eb !important;
+                border-radius: 8px !important;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+                background: white !important;
+                overflow: hidden !important;
+                transition: all 0.2s ease !important;
+            }
+            
+            #media-grid > div:hover {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+                transform: translateY(-1px) !important;
+            }
+            
+            #media-grid .delete-btn {
+                position: absolute !important;
+                top: 4px !important;
+                right: 4px !important;
+                width: 20px !important;
+                height: 20px !important;
+                background: #ef4444 !important;
+                color: white !important;
+                border-radius: 50% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 12px !important;
+                font-weight: bold !important;
+                cursor: pointer !important;
+                opacity: 1 !important;
+                transition: all 0.2s ease !important;
+                z-index: 10 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+            }
+            
+            #media-grid .edit-btn {
+                position: absolute !important;
+                top: 4px !important;
+                left: 4px !important;
+                width: 20px !important;
+                height: 20px !important;
+                background: #3b82f6 !important;
+                color: white !important;
+                border-radius: 50% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 10px !important;
+                font-weight: bold !important;
+                cursor: pointer !important;
+                opacity: 1 !important;
+                transition: all 0.2s ease !important;
+                z-index: 10 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+            }
+            
+            #media-grid .delete-btn:hover {
+                background: #dc2626 !important;
+            }
+            
+            #media-grid .edit-btn:hover {
+                background: #2563eb !important;
+            }
+            
+            /* Force buttons to always be visible - override any conflicting styles */
+            #media-grid .delete-btn,
+            #media-grid .edit-btn {
+                display: flex !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+            }
+            
+            /* Override any group hover effects */
+            #media-grid > div .delete-btn,
+            #media-grid > div .edit-btn {
+                display: flex !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+            }
+            
+            /* Nuclear option - override everything */
+            .edit-btn, .delete-btn {
+                display: flex !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+            }
+            
+            /* Override any Tailwind or other CSS */
+            [class*="edit-btn"], [class*="delete-btn"] {
+                display: flex !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                pointer-events: auto !important;
+            }
+            
+            #media-grid img {
+                width: 100% !important;
+                height: 100% !important;
+                max-width: 150px !important;
+                max-height: 100px !important;
+                object-fit: cover !important;
+                display: block !important;
+            }
+            
+            #media-grid .aspect-square {
+                width: auto !important;
+                height: 100px !important;
+                aspect-ratio: unset !important;
+                max-width: 150px !important;
+            }
+        </style>
+    </head>
+    <body>
+    <div id="app">
+        <!-- Loading screen -->
+        <div id="loading" class="loading-screen">
+            <div class="spinner"></div>
+            <p>Loading Academiq...</p>
+        </div>
+        
+        <!-- Auth screens -->
+        <div id="auth-container" class="hidden">
+            <!-- Login/Register will be inserted here -->
+        </div>
+        
+        <!-- Main app -->
+        <div id="main-app" class="hidden">
+            <!-- Dashboard will be inserted here -->
+        </div>
+        
+        <!-- Public viewer -->
+        <div id="public-viewer" class="hidden">
+            <!-- Public link list will be inserted here -->
+        </div>
+    </div>
+    
+    <!-- Load Supabase from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
+        
+        // Initialize Supabase
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // App state
+        let currentUser = null;
+        let currentView = 'loading';
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Wait for Supabase to load
+            if (typeof supabase === 'undefined') {
+                console.error('Supabase not loaded!');
+                return;
+            }
+            await initApp();
+        });
+        
+        async function initApp() {
+            try {
+                
+                // Check for existing session
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                
+                if (session) {
+                    currentUser = session.user;
+                    showDashboard();
+                } else {
+                    showLogin();
+                }
+            } catch (error) {
+                console.error('Auth error:', error);
+                showLogin();
+            }
+        }
+        
+        function showLoading() {
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('public-viewer').classList.add('hidden');
+        }
+        
+        function showLogin() {
+            currentView = 'login';
+            document.getElementById('auth-container').innerHTML = `
+                <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+                    <div class="max-w-md w-full space-y-8">
+                        <div>
+                            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                                Welcome to Academiq
+                            </h2>
+                            <p class="mt-2 text-center text-sm text-gray-600">
+                                Create beautiful link lists for your academic work
+                            </p>
+                        </div>
+                        <div class="mt-8 space-y-6">
+                            <div>
+                                <button onclick="signInWithGoogle()" class="group relative w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    <span class="absolute left-0 inset-y-0 flex items-center pl-3">
+                                        <svg class="h-5 w-5" viewBox="0 0 24 24">
+                                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                                        </svg>
+                                    </span>
+                                    Continue with Google
+                                </button>
+                            </div>
+                            
+                            <div class="relative">
+                                <div class="absolute inset-0 flex items-center">
+                                    <div class="w-full border-t border-gray-300" />
+                                </div>
+                                <div class="relative flex justify-center text-sm">
+                                    <span class="px-2 bg-gray-50 text-gray-500">Or</span>
+                                </div>
+                            </div>
+                            
+                            <form id="login-form" class="space-y-6">
+                                <div>
+                                    <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                                    <input id="email" name="email" type="email" required class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Enter your email">
+                                </div>
+                                <div>
+                                    <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                                    <input id="password" name="password" type="password" required class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Enter your password">
+                                </div>
+                                <div>
+                                    <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                        Sign In
+                                    </button>
+                                </div>
+                                <div class="text-center">
+                                    <button type="button" onclick="showRegister()" class="text-blue-600 hover:text-blue-500 text-sm">
+                                        Don't have an account? Sign up
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+            document.getElementById('public-viewer').classList.add('hidden');
+            
+            // Setup login form
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+        }
+        
+        function showRegister() {
+            currentView = 'register';
+            document.getElementById('auth-container').innerHTML = `
+                <div class="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+                    <div class="max-w-md w-full space-y-8">
+                        <div>
+                            <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                                Create your Academiq account
+                            </h2>
+                            <p class="mt-2 text-center text-sm text-gray-600">
+                                Start building your academic link lists
+                            </p>
+                        </div>
+                        <form id="register-form" class="mt-8 space-y-6">
+                            <div>
+                                <label for="displayName" class="block text-sm font-medium text-gray-700">Display Name</label>
+                                <input id="displayName" name="displayName" type="text" required class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Enter your name">
+                            </div>
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                                <input id="email" name="email" type="email" required class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Enter your email">
+                            </div>
+                            <div>
+                                <label for="password" class="block text-sm font-medium text-gray-700">Password</label>
+                                <input id="password" name="password" type="password" required class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm" placeholder="Create a password">
+                            </div>
+                            <div>
+                                <button type="submit" class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    Create Account
+                                </button>
+                            </div>
+                            <div class="text-center">
+                                <button type="button" onclick="showLogin()" class="text-blue-600 hover:text-blue-500 text-sm">
+                                    Already have an account? Sign in
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            // Setup register form
+            document.getElementById('register-form').addEventListener('submit', handleRegister);
+        }
+        
+        async function handleLogin(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const email = formData.get('email');
+            const password = formData.get('password');
+            
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email,
+                    password
+                });
+                
+                if (error) throw error;
+                
+                currentUser = data.user;
+                showDashboard();
+            } catch (error) {
+                alert('Login failed: ' + error.message);
+            }
+        }
+        
+        async function handleRegister(e) {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const displayName = formData.get('displayName');
+            const email = formData.get('email');
+            const password = formData.get('password');
+            
+            try {
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            display_name: displayName
+                        },
+                        emailRedirectTo: window.location.origin + '/academiq.html'
+                    }
+                });
+                
+                if (error) throw error;
+                
+                if (data.user) {
+                    // Create profile
+                    const { error: profileError } = await supabaseClient
+                        .from('profiles')
+                        .insert({
+                            id: data.user.id,
+                            handle: email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, ''),
+                            display_name: displayName
+                        });
+                    
+                    if (profileError) {
+                        console.error('Profile creation error:', profileError);
+                    }
+                    
+                    // Check if email confirmation is required
+                    if (data.user.email_confirmed_at) {
+                        // Email already confirmed, go to dashboard
+                        currentUser = data.user;
+                        showDashboard();
+                    } else {
+                        // Email confirmation required
+                        alert('Account created! Please check your email to verify your account.');
+                        showLogin();
+                    }
+                }
+            } catch (error) {
+                alert('Registration failed: ' + error.message);
+            }
+        }
+        
+        async function signInWithGoogle() {
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin + '/academiq.html'
+                    }
+                });
+                
+                if (error) throw error;
+            } catch (error) {
+                alert('Google sign-in failed: ' + error.message);
+            }
+        }
+        
+        function showDashboard() {
+            currentView = 'dashboard';
+            document.getElementById('main-app').innerHTML = `
+                <div class="min-h-screen bg-gray-50">
+                    <nav class="bg-white shadow-sm border-b">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="flex justify-between h-16">
+                                <div class="flex items-center">
+                                    <h1 class="text-xl font-semibold text-gray-900">Academiq</h1>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <button onclick="showEditor()" class="btn btn-primary">
+                                        + New List
+                                    </button>
+                                    <button onclick="signOut()" class="btn btn-ghost">
+                                        Sign Out
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                    
+                    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                        <div class="px-4 py-6 sm:px-0">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-6">Your Link Lists</h2>
+                            <div id="lists-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div class="col-span-full text-center py-12">
+                                    <p class="text-gray-500">No lists yet. Create your first one!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('public-viewer').classList.add('hidden');
+        }
+        
+        function showEditor(listId = null) {
+            currentView = 'editor';
+            const isNewList = !listId;
+            
+            document.getElementById('main-app').innerHTML = `
+                <div class="min-h-screen bg-gray-50">
+                    <nav class="bg-white shadow-sm border-b">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="flex justify-between h-16">
+                                <div class="flex items-center">
+                                    <button onclick="showDashboard()" class="btn btn-ghost">
+                                        ← Back to Dashboard
+                                    </button>
+                                    <h1 class="ml-4 text-xl font-semibold text-gray-900">
+                                        ${isNewList ? 'New Link List' : 'Edit Link List'}
+                                    </h1>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <button onclick="saveList()" class="btn btn-primary">
+                                        Save
+                                    </button>
+                                    <button onclick="previewList()" class="btn btn-secondary">
+                                        Preview
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                    
+                    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                        <div class="px-4 py-6 sm:px-0">
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <!-- Editor Panel -->
+                                <div class="lg:col-span-2">
+                                    <div class="bg-white rounded-lg shadow">
+                                        <div class="px-6 py-4 border-b border-gray-200">
+                                            <div class="flex space-x-1">
+                                                <button onclick="switchTab('buttons')" id="tab-buttons" class="px-3 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600">
+                                                    Buttons
+                                                </button>
+                                                <button onclick="switchTab('grid')" id="tab-grid" class="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+                                                    Grid
+                                                </button>
+                                                <button onclick="switchTab('appearance')" id="tab-appearance" class="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+                                                    Appearance
+                                                </button>
+                                                <button onclick="switchTab('media')" id="tab-media" class="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+                                                    Media
+                                                </button>
+                                                <button onclick="switchTab('settings')" id="tab-settings" class="px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700">
+                                                    Settings
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="p-6">
+                                            <div id="editor-content">
+                                                <!-- Content will be loaded here based on active tab -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Preview Panel -->
+                                <div class="lg:col-span-1">
+                                    <div class="bg-white rounded-lg shadow">
+                                        <div class="px-6 py-4 border-b border-gray-200">
+                                            <h3 class="text-lg font-medium text-gray-900">Preview</h3>
+                                        </div>
+                                        <div class="p-6">
+                                            <div id="mobile-preview" class="bg-gray-100 rounded-lg p-4 min-h-96">
+                                                <!-- Mobile preview will be rendered here -->
+                                                <div class="text-center text-gray-500 py-8">
+                                                    Mobile preview coming soon...
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Initialize editor
+            switchTab('buttons');
+            
+            // Mouse-based drag and drop is now handled per-link
+            console.log('Mouse-based drag and drop ready');
+        }
+        
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+                btn.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+                btn.classList.add('text-gray-500', 'hover:text-gray-700');
+            });
+            
+            const activeTab = document.getElementById(`tab-${tabName}`);
+            activeTab.classList.remove('text-gray-500', 'hover:text-gray-700');
+            activeTab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+            
+            // Load tab content
+            const content = document.getElementById('editor-content');
+            
+            switch(tabName) {
+                case 'buttons':
+                    content.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <h3 class="text-lg font-medium text-gray-900">Links</h3>
+                                <button onclick="addLink()" class="btn btn-primary btn-sm">
+                                    + Add Link
+                                </button>
+                            </div>
+                            <div id="links-list" class="space-y-3">
+                                <div class="text-center py-8 text-gray-500">
+                                    No links yet. Click "Add Link" to get started.
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'grid':
+                    content.innerHTML = `
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-medium text-gray-900">Grid View</h3>
+                            <p class="text-gray-600">Grid view will show your links as image tiles without text descriptions.</p>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+                                    Grid preview coming soon...
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'appearance':
+                    content.innerHTML = `
+                        <div class="flex h-full bg-gradient-to-br from-slate-50 to-blue-50">
+                            <!-- Left Panel - Controls -->
+                            <div class="flex-1 overflow-y-auto">
+                                <div class="p-8 space-y-8">
+                                    <!-- Header -->
+                                    <div class="text-center mb-8">
+                                        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl mb-4">
+                                            <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"></path>
+                                            </svg>
+                                        </div>
+                                        <h1 class="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">Appearance</h1>
+                                        <p class="text-lg text-gray-600 max-w-md mx-auto">Design your perfect link list with our modern, intuitive tools</p>
+                                    </div>
+                                    
+                                    <!-- Profile Section -->
+                                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
+                                        <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-6">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h2 class="text-xl font-bold text-white">Profile</h2>
+                                                        <p class="text-blue-100 text-sm">Customize your personal information</p>
+                                                    </div>
+                                                </div>
+                                                <button class="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-xl" onclick="toggleAccordion('profile')">
+                                                    <svg class="w-6 h-6 transition-transform" id="profile-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="profile-content" class="p-8 space-y-8" style="display: none;">
+                                            <div class="space-y-6">
+                                                <div>
+                                                    <label class="block text-sm font-bold text-gray-800 mb-3">Display Name</label>
+                                                    <input type="text" id="profileTitle" placeholder="Enter your display name" class="w-full px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 focus:outline-none text-lg font-medium transition-all duration-200" value="Alex Towbin">
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-bold text-gray-800 mb-3">Bio Description</label>
+                                                    <div class="bg-white border-2 border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                                                        <div class="bg-gray-50 border-b border-gray-200 p-4 flex items-center space-x-3">
+                                                            <button type="button" class="p-3 hover:bg-gray-200 rounded-xl transition-colors group" onclick="formatText('bold')" title="Bold">
+                                                                <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path d="M5 4a1 1 0 000 2h5.5a2.5 2.5 0 010 5H5a1 1 0 100 2h5.5a4.5 4.5 0 100-9H5z"/>
+                                                                </svg>
+                                                            </button>
+                                                            <button type="button" class="p-3 hover:bg-gray-200 rounded-xl transition-colors group" onclick="formatText('italic')" title="Italic">
+                                                                <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path d="M8 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zM12 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1z"/>
+                                                                </svg>
+                                                            </button>
+                                                            <button type="button" class="p-3 hover:bg-gray-200 rounded-xl transition-colors group" onclick="formatText('underline')" title="Underline">
+                                                                <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 8a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 12a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+                                                                </svg>
+                                                            </button>
+                                                            <div class="border-l border-gray-300 h-8"></div>
+                                                            <button type="button" class="p-3 hover:bg-gray-200 rounded-xl transition-colors group" onclick="formatText('link')" title="Add Link">
+                                                                <svg class="w-5 h-5 text-gray-600 group-hover:text-gray-900" fill="currentColor" viewBox="0 0 20 20">
+                                                                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-3 3a4 4 0 000 5.656 1 1 0 101.414-1.414 2 2 0 000-2.828l3-3z" clip-rule="evenodd"/>
+                                                                </svg>
+                                                            </button>
+                                                            <div class="flex-1"></div>
+                                                            <div class="flex items-center space-x-2">
+                                                                <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                                                                <span class="text-sm font-medium text-gray-600" id="char-count">0/500</span>
+                                                            </div>
+                                                        </div>
+                                                        <div contenteditable="true" id="profileDescription" class="p-6 min-h-[140px] focus:outline-none text-lg leading-relaxed" placeholder="Tell your story in a few words..." oninput="updateCharCount()"></div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div>
+                                                    <label class="block text-sm font-bold text-gray-800 mb-3">Profile Picture</label>
+                                                    <div class="flex items-center space-x-6">
+                                                        <div class="relative group">
+                                                            <div class="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-3xl flex items-center justify-center overflow-hidden border-4 border-white shadow-lg group-hover:shadow-xl transition-all duration-300">
+                                                                <span class="text-blue-400 text-3xl">📷</span>
+                                                            </div>
+                                                            <button class="absolute -top-2 -right-2 w-7 h-7 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600 transition-all duration-200 shadow-lg">
+                                                                ×
+                                                            </button>
+                                                        </div>
+                                                        <div class="flex-1">
+                                                            <button class="px-6 py-3 text-sm font-bold text-gray-700 bg-white border-2 border-gray-200 rounded-2xl hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 shadow-sm">
+                                                                Choose Image
+                                                            </button>
+                                                            <p class="text-xs text-gray-500 mt-2">JPG, PNG, GIF up to 5MB</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                                                <button class="px-8 py-3 text-sm font-bold text-gray-600 bg-gray-100 rounded-2xl hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-500/20 transition-all duration-200">
+                                                    Cancel
+                                                </button>
+                                                <button class="px-8 py-3 text-sm font-bold text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 transition-all duration-200 shadow-lg">
+                                                    Save Changes
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Themes Section -->
+                                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
+                                        <div class="bg-gradient-to-r from-purple-600 to-pink-600 p-6">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h2 class="text-xl font-bold text-white">Themes</h2>
+                                                        <p class="text-purple-100 text-sm">Choose from beautiful preset designs</p>
+                                                    </div>
+                                                </div>
+                                                <button class="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-xl" onclick="toggleAccordion('themes')">
+                                                    <svg class="w-6 h-6 transition-transform" id="themes-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="themes-content" class="p-8" style="display: none;">
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div class="theme-preset cursor-pointer group" data-theme="light" onclick="selectTheme('light')">
+                                                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4 group-hover:border-blue-500 group-hover:shadow-lg transition-all duration-300">
+                                                        <div class="w-full h-20 bg-white border border-gray-200 rounded-xl mb-3 flex items-center justify-center">
+                                                            <div class="w-16 h-8 bg-gray-100 rounded"></div>
+                                                        </div>
+                                                        <p class="text-sm font-bold text-gray-900 text-center">Light</p>
+                                                    </div>
+                                                </div>
+                                                <div class="theme-preset cursor-pointer group" data-theme="dark" onclick="selectTheme('dark')">
+                                                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4 group-hover:border-blue-500 group-hover:shadow-lg transition-all duration-300">
+                                                        <div class="w-full h-20 bg-gray-900 rounded-xl mb-3 flex items-center justify-center">
+                                                            <div class="w-16 h-8 bg-gray-700 rounded"></div>
+                                                        </div>
+                                                        <p class="text-sm font-bold text-gray-900 text-center">Dark</p>
+                                                    </div>
+                                                </div>
+                                                <div class="theme-preset cursor-pointer group" data-theme="gradient" onclick="selectTheme('gradient')">
+                                                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4 group-hover:border-blue-500 group-hover:shadow-lg transition-all duration-300">
+                                                        <div class="w-full h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl mb-3 flex items-center justify-center">
+                                                            <div class="w-16 h-8 bg-white/20 rounded"></div>
+                                                        </div>
+                                                        <p class="text-sm font-bold text-gray-900 text-center">Gradient</p>
+                                                    </div>
+                                                </div>
+                                                <div class="theme-preset cursor-pointer group" data-theme="colorful" onclick="selectTheme('colorful')">
+                                                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4 group-hover:border-blue-500 group-hover:shadow-lg transition-all duration-300">
+                                                        <div class="w-full h-20 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-xl mb-3 flex items-center justify-center">
+                                                            <div class="w-16 h-8 bg-white/20 rounded"></div>
+                                                        </div>
+                                                        <p class="text-sm font-bold text-gray-900 text-center">Colorful</p>
+                                                    </div>
+                                                </div>
+                                                <div class="theme-preset cursor-pointer group" data-theme="sunset" onclick="selectTheme('sunset')">
+                                                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4 group-hover:border-blue-500 group-hover:shadow-lg transition-all duration-300">
+                                                        <div class="w-full h-20 bg-gradient-to-r from-orange-400 to-pink-500 rounded-xl mb-3 flex items-center justify-center">
+                                                            <div class="w-16 h-8 bg-white/20 rounded"></div>
+                                                        </div>
+                                                        <p class="text-sm font-bold text-gray-900 text-center">Sunset</p>
+                                                    </div>
+                                                </div>
+                                                <div class="theme-preset cursor-pointer group" data-theme="ocean" onclick="selectTheme('ocean')">
+                                                    <div class="bg-white border-2 border-gray-200 rounded-2xl p-4 group-hover:border-blue-500 group-hover:shadow-lg transition-all duration-300">
+                                                        <div class="w-full h-20 bg-gradient-to-r from-blue-400 to-cyan-500 rounded-xl mb-3 flex items-center justify-center">
+                                                            <div class="w-16 h-8 bg-white/20 rounded"></div>
+                                                        </div>
+                                                        <p class="text-sm font-bold text-gray-900 text-center">Ocean</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="mt-6 p-4 bg-blue-50 rounded-2xl">
+                                                <p class="text-sm text-blue-800 text-center font-medium">💡 Setting a custom theme will override your current theme</p>
+                                            </div>
+                                            
+                                            <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                                                <button class="px-8 py-3 text-sm font-bold text-gray-600 bg-gray-100 rounded-2xl hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-500/20 transition-all duration-200">
+                                                    Cancel
+                                                </button>
+                                                <button class="px-8 py-3 text-sm font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-4 focus:ring-purple-500/20 transition-all duration-200 shadow-lg">
+                                                    Apply Theme
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Page Styles Section -->
+                                    <div class="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 overflow-hidden">
+                                        <div class="bg-gradient-to-r from-green-600 to-teal-600 p-6">
+                                            <div class="flex items-center justify-between">
+                                                <div class="flex items-center space-x-3">
+                                                    <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5a2 2 0 00-2-2h-4a2 2 0 00-2 2v12a4 4 0 004 4h4a2 2 0 002-2V5z"></path>
+                                                        </svg>
+                                                    </div>
+                                                    <div>
+                                                        <h2 class="text-xl font-bold text-white">Page Styles</h2>
+                                                        <p class="text-green-100 text-sm">Customize colors and backgrounds</p>
+                                                    </div>
+                                                </div>
+                                                <button class="text-white/80 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-xl" onclick="toggleAccordion('styles')">
+                                                    <svg class="w-6 h-6 transition-transform" id="styles-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="styles-content" class="p-8 space-y-8" style="display: none;">
+                                            <!-- Background Type -->
+                                            <div>
+                                                <label class="block text-sm font-bold text-gray-800 mb-4">Background Style</label>
+                                                <div class="grid grid-cols-3 gap-4">
+                                                    <label class="flex items-center justify-center p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-green-500 transition-all duration-200 group">
+                                                        <input type="radio" name="bgType" value="solid" checked class="sr-only" onchange="updateBackgroundType()">
+                                                        <div class="text-center">
+                                                            <div class="w-12 h-12 bg-gray-200 rounded-xl mx-auto mb-3 group-has-[:checked]:bg-green-100 group-has-[:checked]:ring-4 group-has-[:checked]:ring-green-500/20"></div>
+                                                            <span class="text-sm font-bold text-gray-700 group-has-[:checked]:text-green-600">Solid</span>
+                                                        </div>
+                                                    </label>
+                                                    <label class="flex items-center justify-center p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-green-500 transition-all duration-200 group">
+                                                        <input type="radio" name="bgType" value="gradient" class="sr-only" onchange="updateBackgroundType()">
+                                                        <div class="text-center">
+                                                            <div class="w-12 h-12 bg-gradient-to-r from-blue-400 to-purple-400 rounded-xl mx-auto mb-3 group-has-[:checked]:ring-4 group-has-[:checked]:ring-green-500/20"></div>
+                                                            <span class="text-sm font-bold text-gray-700 group-has-[:checked]:text-green-600">Gradient</span>
+                                                        </div>
+                                                    </label>
+                                                    <label class="flex items-center justify-center p-4 bg-gray-50 border-2 border-gray-200 rounded-2xl cursor-pointer hover:border-green-500 transition-all duration-200 group">
+                                                        <input type="radio" name="bgType" value="image" class="sr-only" onchange="updateBackgroundType()">
+                                                        <div class="text-center">
+                                                            <div class="w-12 h-12 bg-gray-100 rounded-xl mx-auto mb-3 flex items-center justify-center group-has-[:checked]:bg-green-100 group-has-[:checked]:ring-4 group-has-[:checked]:ring-green-500/20">
+                                                                <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                                                </svg>
+                                                            </div>
+                                                            <span class="text-sm font-bold text-gray-700 group-has-[:checked]:text-green-600">Image</span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Solid Color -->
+                                            <div id="solid-color-settings">
+                                                <label class="block text-sm font-bold text-gray-800 mb-4">Background Color</label>
+                                                <div class="flex items-center space-x-6">
+                                                    <div class="relative">
+                                                        <input type="color" id="bgColor" value="#ffffff" class="w-16 h-16 border-4 border-white rounded-2xl cursor-pointer shadow-lg focus:ring-4 focus:ring-green-500/20 focus:outline-none" onchange="updateBackground()">
+                                                        <div class="absolute inset-0 rounded-2xl border-2 border-gray-200 pointer-events-none"></div>
+                                                    </div>
+                                                    <input type="text" id="bgColorText" value="#ffffff" class="flex-1 px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 focus:outline-none font-mono text-lg" placeholder="#ffffff" onchange="updateBackgroundFromText()">
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Advanced Gradient Settings -->
+                                            <div id="gradient-settings" style="display: none;">
+                                                <label class="block text-sm font-bold text-gray-800 mb-4">Gradient Design</label>
+                                                
+                                                <!-- Quick Gradients -->
+                                                <div class="mb-6">
+                                                    <p class="text-sm font-bold text-gray-700 mb-4">Quick Gradients</p>
+                                                    <div class="grid grid-cols-3 gap-3">
+                                                        <div class="gradient-preset cursor-pointer group" onclick="applyQuickGradient('linear-gradient(45deg, #ff6b6b, #4ecdc4)')">
+                                                            <div class="bg-white border-2 border-gray-200 rounded-2xl p-3 group-hover:border-green-500 transition-all duration-200 shadow-sm group-hover:shadow-lg">
+                                                                <div class="w-full h-16 bg-gradient-to-r from-red-400 to-cyan-400 rounded-xl"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="gradient-preset cursor-pointer group" onclick="applyQuickGradient('linear-gradient(135deg, #667eea, #764ba2)')">
+                                                            <div class="bg-white border-2 border-gray-200 rounded-2xl p-3 group-hover:border-green-500 transition-all duration-200 shadow-sm group-hover:shadow-lg">
+                                                                <div class="w-full h-16 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl"></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="gradient-preset cursor-pointer group" onclick="applyQuickGradient('linear-gradient(43deg, #D54070 0%, #8F4469 20%, #CA5699 40%, #59B8DA 60%, #9AD0DD 80%, #73B44A 100%)')">
+                                                            <div class="bg-white border-2 border-gray-200 rounded-2xl p-3 group-hover:border-green-500 transition-all duration-200 shadow-sm group-hover:shadow-lg">
+                                                                <div class="w-full h-16 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-xl"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Custom Gradient Editor -->
+                                                <div class="space-y-6">
+                                                    <div>
+                                                        <label class="block text-sm font-bold text-gray-800 mb-3">Custom Gradient</label>
+                                                        <div class="flex items-center space-x-4">
+                                                            <div class="w-16 h-16 border-2 border-gray-200 rounded-2xl shadow-sm" id="gradientPreview"></div>
+                                                            <input type="text" id="gradientText" class="flex-1 px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 focus:outline-none font-mono text-lg" placeholder="linear-gradient(45deg, #ff6b6b, #4ecdc4)" onchange="updateGradientFromText()">
+                                                            <button onclick="copyGradient()" class="px-6 py-4 text-sm font-bold text-gray-700 bg-white border-2 border-gray-200 rounded-2xl hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:ring-4 focus:ring-green-500/20 transition-all duration-200 shadow-sm">
+                                                                Copy
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Gradient Stops -->
+                                                    <div>
+                                                        <div class="flex items-center justify-between mb-4">
+                                                            <label class="text-sm font-bold text-gray-800">Color Stops</label>
+                                                            <button onclick="addGradientStop()" class="px-4 py-2 text-xs font-bold text-green-600 bg-green-50 rounded-xl hover:bg-green-100 focus:outline-none focus:ring-4 focus:ring-green-500/20 transition-all duration-200">
+                                                                + Add Stop
+                                                            </button>
+                                                        </div>
+                                                        <div id="gradientStops" class="space-y-3">
+                                                            <!-- Gradient stops will be added here dynamically -->
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Gradient Direction -->
+                                                    <div>
+                                                        <label class="block text-sm font-bold text-gray-800 mb-3">Direction</label>
+                                                        <div class="grid grid-cols-2 gap-4">
+                                                            <select id="gradientDirection" class="px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 focus:outline-none text-lg" onchange="updateGradientDirection()">
+                                                                <option value="to right">Left to Right</option>
+                                                                <option value="to bottom">Top to Bottom</option>
+                                                                <option value="to bottom right">Diagonal</option>
+                                                                <option value="45deg">45°</option>
+                                                                <option value="90deg">90°</option>
+                                                                <option value="135deg">135°</option>
+                                                                <option value="180deg">180°</option>
+                                                            </select>
+                                                            <input type="number" id="customAngle" placeholder="Custom angle" class="px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 focus:outline-none text-lg" min="0" max="360" onchange="updateCustomAngle()">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Image Settings -->
+                                            <div id="image-settings" style="display: none;">
+                                                <label class="block text-sm font-bold text-gray-800 mb-4">Background Image</label>
+                                                <div class="space-y-6">
+                                                    <div>
+                                                        <input type="file" id="bgImageUpload" accept="image/*" class="w-full px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 focus:outline-none text-lg" onchange="handleBackgroundImage()">
+                                                    </div>
+                                                    <div class="grid grid-cols-2 gap-6">
+                                                        <div>
+                                                            <label class="block text-sm font-bold text-gray-700 mb-3">Position</label>
+                                                            <select id="bgPosition" class="w-full px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 focus:outline-none text-lg" onchange="updateBackground()">
+                                                                <option value="center">Center</option>
+                                                                <option value="top">Top</option>
+                                                                <option value="bottom">Bottom</option>
+                                                                <option value="left">Left</option>
+                                                                <option value="right">Right</option>
+                                                            </select>
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-sm font-bold text-gray-700 mb-3">Size</label>
+                                                            <select id="bgSize" class="w-full px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 focus:outline-none text-lg" onchange="updateBackground()">
+                                                                <option value="cover">Cover</option>
+                                                                <option value="contain">Contain</option>
+                                                                <option value="100% 100%">Stretch</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <label class="flex items-center">
+                                                            <input type="checkbox" id="bgBlur" class="mr-3 w-5 h-5 text-green-600 focus:ring-green-500 rounded" onchange="updateBackground()">
+                                                            <span class="text-sm font-bold text-gray-700">Add blur effect</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Text Color -->
+                                            <div>
+                                                <label class="block text-sm font-bold text-gray-800 mb-4">Text Color</label>
+                                                <div class="flex items-center space-x-6">
+                                                    <div class="relative">
+                                                        <input type="color" id="textColor" class="w-16 h-16 border-4 border-white rounded-2xl cursor-pointer shadow-lg focus:ring-4 focus:ring-green-500/20 focus:outline-none" onchange="updateTextSettings()">
+                                                        <div class="absolute inset-0 rounded-2xl border-2 border-gray-200 pointer-events-none"></div>
+                                                    </div>
+                                                    <input type="text" id="textColorText" class="flex-1 px-6 py-4 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 focus:outline-none font-mono text-lg" placeholder="#000000" onchange="updateTextFromText()">
+                                                    <label class="flex items-center">
+                                                        <input type="checkbox" id="autoContrast" checked class="mr-3 w-5 h-5 text-green-600 focus:ring-green-500 rounded" onchange="updateTextSettings()">
+                                                        <span class="text-sm font-bold text-gray-700">Auto-contrast</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+                                                <button class="px-8 py-3 text-sm font-bold text-gray-600 bg-gray-100 rounded-2xl hover:bg-gray-200 focus:outline-none focus:ring-4 focus:ring-gray-500/20 transition-all duration-200">
+                                                    Cancel
+                                                </button>
+                                                <button class="px-8 py-3 text-sm font-bold text-white bg-gradient-to-r from-green-600 to-teal-600 rounded-2xl hover:from-green-700 hover:to-teal-700 focus:outline-none focus:ring-4 focus:ring-green-500/20 transition-all duration-200 shadow-lg">
+                                                    Apply Styles
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right Panel - Preview -->
+                            <div class="w-[420px] bg-white/60 backdrop-blur-sm border-l border-white/20 flex flex-col">
+                                <div class="p-8 border-b border-white/20 bg-white/40">
+                                    <div class="flex items-center space-x-3 mb-2">
+                                        <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </div>
+                                        <h3 class="text-xl font-bold text-gray-900">Live Preview</h3>
+                                    </div>
+                                    <p class="text-gray-600">See how your link list will look</p>
+                                </div>
+                                <div class="flex-1 p-8">
+                                    <div id="theme-preview" class="w-full h-full bg-white rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
+                                        <div class="p-8 h-full flex flex-col justify-center items-center text-center">
+                                            <div class="w-20 h-20 bg-gradient-to-r from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-6">
+                                                <span class="text-blue-400 text-3xl">📱</span>
+                                            </div>
+                                            <h4 class="text-2xl font-bold text-gray-900 mb-3">Mobile Preview</h4>
+                                            <p class="text-gray-500 text-lg">Your link list preview will appear here</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'media':
+                    content.innerHTML = `
+                        <div class="space-y-4">
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center space-y-2 sm:space-y-0">
+                                <h3 class="text-lg font-medium text-gray-900">Media Library</h3>
+                                <div class="flex space-x-2">
+                                    <button onclick="createFolder()" class="btn btn-secondary btn-sm">
+                                        📁 New Folder
+                                    </button>
+                                    <button onclick="openFileUpload()" class="btn btn-primary btn-sm">
+                                        📤 Upload Files
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Search and filters -->
+                            <div class="flex space-x-4">
+                                <div class="flex-1">
+                                    <input type="text" id="media-search" placeholder="Search media..." 
+                                           class="form-input" oninput="searchMedia()">
+                                </div>
+                                <select id="media-filter" class="form-select" onchange="filterMedia()">
+                                    <option value="all">All Files</option>
+                                    <option value="jpg">JPG/JPEG</option>
+                                    <option value="png">PNG</option>
+                                    <option value="gif">GIF</option>
+                                    <option value="tif">TIF/TIFF</option>
+                                    <option value="webp">WebP</option>
+                                    <option value="svg">SVG</option>
+                                    <option value="recent">Recent</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Breadcrumb navigation -->
+                            <div id="media-breadcrumb" class="flex items-center space-x-2 text-sm text-gray-600">
+                                <span class="cursor-pointer hover:text-gray-900" onclick="navigateToFolder('')">📁 Media Library</span>
+                            </div>
+                            
+                            <!-- Media grid -->
+                            <div id="media-grid">
+                                <div class="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+                                    <p class="text-sm">No media files yet</p>
+                                    <p class="text-xs mt-1">Upload some images to get started</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Hidden file input -->
+                            <input type="file" id="file-upload" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/tiff,image/tif,image/webp,image/bmp,image/svg+xml,image/ico,image/icon" style="display: none;" onchange="handleFileUpload(event)">
+                        </div>
+                    `;
+                    break;
+                case 'settings':
+                    content.innerHTML = `
+                        <div class="space-y-6">
+                            <h3 class="text-lg font-medium text-gray-900">Settings</h3>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">List URL</label>
+                                <div class="flex">
+                                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                                        academiq.com/u/yourname/
+                                    </span>
+                                    <input type="text" placeholder="my-list" class="form-input rounded-l-none">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Visibility</label>
+                                <select class="form-input">
+                                    <option>Public</option>
+                                    <option>Unlisted</option>
+                                    <option>Private</option>
+                                    <option>Passkey Protected</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Social Links</label>
+                                <div class="space-y-3">
+                                    <div class="flex items-center space-x-3">
+                                        <span class="w-8">🐦</span>
+                                        <input type="url" placeholder="Twitter URL" class="form-input">
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <span class="w-8">💼</span>
+                                        <input type="url" placeholder="LinkedIn URL" class="form-input">
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <span class="w-8">📺</span>
+                                        <input type="url" placeholder="YouTube URL" class="form-input">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+        }
+        
+        function addLink() {
+            const linksList = document.getElementById('links-list');
+            const linkCount = linksList.children.length;
+            
+            if (linkCount === 1 && linksList.querySelector('.text-center')) {
+                linksList.innerHTML = '';
+            }
+            
+            const linkId = 'link-' + Date.now();
+            const linkHTML = `
+                <div id="${linkId}" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow link-item">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-gray-200 rounded flex items-center justify-center cursor-move drag-handle">
+                                <span class="text-gray-400">⋮⋮</span>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <div class="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                                    <span class="text-gray-400">📷</span>
+                                </div>
+                                <div class="flex-1">
+                                    <input type="text" placeholder="Link title" class="form-input" value="New Link">
+                                </div>
+                            </div>
+                            <input type="url" placeholder="https://example.com" class="form-input mb-2">
+                            <div class="flex items-center space-x-2">
+                                <button onclick="removeLink('${linkId}')" class="text-red-500 hover:text-red-700 text-sm">
+                                    Delete
+                                </button>
+                                <button onclick="editLinkImage('${linkId}')" class="text-blue-500 hover:text-blue-700 text-sm">
+                                    Change Image
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            linksList.insertAdjacentHTML('beforeend', linkHTML);
+            
+            // Add event listeners
+            const newLink = document.getElementById(linkId);
+            const dragHandle = newLink.querySelector('.drag-handle');
+            
+            // Drag events only on the handle
+            // Mouse-based drag and drop events
+            if (dragHandle) {
+                dragHandle.addEventListener('mousedown', startDrag);
+            }
+            
+            console.log('Added drop events to link:', linkId);
+            
+            // Input events for real-time preview
+            const titleInput = newLink.querySelector('input[type="text"]');
+            const urlInput = newLink.querySelector('input[type="url"]');
+            
+            if (titleInput) {
+                titleInput.addEventListener('input', updateMobilePreview);
+            }
+            if (urlInput) {
+                urlInput.addEventListener('input', updateMobilePreview);
+            }
+            
+            // Update mobile preview
+            updateMobilePreview();
+        }
+        
+        // Simple mouse-based drag and drop
+        let draggedElement = null;
+        let draggedIndex = -1;
+        let isDragging = false;
+        let dropPlaceholder = null;
+        
+        function startDrag(e) {
+            const dragHandle = e.target.closest('.drag-handle');
+            if (!dragHandle) return;
+            
+            draggedElement = dragHandle.closest('.link-item');
+            if (!draggedElement) return;
+            
+            e.preventDefault();
+            isDragging = true;
+            
+            // Get current position
+            const allLinks = Array.from(document.querySelectorAll('.link-item'));
+            draggedIndex = allLinks.indexOf(draggedElement);
+            
+            // Clean visual feedback - exactly like the reference image
+            draggedElement.style.transition = 'all 0.2s ease-out';
+            draggedElement.style.opacity = '0.7';
+            draggedElement.style.transform = 'scale(1.0)';
+            draggedElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            draggedElement.style.zIndex = '1000';
+            draggedElement.style.cursor = 'grabbing';
+            
+            console.log('Started dragging:', draggedElement.id, 'at index:', draggedIndex);
+            
+            // Add global mouse events
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        }
+        
+        function handleMouseMove(e) {
+            if (!isDragging || !draggedElement) return;
+            
+            e.preventDefault();
+            
+            // Find element under mouse
+            const elementBelow = document.elementFromPoint(e.clientX, e.clientY);
+            const targetLink = elementBelow?.closest('.link-item');
+            
+            // Remove existing placeholder
+            if (dropPlaceholder) {
+                dropPlaceholder.remove();
+                dropPlaceholder = null;
+            }
+            
+            // Remove all highlights
+            document.querySelectorAll('.link-item').forEach(link => {
+                if (link !== draggedElement) {
+                    link.style.backgroundColor = '';
+                    link.style.borderColor = '';
+                    link.style.transform = '';
+                    link.style.boxShadow = '';
+                }
+            });
+            
+            // Show dashed placeholder where item will be dropped
+            if (targetLink && targetLink !== draggedElement) {
+                const linksList = document.getElementById('links-list');
+                const allLinks = Array.from(document.querySelectorAll('.link-item'));
+                const targetIndex = allLinks.indexOf(targetLink);
+                const draggedIndex = allLinks.indexOf(draggedElement);
+                
+                // Create dashed placeholder
+                dropPlaceholder = document.createElement('div');
+                dropPlaceholder.style.height = '4px';
+                dropPlaceholder.style.margin = '8px 0';
+                dropPlaceholder.style.border = '2px dashed #3b82f6';
+                dropPlaceholder.style.borderRadius = '2px';
+                dropPlaceholder.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                dropPlaceholder.style.transition = 'all 0.2s ease-out';
+                
+                // Insert placeholder at correct position
+                if (draggedIndex < targetIndex) {
+                    // Moving down - insert after target
+                    linksList.insertBefore(dropPlaceholder, targetLink.nextSibling);
+                } else {
+                    // Moving up - insert before target
+                    linksList.insertBefore(dropPlaceholder, targetLink);
+                }
+                
+                console.log('Showing placeholder at index:', targetIndex);
+            }
+        }
+        
+        function handleMouseUp(e) {
+            if (!isDragging || !draggedElement) return;
+            
+            e.preventDefault();
+            
+            // If there's a placeholder, move the element to that position
+            if (dropPlaceholder) {
+                const linksList = document.getElementById('links-list');
+                const allLinks = Array.from(document.querySelectorAll('.link-item'));
+                const currentIndex = allLinks.indexOf(draggedElement);
+                
+                // Find where the placeholder is
+                const placeholderIndex = Array.from(linksList.children).indexOf(dropPlaceholder);
+                
+                if (placeholderIndex !== -1 && placeholderIndex !== currentIndex) {
+                    // Move the element to the placeholder position
+                    linksList.insertBefore(draggedElement, dropPlaceholder);
+                    console.log('Moved element to placeholder position');
+                    updateMobilePreview();
+                }
+            }
+            
+            resetDrag();
+        }
+        
+        function resetDrag() {
+            // Remove placeholder
+            if (dropPlaceholder) {
+                dropPlaceholder.remove();
+                dropPlaceholder = null;
+            }
+            
+            if (draggedElement) {
+                // Clean reset - no transitions for immediate feedback
+                draggedElement.style.opacity = '';
+                draggedElement.style.transform = '';
+                draggedElement.style.boxShadow = '';
+                draggedElement.style.zIndex = '';
+                draggedElement.style.cursor = '';
+                draggedElement.style.transition = '';
+            }
+            
+            // Remove global events
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            
+            draggedElement = null;
+            draggedIndex = -1;
+            isDragging = false;
+        }
+        
+        function removeLink(linkId) {
+            document.getElementById(linkId).remove();
+            
+            const linksList = document.getElementById('links-list');
+            if (linksList.children.length === 0) {
+                linksList.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        No links yet. Click "Add Link" to get started.
+                    </div>
+                `;
+            }
+            
+            updateMobilePreview();
+        }
+        
+        // Media Library Functions
+        let mediaLibrary = {
+            currentFolder: '',
+            files: [],
+            folders: []
+        };
+        
+        function openFileUpload() {
+            document.getElementById('file-upload').click();
+        }
+        
+        function handleFileUpload(event) {
+            const files = Array.from(event.target.files);
+            console.log('Uploading files:', files);
+            
+            // Validate and process each file
+            files.forEach(file => {
+                // Check if it's a valid image file
+                if (isValidImageFile(file)) {
+                    const fileId = 'media-' + Date.now() + Math.random();
+                    const fileObj = {
+                        id: fileId,
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        url: URL.createObjectURL(file),
+                        folder: mediaLibrary.currentFolder,
+                        uploadedAt: new Date(),
+                        extension: getFileExtension(file.name)
+                    };
+                    
+                    mediaLibrary.files.push(fileObj);
+                    console.log('Added file:', fileObj.name, 'Type:', fileObj.type, 'Size:', formatFileSize(fileObj.size));
+                } else {
+                    console.warn('Invalid file type:', file.name, file.type);
+                    alert(`File "${file.name}" is not a supported image format. Please upload JPG, PNG, GIF, TIF, WebP, BMP, SVG, or ICO files.`);
+                }
+            });
+            
+            renderMediaGrid();
+            
+            // Reset file input
+            event.target.value = '';
+        }
+        
+        function isValidImageFile(file) {
+            const validTypes = [
+                'image/jpeg',
+                'image/jpg', 
+                'image/png',
+                'image/gif',
+                'image/tiff',
+                'image/tif',
+                'image/webp',
+                'image/bmp',
+                'image/svg+xml',
+                'image/ico',
+                'image/icon'
+            ];
+            
+            const validExtensions = [
+                '.jpg', '.jpeg', '.png', '.gif', '.tif', '.tiff', 
+                '.webp', '.bmp', '.svg', '.ico', '.icon'
+            ];
+            
+            // Check MIME type
+            if (validTypes.includes(file.type.toLowerCase())) {
+                return true;
+            }
+            
+            // Check file extension as fallback
+            const extension = getFileExtension(file.name).toLowerCase();
+            return validExtensions.includes(extension);
+        }
+        
+        function getFileExtension(filename) {
+            return filename.slice((filename.lastIndexOf('.') - 1 >>> 0) + 2);
+        }
+        
+        function createFolder() {
+            const folderName = prompt('Enter folder name:');
+            if (folderName && folderName.trim()) {
+                const folderId = 'folder-' + Date.now();
+                const folder = {
+                    id: folderId,
+                    name: folderName.trim(),
+                    parent: mediaLibrary.currentFolder,
+                    createdAt: new Date()
+                };
+                
+                mediaLibrary.folders.push(folder);
+                renderMediaGrid();
+                console.log('Created folder:', folder);
+            }
+        }
+        
+        function navigateToFolder(folderId) {
+            mediaLibrary.currentFolder = folderId;
+            renderMediaGrid();
+            updateBreadcrumb();
+        }
+        
+        function updateBreadcrumb() {
+            const breadcrumb = document.getElementById('media-breadcrumb');
+            if (!breadcrumb) return;
+            
+            breadcrumb.innerHTML = '<span class="cursor-pointer hover:text-gray-900" onclick="navigateToFolder(\'\')">📁 Media Library</span>';
+            
+            // Add folder path if not in root
+            if (mediaLibrary.currentFolder) {
+                const folder = mediaLibrary.folders.find(f => f.id === mediaLibrary.currentFolder);
+                if (folder) {
+                    breadcrumb.innerHTML += ` <span class="text-gray-400">›</span> <span class="cursor-pointer hover:text-gray-900" onclick="navigateToFolder('${folder.id}')">📁 ${folder.name}</span>`;
+                }
+            }
+        }
+        
+        function renderMediaGrid() {
+            const grid = document.getElementById('media-grid');
+            if (!grid) return;
+            
+            // Filter files by current folder
+            const currentFiles = mediaLibrary.files.filter(file => file.folder === mediaLibrary.currentFolder);
+            const currentFolders = mediaLibrary.folders.filter(folder => folder.parent === mediaLibrary.currentFolder);
+            
+            if (currentFiles.length === 0 && currentFolders.length === 0) {
+                grid.innerHTML = `
+                    <div class="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg col-span-full">
+                        <p class="text-sm">No media files yet</p>
+                        <p class="text-xs mt-1">Upload some images to get started</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            // Render folders first
+            currentFolders.forEach(folder => {
+                html += `
+                    <div class="bg-white border border-gray-300 rounded-sm hover:shadow-sm transition-shadow cursor-pointer" onclick="navigateToFolder('${folder.id}')">
+                        <div class="text-center aspect-square flex flex-col items-center justify-center">
+                            <div class="text-sm mb-0.5">📁</div>
+                            <p class="text-xs font-medium text-gray-900 truncate px-1">${folder.name}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Render files
+            currentFiles.forEach(file => {
+                html += `
+                    <div class="relative cursor-pointer" onclick="selectMedia('${file.id}')" style="position: relative;">
+                        <div>
+                            <img src="${file.url}" alt="${file.name}">
+                        </div>
+                        <button onclick="event.stopPropagation(); editImage('${file.id}')" title="Edit image" style="position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; cursor: pointer; opacity: 1; visibility: visible; pointer-events: auto; z-index: 10; border: none;">
+                            ✏️
+                        </button>
+                        <button onclick="event.stopPropagation(); deleteMedia('${file.id}')" title="Delete image" style="position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; background: #ef4444; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; cursor: pointer; opacity: 1; visibility: visible; pointer-events: auto; z-index: 10; border: none;">
+                            ×
+                        </button>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+        
+        function selectMedia(fileId) {
+            const file = mediaLibrary.files.find(f => f.id === fileId);
+            if (file) {
+                console.log('Selected media:', file);
+                // This will be used when selecting images for links
+            }
+        }
+        
+        function editImage(fileId) {
+            // Close any existing editor first
+            closeImageEditor();
+            
+            const file = mediaLibrary.files.find(f => f.id === fileId);
+            if (!file) return;
+            
+            // Create image editor modal
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-4xl max-h-[90vh] overflow-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Edit Image: ${file.name}</h3>
+                        <button onclick="closeImageEditor()" class="text-gray-500 hover:text-gray-700 text-xl">×</button>
+                    </div>
+                    
+                    <div class="flex gap-4">
+                        <!-- Image Preview -->
+                        <div class="flex-1">
+                            <div class="border border-gray-300 rounded-lg overflow-hidden">
+                                <img id="edit-image" src="${file.url}" alt="${file.name}" style="max-width: 500px; max-height: 500px; object-fit: contain;">
+                            </div>
+                        </div>
+                        
+                        <!-- Controls -->
+                        <div class="w-64 space-y-4">
+                            <div>
+                                <h4 class="font-medium mb-2">Rotate</h4>
+                                <div class="flex gap-2">
+                                    <button onclick="rotateImage(-90)" class="btn btn-secondary btn-sm">↺ 90°</button>
+                                    <button onclick="rotateImage(90)" class="btn btn-secondary btn-sm">↻ 90°</button>
+                                    <button onclick="rotateImage(180)" class="btn btn-secondary btn-sm">↻ 180°</button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-medium mb-2">Crop</h4>
+                                <div class="space-y-2">
+                                    <button onclick="startCrop()" class="btn btn-primary btn-sm w-full">Start Cropping</button>
+                                    <button onclick="applyCrop()" class="btn btn-success btn-sm w-full" disabled id="apply-crop">Apply Crop</button>
+                                    <button onclick="cancelCrop()" class="btn btn-secondary btn-sm w-full" disabled id="cancel-crop">Cancel Crop</button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 class="font-medium mb-2">Filters</h4>
+                                <div class="space-y-2">
+                                    <button onclick="applyFilter('grayscale')" class="btn btn-secondary btn-sm w-full">Grayscale</button>
+                                    <button onclick="applyFilter('sepia')" class="btn btn-secondary btn-sm w-full">Sepia</button>
+                                    <button onclick="applyFilter('brightness')" class="btn btn-secondary btn-sm w-full">Brighten</button>
+                                    <button onclick="resetFilters()" class="btn btn-secondary btn-sm w-full">Reset</button>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-4 border-t">
+                                <button onclick="saveEditedImage()" class="btn btn-primary w-full">Save Changes</button>
+                                <button onclick="closeImageEditor()" class="btn btn-secondary w-full mt-2">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Initialize editing state
+            window.currentEditingFile = file;
+            window.currentRotation = 0;
+            window.currentFilters = [];
+            window.isCropping = false;
+        }
+        
+        function rotateImage(degrees) {
+            const img = document.getElementById('edit-image');
+            window.currentRotation += degrees;
+            img.style.transform = `rotate(${window.currentRotation}deg)`;
+        }
+        
+        function startCrop() {
+            const img = document.getElementById('edit-image');
+            img.style.cursor = 'crosshair';
+            window.isCropping = true;
+            window.cropStartX = 0;
+            window.cropStartY = 0;
+            window.cropEndX = 0;
+            window.cropEndY = 0;
+            
+            // Remove any existing crop overlay
+            if (window.cropOverlay) {
+                window.cropOverlay.remove();
+                window.cropOverlay = null;
+            }
+            
+            document.getElementById('apply-crop').disabled = false;
+            document.getElementById('cancel-crop').disabled = false;
+            
+            // Remove existing event listeners
+            img.removeEventListener('mousedown', handleCropStart);
+            img.removeEventListener('mousemove', handleCropMove);
+            img.removeEventListener('mouseup', handleCropEnd);
+            
+            // Add new event listeners
+            img.addEventListener('mousedown', handleCropStart);
+            img.addEventListener('mousemove', handleCropMove);
+            img.addEventListener('mouseup', handleCropEnd);
+        }
+        
+        function handleCropStart(e) {
+            if (!window.isCropping) return;
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Remove any existing crop overlay
+            if (window.cropOverlay) {
+                window.cropOverlay.remove();
+            }
+            
+            const rect = e.target.getBoundingClientRect();
+            window.cropStartX = e.clientX - rect.left;
+            window.cropStartY = e.clientY - rect.top;
+            
+            // Create crop overlay
+            window.cropOverlay = document.createElement('div');
+            window.cropOverlay.style.position = 'absolute';
+            window.cropOverlay.style.border = '2px dashed #3b82f6';
+            window.cropOverlay.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+            window.cropOverlay.style.pointerEvents = 'none';
+            window.cropOverlay.style.zIndex = '20';
+            window.cropOverlay.style.left = window.cropStartX + 'px';
+            window.cropOverlay.style.top = window.cropStartY + 'px';
+            window.cropOverlay.style.width = '0px';
+            window.cropOverlay.style.height = '0px';
+            
+            const imgContainer = e.target.parentElement;
+            imgContainer.style.position = 'relative';
+            imgContainer.appendChild(window.cropOverlay);
+            
+            console.log('Crop started at:', window.cropStartX, window.cropStartY);
+        }
+        
+        function handleCropMove(e) {
+            if (!window.isCropping || !window.cropOverlay) return;
+            
+            const rect = e.target.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            const left = Math.min(window.cropStartX, currentX);
+            const top = Math.min(window.cropStartY, currentY);
+            const width = Math.abs(currentX - window.cropStartX);
+            const height = Math.abs(currentY - window.cropStartY);
+            
+            window.cropOverlay.style.left = left + 'px';
+            window.cropOverlay.style.top = top + 'px';
+            window.cropOverlay.style.width = width + 'px';
+            window.cropOverlay.style.height = height + 'px';
+        }
+        
+        function handleCropEnd(e) {
+            if (!window.isCropping || !window.cropOverlay) return;
+            
+            const img = document.getElementById('edit-image');
+            const rect = e.target.getBoundingClientRect();
+            window.cropEndX = e.clientX - rect.left;
+            window.cropEndY = e.clientY - rect.top;
+            
+            // Only keep crop if it has meaningful size
+            const width = Math.abs(window.cropEndX - window.cropStartX);
+            const height = Math.abs(window.cropEndY - window.cropStartY);
+            
+            if (width < 10 || height < 10) {
+                window.cropOverlay.remove();
+                window.cropOverlay = null;
+                console.log('Crop too small, removed');
+                return;
+            }
+            
+            console.log('Crop ended at:', window.cropEndX, window.cropEndY);
+            console.log('Crop area:', {
+                left: Math.min(window.cropStartX, window.cropEndX),
+                top: Math.min(window.cropStartY, window.cropEndY),
+                width: width,
+                height: height
+            });
+            
+            // Disable further cropping until apply/cancel
+            window.isCropping = false;
+            img.style.cursor = 'default';
+        }
+        
+        function applyCrop() {
+            if (!window.cropOverlay) {
+                alert('Please select a crop area first');
+                return;
+            }
+            
+            const img = document.getElementById('edit-image');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Get crop dimensions
+            const cropLeft = parseInt(window.cropOverlay.style.left);
+            const cropTop = parseInt(window.cropOverlay.style.top);
+            const cropWidth = parseInt(window.cropOverlay.style.width);
+            const cropHeight = parseInt(window.cropOverlay.style.height);
+            
+            // Set canvas size to crop size
+            canvas.width = cropWidth;
+            canvas.height = cropHeight;
+            
+            // Calculate scale factor (image might be scaled down in display)
+            const imgRect = img.getBoundingClientRect();
+            const scaleX = img.naturalWidth / imgRect.width;
+            const scaleY = img.naturalHeight / imgRect.height;
+            
+            // Calculate actual crop coordinates on the original image
+            const actualLeft = cropLeft * scaleX;
+            const actualTop = cropTop * scaleY;
+            const actualWidth = cropWidth * scaleX;
+            const actualHeight = cropHeight * scaleY;
+            
+            // Draw cropped portion to canvas
+            ctx.drawImage(
+                img,
+                actualLeft, actualTop, actualWidth, actualHeight,
+                0, 0, cropWidth, cropHeight
+            );
+            
+            // Convert canvas to blob and update image
+            canvas.toBlob(function(blob) {
+                const newUrl = URL.createObjectURL(blob);
+                img.src = newUrl;
+                
+                // Update the file in media library
+                const file = window.currentEditingFile;
+                if (file) {
+                    file.url = newUrl;
+                    // Update the thumbnail in the media library
+                    renderMediaGrid();
+                }
+                
+                console.log('Crop applied successfully');
+            }, 'image/png');
+            
+            // Remove crop overlay
+            window.cropOverlay.remove();
+            window.cropOverlay = null;
+            
+            window.isCropping = false;
+            document.getElementById('apply-crop').disabled = true;
+            document.getElementById('cancel-crop').disabled = true;
+            
+            img.style.cursor = 'default';
+            
+            // Remove event listeners
+            img.removeEventListener('mousedown', handleCropStart);
+            img.removeEventListener('mousemove', handleCropMove);
+            img.removeEventListener('mouseup', handleCropEnd);
+        }
+        
+        function cancelCrop() {
+            // Remove crop overlay
+            if (window.cropOverlay) {
+                window.cropOverlay.remove();
+                window.cropOverlay = null;
+            }
+            
+            window.isCropping = false;
+            document.getElementById('apply-crop').disabled = true;
+            document.getElementById('cancel-crop').disabled = true;
+            
+            const img = document.getElementById('edit-image');
+            img.style.cursor = 'default';
+            
+            // Remove event listeners
+            img.removeEventListener('mousedown', handleCropStart);
+            img.removeEventListener('mousemove', handleCropMove);
+            img.removeEventListener('mouseup', handleCropEnd);
+        }
+        
+        function applyFilter(filterType) {
+            const img = document.getElementById('edit-image');
+            let filter = '';
+            
+            switch(filterType) {
+                case 'grayscale':
+                    filter = 'grayscale(100%)';
+                    break;
+                case 'sepia':
+                    filter = 'sepia(100%)';
+                    break;
+                case 'brightness':
+                    filter = 'brightness(1.2)';
+                    break;
+            }
+            
+            img.style.filter = filter;
+            window.currentFilters.push(filterType);
+        }
+        
+        function resetFilters() {
+            const img = document.getElementById('edit-image');
+            img.style.filter = '';
+            img.style.transform = `rotate(${window.currentRotation}deg)`;
+            window.currentFilters = [];
+        }
+        
+        function saveEditedImage() {
+            const file = window.currentEditingFile;
+            console.log('Saving edited image:', file.name);
+            console.log('Rotation:', window.currentRotation);
+            console.log('Filters:', window.currentFilters);
+            
+            // In a real implementation, you'd process the canvas and update the file
+            alert('Image saved! (This is a demo - actual saving would process the canvas)');
+            closeImageEditor();
+        }
+        
+        function closeImageEditor() {
+            const modal = document.querySelector('.fixed.inset-0');
+            if (modal) {
+                modal.remove();
+            }
+            window.currentEditingFile = null;
+            window.currentRotation = 0;
+            window.currentFilters = [];
+            window.isCropping = false;
+        }
+        
+        function deleteMedia(fileId) {
+            if (confirm('Are you sure you want to delete this file?')) {
+                mediaLibrary.files = mediaLibrary.files.filter(f => f.id !== fileId);
+                renderMediaGrid();
+            }
+        }
+        
+        function searchMedia() {
+            const searchTerm = document.getElementById('media-search').value.toLowerCase();
+            // Implement search functionality
+            console.log('Searching for:', searchTerm);
+        }
+        
+        function filterMedia() {
+            const filter = document.getElementById('media-filter').value;
+            console.log('Filtering by:', filter);
+            
+            // Get all files for current folder
+            const currentFiles = mediaLibrary.files.filter(file => file.folder === mediaLibrary.currentFolder);
+            const currentFolders = mediaLibrary.folders.filter(folder => folder.parent === mediaLibrary.currentFolder);
+            
+            let filteredFiles = currentFiles;
+            
+            if (filter !== 'all' && filter !== 'recent') {
+                // Filter by file type
+                filteredFiles = currentFiles.filter(file => {
+                    const extension = file.extension.toLowerCase();
+                    switch(filter) {
+                        case 'jpg': return ['jpg', 'jpeg'].includes(extension);
+                        case 'png': return extension === 'png';
+                        case 'gif': return extension === 'gif';
+                        case 'tif': return ['tif', 'tiff'].includes(extension);
+                        case 'webp': return extension === 'webp';
+                        case 'svg': return extension === 'svg';
+                        default: return true;
+                    }
+                });
+            } else if (filter === 'recent') {
+                // Sort by upload date, most recent first
+                filteredFiles = currentFiles.sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+            }
+            
+            // Render filtered results
+            renderFilteredMedia(filteredFiles, currentFolders);
+        }
+        
+        function renderFilteredMedia(files, folders) {
+            const grid = document.getElementById('media-grid');
+            if (!grid) return;
+            
+            if (files.length === 0 && folders.length === 0) {
+                grid.innerHTML = `
+                    <div class="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg col-span-full">
+                        <p class="text-sm">No media files found</p>
+                        <p class="text-xs mt-1">Try a different filter or upload some images</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            // Render folders first
+            folders.forEach(folder => {
+                html += `
+                    <div class="bg-white border border-gray-300 rounded-sm hover:shadow-sm transition-shadow cursor-pointer" onclick="navigateToFolder('${folder.id}')">
+                        <div class="text-center aspect-square flex flex-col items-center justify-center">
+                            <div class="text-sm mb-0.5">📁</div>
+                            <p class="text-xs font-medium text-gray-900 truncate px-1">${folder.name}</p>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Render filtered files
+            files.forEach(file => {
+                html += `
+                    <div class="relative cursor-pointer" onclick="selectMedia('${file.id}')" style="position: relative;">
+                        <div>
+                            <img src="${file.url}" alt="${file.name}">
+                        </div>
+                        <button onclick="event.stopPropagation(); editImage('${file.id}')" title="Edit image" style="position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; cursor: pointer; opacity: 1; visibility: visible; pointer-events: auto; z-index: 10; border: none;">
+                            ✏️
+                        </button>
+                        <button onclick="event.stopPropagation(); deleteMedia('${file.id}')" title="Delete image" style="position: absolute; top: 4px; right: 4px; width: 20px; height: 20px; background: #ef4444; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; cursor: pointer; opacity: 1; visibility: visible; pointer-events: auto; z-index: 10; border: none;">
+                            ×
+                        </button>
+                    </div>
+                `;
+            });
+            
+            grid.innerHTML = html;
+        }
+        
+        // Theming system
+        let currentTheme = {
+            type: 'solid',
+            color: '#ffffff',
+            gradientText: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
+            gradientStops: [
+                { color: '#ff6b6b', position: 0 },
+                { color: '#4ecdc4', position: 100 }
+            ],
+            gradientDirection: '45deg',
+            image: null,
+            position: 'center',
+            size: 'cover',
+            blur: false,
+            autoContrast: true,
+            textColor: null
+        };
+
+        // Accordion functionality
+        function toggleAccordion(section) {
+            const content = document.getElementById(section + '-content');
+            const chevron = document.getElementById(section + '-chevron');
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                chevron.style.transform = 'rotate(180deg)';
+            } else {
+                content.style.display = 'none';
+                chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // Rich text editor functions
+        function formatText(command) {
+            document.execCommand(command, false, null);
+            updateCharCount();
+        }
+
+        function updateCharCount() {
+            const editor = document.getElementById('profileDescription');
+            const charCount = document.getElementById('char-count');
+            const text = editor.textContent || editor.innerText || '';
+            const count = text.length;
+            
+            charCount.textContent = count + '/500';
+            
+            if (count > 500) {
+                charCount.classList.add('text-red-500');
+                charCount.classList.remove('text-gray-500');
+            } else {
+                charCount.classList.remove('text-red-500');
+                charCount.classList.add('text-gray-500');
+            }
+        }
+        
+        function selectTheme(themeName) {
+            // Remove previous selection
+            document.querySelectorAll('.theme-preset').forEach(preset => {
+                preset.classList.remove('border-blue-500');
+                preset.classList.add('border-gray-200');
+            });
+            
+            // Add selection to clicked preset
+            const preset = document.querySelector(`[data-theme="${themeName}"]`);
+            preset.classList.remove('border-gray-200');
+            preset.classList.add('border-blue-500');
+            
+            // Apply theme
+            switch(themeName) {
+                case 'light':
+                    currentTheme.type = 'solid';
+                    currentTheme.color = '#ffffff';
+                    break;
+                case 'dark':
+                    currentTheme.type = 'solid';
+                    currentTheme.color = '#1f2937';
+                    break;
+                case 'gradient':
+                    currentTheme.type = 'gradient';
+                    currentTheme.gradientText = 'linear-gradient(135deg, #8b5cf6, #ec4899)';
+                    currentTheme.gradientDirection = '135deg';
+                    currentTheme.gradientStops = [
+                        { color: '#8b5cf6', position: 0 },
+                        { color: '#ec4899', position: 100 }
+                    ];
+                    break;
+                case 'colorful':
+                    currentTheme.type = 'gradient';
+                    currentTheme.gradientText = 'linear-gradient(45deg, #3b82f6, #f59e0b)';
+                    currentTheme.gradientDirection = '45deg';
+                    currentTheme.gradientStops = [
+                        { color: '#3b82f6', position: 0 },
+                        { color: '#f59e0b', position: 100 }
+                    ];
+                    break;
+                case 'sunset':
+                    currentTheme.type = 'gradient';
+                    currentTheme.gradientText = 'linear-gradient(45deg, #f97316, #ec4899)';
+                    currentTheme.gradientDirection = '45deg';
+                    currentTheme.gradientStops = [
+                        { color: '#f97316', position: 0 },
+                        { color: '#ec4899', position: 100 }
+                    ];
+                    break;
+                case 'ocean':
+                    currentTheme.type = 'gradient';
+                    currentTheme.gradientText = 'linear-gradient(45deg, #3b82f6, #06b6d4)';
+                    currentTheme.gradientDirection = '45deg';
+                    currentTheme.gradientStops = [
+                        { color: '#3b82f6', position: 0 },
+                        { color: '#06b6d4', position: 100 }
+                    ];
+                    break;
+            }
+            
+            updatePreview();
+            updateGradientUI();
+        }
+        
+        function applyQuickGradient(gradientText) {
+            currentTheme.type = 'gradient';
+            currentTheme.gradientText = gradientText;
+            
+            // Parse gradient to extract stops
+            parseGradientText(gradientText);
+            
+            updatePreview();
+            updateGradientUI();
+        }
+        
+        function parseGradientText(gradientText) {
+            // Extract direction
+            const directionMatch = gradientText.match(/linear-gradient\(([^,]+),/);
+            if (directionMatch) {
+                currentTheme.gradientDirection = directionMatch[1].trim();
+            }
+            
+            // Extract color stops
+            const stopsMatch = gradientText.match(/linear-gradient\([^,]+,(.+)\)/);
+            if (stopsMatch) {
+                const stopsText = stopsMatch[1];
+                const stopMatches = stopsText.match(/#[a-fA-F0-9]{6}\s*(\d+%)?/g);
+                
+                if (stopMatches) {
+                    currentTheme.gradientStops = stopMatches.map((stop, index) => {
+                        const colorMatch = stop.match(/#[a-fA-F0-9]{6}/);
+                        const positionMatch = stop.match(/(\d+)%/);
+                        
+                        return {
+                            color: colorMatch ? colorMatch[0] : '#000000',
+                            position: positionMatch ? parseInt(positionMatch[1]) : (index * 100 / (stopMatches.length - 1))
+                        };
+                    });
+                }
+            }
+        }
+        
+        function updateGradientUI() {
+            if (currentTheme.type === 'gradient') {
+                document.getElementById('gradientText').value = currentTheme.gradientText;
+                document.getElementById('gradientPreview').style.background = currentTheme.gradientText;
+                
+                // Update gradient stops UI
+                renderGradientStops();
+            }
+        }
+        
+        function renderGradientStops() {
+            const container = document.getElementById('gradientStops');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            currentTheme.gradientStops.forEach((stop, index) => {
+                const stopDiv = document.createElement('div');
+                stopDiv.className = 'flex items-center space-x-3';
+                stopDiv.innerHTML = `
+                    <input type="color" value="${stop.color}" class="w-8 h-8 border border-gray-300 rounded cursor-pointer" onchange="updateGradientStop(${index}, 'color', this.value)">
+                    <input type="number" value="${stop.position}" min="0" max="100" class="w-16 px-2 py-1 border border-gray-300 rounded text-sm" onchange="updateGradientStop(${index}, 'position', this.value)">
+                    <span class="text-sm text-gray-600">%</span>
+                    ${currentTheme.gradientStops.length > 2 ? `<button onclick="removeGradientStop(${index})" class="text-red-500 hover:text-red-700 text-sm">×</button>` : ''}
+                `;
+                container.appendChild(stopDiv);
+            });
+        }
+        
+        function updateGradientStop(index, property, value) {
+            if (property === 'color') {
+                currentTheme.gradientStops[index].color = value;
+            } else if (property === 'position') {
+                currentTheme.gradientStops[index].position = parseInt(value);
+            }
+            
+            updateGradientFromStops();
+        }
+        
+        function addGradientStop() {
+            const newPosition = currentTheme.gradientStops.length > 0 ? 
+                Math.round((currentTheme.gradientStops[currentTheme.gradientStops.length - 1].position + 100) / 2) : 50;
+            
+            currentTheme.gradientStops.push({
+                color: '#ffffff',
+                position: newPosition
+            });
+            
+            // Sort by position
+            currentTheme.gradientStops.sort((a, b) => a.position - b.position);
+            
+            renderGradientStops();
+            updateGradientFromStops();
+        }
+        
+        function removeGradientStop(index) {
+            if (currentTheme.gradientStops.length > 2) {
+                currentTheme.gradientStops.splice(index, 1);
+                renderGradientStops();
+                updateGradientFromStops();
+            }
+        }
+        
+        function updateGradientFromStops() {
+            const stopsText = currentTheme.gradientStops.map(stop => 
+                `${stop.color} ${stop.position}%`
+            ).join(', ');
+            
+            currentTheme.gradientText = `linear-gradient(${currentTheme.gradientDirection}, ${stopsText})`;
+            
+            document.getElementById('gradientText').value = currentTheme.gradientText;
+            document.getElementById('gradientPreview').style.background = currentTheme.gradientText;
+            
+            updatePreview();
+        }
+        
+        function updateGradientFromText() {
+            const gradientText = document.getElementById('gradientText').value;
+            if (gradientText) {
+                currentTheme.gradientText = gradientText;
+                parseGradientText(gradientText);
+                document.getElementById('gradientPreview').style.background = gradientText;
+                renderGradientStops();
+                updatePreview();
+            }
+        }
+        
+        function updateGradientDirection() {
+            const direction = document.getElementById('gradientDirection').value;
+            currentTheme.gradientDirection = direction;
+            updateGradientFromStops();
+        }
+        
+        function updateCustomAngle() {
+            const angle = document.getElementById('customAngle').value;
+            if (angle) {
+                currentTheme.gradientDirection = `${angle}deg`;
+                updateGradientFromStops();
+            }
+        }
+        
+        function copyGradient() {
+            navigator.clipboard.writeText(currentTheme.gradientText).then(() => {
+                alert('Gradient copied to clipboard!');
+            });
+        }
+        
+        function updateBackgroundType() {
+            const bgType = document.querySelector('input[name="bgType"]:checked').value;
+            currentTheme.type = bgType;
+            
+            // Show/hide relevant settings
+            document.getElementById('solid-color-settings').style.display = bgType === 'solid' ? 'block' : 'none';
+            document.getElementById('gradient-settings').style.display = bgType === 'gradient' ? 'block' : 'none';
+            document.getElementById('image-settings').style.display = bgType === 'image' ? 'block' : 'none';
+            
+            if (bgType === 'gradient') {
+                updateGradientUI();
+            }
+            
+            updatePreview();
+        }
+        
+        function updateBackground() {
+            if (currentTheme.type === 'solid') {
+                currentTheme.color = document.getElementById('bgColor').value;
+            } else if (currentTheme.type === 'image') {
+                currentTheme.position = document.getElementById('bgPosition').value;
+                currentTheme.size = document.getElementById('bgSize').value;
+                currentTheme.blur = document.getElementById('bgBlur').checked;
+            }
+            
+            updatePreview();
+        }
+        
+        function updateBackgroundFromText() {
+            const colorText = document.getElementById('bgColorText').value;
+            if (colorText && /^#[0-9A-F]{6}$/i.test(colorText)) {
+                currentTheme.color = colorText;
+                document.getElementById('bgColor').value = colorText;
+                updatePreview();
+            }
+        }
+        
+        function handleBackgroundImage() {
+            const file = document.getElementById('bgImageUpload').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentTheme.image = e.target.result;
+                    updatePreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function updateTextSettings() {
+            currentTheme.autoContrast = document.getElementById('autoContrast').checked;
+            currentTheme.textColor = document.getElementById('textColor').value || null;
+            updatePreview();
+        }
+        
+        function updateTextFromText() {
+            const colorText = document.getElementById('textColorText').value;
+            if (colorText && /^#[0-9A-F]{6}$/i.test(colorText)) {
+                currentTheme.textColor = colorText;
+                document.getElementById('textColor').value = colorText;
+                updatePreview();
+            }
+        }
+        
+        function updatePreview() {
+            const preview = document.getElementById('theme-preview');
+            if (!preview) return;
+            
+            let backgroundStyle = '';
+            
+            if (currentTheme.type === 'solid') {
+                backgroundStyle = `background-color: ${currentTheme.color};`;
+            } else if (currentTheme.type === 'gradient') {
+                backgroundStyle = `background: ${currentTheme.gradientText};`;
+            } else if (currentTheme.type === 'image' && currentTheme.image) {
+                const blurStyle = currentTheme.blur ? 'filter: blur(2px);' : '';
+                backgroundStyle = `background-image: url(${currentTheme.image}); background-position: ${currentTheme.position}; background-size: ${currentTheme.size}; background-repeat: no-repeat; ${blurStyle}`;
+            }
+            
+            // Determine text color
+            let textColor = '#000000';
+            if (currentTheme.textColor) {
+                textColor = currentTheme.textColor;
+            } else if (currentTheme.autoContrast) {
+                // Simple contrast calculation
+                if (currentTheme.type === 'solid') {
+                    const rgb = hexToRgb(currentTheme.color);
+                    const brightness = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+                    textColor = brightness > 128 ? '#000000' : '#ffffff';
+                } else {
+                    textColor = '#ffffff'; // Default for gradients and images
+                }
+            }
+            
+            preview.style.cssText = backgroundStyle + `color: ${textColor};`;
+            preview.innerHTML = `
+                <div class="text-center">
+                    <h3 class="text-xl font-bold mb-2">Your Link List</h3>
+                    <p class="text-sm mb-4">This is how your link list will look</p>
+                    <div class="space-y-2">
+                        <div class="bg-white bg-opacity-20 rounded-lg p-3 text-left">
+                            <div class="font-medium">Sample Link 1</div>
+                            <div class="text-sm opacity-80">Description of your link</div>
+                        </div>
+                        <div class="bg-white bg-opacity-20 rounded-lg p-3 text-left">
+                            <div class="font-medium">Sample Link 2</div>
+                            <div class="text-sm opacity-80">Another link description</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+        
+        function resetTheme() {
+            currentTheme = {
+                type: 'solid',
+                color: '#ffffff',
+                gradientText: 'linear-gradient(45deg, #ff6b6b, #4ecdc4)',
+                gradientStops: [
+                    { color: '#ff6b6b', position: 0 },
+                    { color: '#4ecdc4', position: 100 }
+                ],
+                gradientDirection: '45deg',
+                image: null,
+                position: 'center',
+                size: 'cover',
+                blur: false,
+                autoContrast: true,
+                textColor: null
+            };
+            
+            // Reset form
+            document.querySelector('input[name="bgType"][value="solid"]').checked = true;
+            document.getElementById('bgColor').value = '#ffffff';
+            document.getElementById('bgColorText').value = '#ffffff';
+            document.getElementById('gradientText').value = 'linear-gradient(45deg, #ff6b6b, #4ecdc4)';
+            document.getElementById('gradientDirection').value = '45deg';
+            document.getElementById('customAngle').value = '';
+            document.getElementById('bgPosition').value = 'center';
+            document.getElementById('bgSize').value = 'cover';
+            document.getElementById('bgBlur').checked = false;
+            document.getElementById('autoContrast').checked = true;
+            document.getElementById('textColor').value = '#000000';
+            document.getElementById('textColorText').value = '#000000';
+            
+            updateBackgroundType();
+            renderGradientStops();
+        }
+        
+        function previewTheme() {
+            // This would open a full preview modal or navigate to preview mode
+            alert('Full preview would open here - showing your link list with the selected theme!');
+        }
+        
+        function updateMobilePreview() {
+            const preview = document.getElementById('mobile-preview');
+            const linksList = document.getElementById('links-list');
+            const links = linksList.querySelectorAll('.draggable-link');
+            
+            if (links.length === 0) {
+                preview.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        Mobile preview coming soon...
+                    </div>
+                `;
+                return;
+            }
+            
+            let previewHTML = `
+                <div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-96 rounded-lg p-4">
+                    <div class="text-center mb-6">
+                        <div class="w-16 h-16 bg-gray-300 rounded-full mx-auto mb-2"></div>
+                        <h2 class="text-lg font-semibold text-gray-900">Your Name</h2>
+                        <p class="text-sm text-gray-600">Your description</p>
+                    </div>
+                    <div class="space-y-3">
+            `;
+            
+            links.forEach((link, index) => {
+                const titleInput = link.querySelector('input[type="text"]');
+                const urlInput = link.querySelector('input[type="url"]');
+                const title = titleInput ? titleInput.value : 'New Link';
+                const url = urlInput ? urlInput.value : '#';
+                
+                previewHTML += `
+                    <div class="bg-white rounded-lg p-3 shadow-sm">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center">
+                                <span class="text-gray-400 text-sm">📷</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="text-sm font-medium text-gray-900 truncate">${title}</div>
+                                <div class="text-xs text-gray-500 truncate">${url}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            previewHTML += `
+                    </div>
+                </div>
+            `;
+            
+            preview.innerHTML = previewHTML;
+        }
+        
+        function editLinkImage(linkId) {
+            alert('Image picker coming soon! This will open the media library.');
+        }
+        
+        function saveList() {
+            alert('Saving list... This will save to your Supabase database.');
+        }
+        
+        function previewList() {
+            alert('Preview coming soon! This will show your link list in mobile view.');
+        }
+        
+        function showDashboard() {
+            currentView = 'dashboard';
+            document.getElementById('main-app').innerHTML = `
+                <div class="min-h-screen bg-gray-50">
+                    <nav class="bg-white shadow-sm border-b">
+                        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div class="flex justify-between h-16">
+                                <div class="flex items-center">
+                                    <h1 class="text-xl font-semibold text-gray-900">Academiq</h1>
+                                </div>
+                                <div class="flex items-center space-x-4">
+                                    <button onclick="showEditor()" class="btn btn-primary">
+                                        + New List
+                                    </button>
+                                    <button onclick="signOut()" class="btn btn-ghost">
+                                        Sign Out
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </nav>
+                    
+                    <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+                        <div class="px-4 py-6 sm:px-0">
+                            <h2 class="text-2xl font-bold text-gray-900 mb-6">Your Link Lists</h2>
+                            <div id="lists-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div class="col-span-full text-center py-12">
+                                    <p class="text-gray-500">No lists yet. Create your first one!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('public-viewer').classList.add('hidden');
+        }
+        
+        async function signOut() {
+            try {
+                await supabaseClient.auth.signOut();
+                currentUser = null;
+                showLogin();
+            } catch (error) {
+                alert('Sign out failed: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

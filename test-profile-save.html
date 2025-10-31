@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Profile Save</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Profile Save</h1>
+    <button onclick="testProfileSave()">Test Save Profile</button>
+    <div id="result"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function testProfileSave() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                // First, check if we can read from profiles table
+                console.log('Testing profiles table access...');
+                const { data: testData, error: testError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .limit(1);
+                
+                if (testError) {
+                    resultDiv.innerHTML = `<p style="color: red;">Error accessing profiles table: ${testError.message}</p>`;
+                    return;
+                }
+                
+                resultDiv.innerHTML = '<p style="color: green;">Profiles table accessible. Columns found:</p>';
+                
+                if (testData && testData.length > 0) {
+                    const columns = Object.keys(testData[0]);
+                    resultDiv.innerHTML += `<ul>${columns.map(col => `<li>${col}</li>`).join('')}</ul>`;
+                } else {
+                    resultDiv.innerHTML += '<p>No data in profiles table, but table exists.</p>';
+                }
+                
+                // Test a simple insert
+                console.log('Testing profile insert...');
+                const testProfile = {
+                    id: 'test-user-id',
+                    display_name: 'Test User',
+                    social_email: 'test@example.com',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+                
+                const { data: insertData, error: insertError } = await supabase
+                    .from('profiles')
+                    .upsert(testProfile);
+                
+                if (insertError) {
+                    resultDiv.innerHTML += `<p style="color: red;">Insert error: ${insertError.message}</p>`;
+                } else {
+                    resultDiv.innerHTML += '<p style="color: green;">Test insert successful!</p>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                console.error('Test error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+

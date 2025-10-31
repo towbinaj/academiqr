@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AcademiQR Database Checker</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .check-item { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .config { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>AcademiQR Database Checker</h1>
+    <p>This tool will check if your Supabase database is properly configured for AcademiQR.</p>
+    
+    <div class="config">
+        <h3>Configuration</h3>
+        <p><strong>Supabase URL:</strong> <span id="supabaseUrl">Loading...</span></p>
+        <p><strong>Supabase Key:</strong> <span id="supabaseKey">Loading...</span></p>
+    </div>
+    
+    <button onclick="checkDatabase()">Check Database</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        // Use the same Supabase configuration as the main app
+        const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
+        
+        document.getElementById('supabaseUrl').textContent = SUPABASE_URL;
+        document.getElementById('supabaseKey').textContent = SUPABASE_ANON_KEY.substring(0, 20) + '...';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function checkDatabase() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Checking Database...</h3>';
+            
+            const checks = [
+                { name: 'Supabase Connection', test: testConnection },
+                { name: 'Collections Table', test: testCollectionsTable },
+                { name: 'Links Table', test: testLinksTable },
+                { name: 'Profiles Table', test: testProfilesTable },
+                { name: 'Analytics Table', test: testAnalyticsTable },
+                { name: 'Collections Columns', test: testCollectionsColumns },
+                { name: 'Links Columns', test: testLinksColumns },
+                { name: 'Profiles Columns', test: testProfilesColumns }
+            ];
+            
+            for (const check of checks) {
+                try {
+                    const result = await check.test();
+                    addResult(check.name, result.success, result.message);
+                } catch (error) {
+                    addResult(check.name, false, error.message);
+                }
+            }
+        }
+        
+        function addResult(name, success, message) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `check-item ${success ? 'success' : 'error'}`;
+            div.innerHTML = `<strong>${name}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+        
+        async function testConnection() {
+            const { data, error } = await supabase.from('collections').select('count').limit(1);
+            if (error) throw new Error(`Connection failed: ${error.message}`);
+            return { success: true, message: 'Connected successfully' };
+        }
+        
+        async function testCollectionsTable() {
+            const { data, error } = await supabase.from('collections').select('*').limit(1);
+            if (error && error.code === '42P01') {
+                return { success: false, message: 'Table does not exist. Run the database schema script.' };
+            }
+            if (error) throw new Error(error.message);
+            return { success: true, message: 'Table exists' };
+        }
+        
+        async function testLinksTable() {
+            const { data, error } = await supabase.from('links').select('*').limit(1);
+            if (error && error.code === '42P01') {
+                return { success: false, message: 'Table does not exist. Run the database schema script.' };
+            }
+            if (error) throw new Error(error.message);
+            return { success: true, message: 'Table exists' };
+        }
+        
+        async function testProfilesTable() {
+            const { data, error } = await supabase.from('profiles').select('*').limit(1);
+            if (error && error.code === '42P01') {
+                return { success: false, message: 'Table does not exist. Run the database schema script.' };
+            }
+            if (error) throw new Error(error.message);
+            return { success: true, message: 'Table exists' };
+        }
+        
+        async function testAnalyticsTable() {
+            const { data, error } = await supabase.from('analytics').select('*').limit(1);
+            if (error && error.code === '42P01') {
+                return { success: false, message: 'Table does not exist. Run the database schema script.' };
+            }
+            if (error) throw new Error(error.message);
+            return { success: true, message: 'Table exists' };
+        }
+        
+        async function testCollectionsColumns() {
+            const { data, error } = await supabase.from('collections').select('description, visibility, passkey, updated_at').limit(1);
+            if (error) {
+                if (error.message.includes('column') && error.message.includes('does not exist')) {
+                    return { success: false, message: 'Missing columns. Run the database schema script.' };
+                }
+                throw new Error(error.message);
+            }
+            return { success: true, message: 'All required columns exist' };
+        }
+        
+        async function testLinksColumns() {
+            const { data, error } = await supabase.from('links').select('description, image_url, visible, updated_at').limit(1);
+            if (error) {
+                if (error.message.includes('column') && error.message.includes('does not exist')) {
+                    return { success: false, message: 'Missing columns. Run the database schema script.' };
+                }
+                throw new Error(error.message);
+            }
+            return { success: true, message: 'All required columns exist' };
+        }
+        
+        async function testProfilesColumns() {
+            const requiredColumns = [
+                'display_name', 'bio', 'social_email', 'social_instagram', 'social_twitter', 
+                'social_linkedin', 'social_facebook', 'social_youtube', 'social_tiktok', 
+                'social_snapchat', 'profile_photo_url', 'background_type', 'background_color',
+                'gradient_color1', 'gradient_color2', 'text_color', 'link_color', 
+                'button_style', 'button_color', 'updated_at'
+            ];
+            
+            const { data, error } = await supabase.from('profiles').select(requiredColumns.join(', ')).limit(1);
+            if (error) {
+                if (error.message.includes('column') && error.message.includes('does not exist')) {
+                    const missingColumns = [];
+                    for (const column of requiredColumns) {
+                        try {
+                            await supabase.from('profiles').select(column).limit(1);
+                        } catch (colError) {
+                            if (colError.message.includes('does not exist')) {
+                                missingColumns.push(column);
+                            }
+                        }
+                    }
+                    return { 
+                        success: false, 
+                        message: `Missing columns: ${missingColumns.join(', ')}. Run fix-profiles-table.sql` 
+                    };
+                }
+                throw new Error(error.message);
+            }
+            return { success: true, message: 'All required columns exist' };
+        }
+    </script>
+</body>
+</html>

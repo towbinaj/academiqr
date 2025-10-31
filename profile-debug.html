@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile Debug Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 3px; }
+        .error { background: #f8d7da; color: #721c24; }
+        .success { background: #d4edda; color: #155724; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+    </style>
+</head>
+<body>
+    <h1>Profile Debug Tool</h1>
+    
+    <div class="section">
+        <h2>1. Check Table Schema</h2>
+        <button onclick="checkSchema()">Check Profiles Table Schema</button>
+        <div id="schemaResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>2. Test Profile Save</h2>
+        <button onclick="testProfileSave()">Test Simple Profile Save</button>
+        <div id="saveResult" class="result"></div>
+    </div>
+    
+    <div class="section">
+        <h2>3. Check Current User</h2>
+        <button onclick="checkUser()">Check Current User</button>
+        <div id="userResult" class="result"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5NzQ4NzMsImV4cCI6MjA1MDU1MDg3M30.8QZqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJqJq';
+        
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function checkSchema() {
+            const resultDiv = document.getElementById('schemaResult');
+            resultDiv.innerHTML = 'Checking schema...';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+                    return;
+                }
+                
+                // Get column info by trying to select each expected column
+                const expectedColumns = [
+                    'id', 'handle', 'display_name', 'avatar_url', 'created_at', 'updated_at',
+                    'profile_photo', 'social_instagram', 'social_facebook', 'social_twitter', 
+                    'social_linkedin', 'social_email', 'social_youtube', 'social_tiktok', 
+                    'social_snapchat', 'profile_photo_position', 'background_type', 
+                    'background_color', 'gradient_color1', 'gradient_color2', 'text_color', 
+                    'link_color', 'button_style', 'button_color'
+                ];
+                
+                const existingColumns = [];
+                const missingColumns = [];
+                
+                for (const column of expectedColumns) {
+                    try {
+                        await supabase.from('profiles').select(column).limit(1);
+                        existingColumns.push(column);
+                    } catch (colError) {
+                        if (colError.message.includes('does not exist')) {
+                            missingColumns.push(column);
+                        }
+                    }
+                }
+                
+                let html = '<h3>Schema Analysis:</h3>';
+                html += `<p><strong>Existing columns (${existingColumns.length}):</strong></p>`;
+                html += `<pre>${existingColumns.join(', ')}</pre>`;
+                
+                if (missingColumns.length > 0) {
+                    html += `<p><strong>Missing columns (${missingColumns.length}):</strong></p>`;
+                    html += `<pre>${missingColumns.join(', ')}</pre>`;
+                }
+                
+                resultDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testProfileSave() {
+            const resultDiv = document.getElementById('saveResult');
+            resultDiv.innerHTML = 'Testing profile save...';
+            
+            try {
+                // Get current user
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                
+                if (userError || !user) {
+                    resultDiv.innerHTML = `<div class="error">No user logged in: ${userError?.message || 'No user found'}</div>`;
+                    return;
+                }
+                
+                // Try to save minimal profile data
+                const testData = {
+                    id: user.id,
+                    display_name: 'Test User',
+                    updated_at: new Date().toISOString()
+                };
+                
+                console.log('Attempting to save test profile:', testData);
+                
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .upsert(testData);
+                
+                console.log('Supabase response:', { data, error });
+                
+                if (error) {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>Save Failed:</h3>
+                            <p><strong>Message:</strong> ${error.message}</p>
+                            <p><strong>Details:</strong> ${error.details || 'None'}</p>
+                            <p><strong>Hint:</strong> ${error.hint || 'None'}</p>
+                            <p><strong>Code:</strong> ${error.code || 'None'}</p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="success">Profile saved successfully! Data: ${JSON.stringify(data)}</div>`;
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function checkUser() {
+            const resultDiv = document.getElementById('userResult');
+            resultDiv.innerHTML = 'Checking user...';
+            
+            try {
+                const { data: { user }, error } = await supabase.auth.getUser();
+                
+                if (error) {
+                    resultDiv.innerHTML = `<div class="error">Error getting user: ${error.message}</div>`;
+                    return;
+                }
+                
+                if (!user) {
+                    resultDiv.innerHTML = `<div class="error">No user logged in</div>`;
+                    return;
+                }
+                
+                resultDiv.innerHTML = `
+                    <div class="success">
+                        <h3>User Found:</h3>
+                        <p><strong>ID:</strong> ${user.id}</p>
+                        <p><strong>Email:</strong> ${user.email || 'No email'}</p>
+                        <p><strong>Created:</strong> ${user.created_at}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+

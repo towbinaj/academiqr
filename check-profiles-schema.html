@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Profiles Schema</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Check Profiles Table Schema</h1>
+    <button onclick="checkSchema()">Check Schema</button>
+    <div id="result"></div>
+    
+    <script>
+        const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        async function checkSchema() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Checking...';
+            
+            try {
+                // Try to get the schema by selecting all columns
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                    console.error('Schema check error:', error);
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    const columns = Object.keys(data[0]);
+                    resultDiv.innerHTML = `
+                        <h3>Profiles Table Columns:</h3>
+                        <ul>${columns.map(col => `<li><strong>${col}</strong>: ${typeof data[0][col]}</li>`).join('')}</ul>
+                        <h3>Sample Data:</h3>
+                        <pre>${JSON.stringify(data[0], null, 2)}</pre>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<p>Table exists but is empty. Trying to insert test data...</p>';
+                    
+                    // Try a minimal insert to see what columns are required
+                    const testData = {
+                        id: 'test-' + Date.now(),
+                        display_name: 'Test User'
+                    };
+                    
+                    const { data: insertData, error: insertError } = await supabase
+                        .from('profiles')
+                        .insert(testData);
+                    
+                    if (insertError) {
+                        resultDiv.innerHTML += `<p style="color: red;">Insert error: ${insertError.message}</p>`;
+                    } else {
+                        resultDiv.innerHTML += '<p style="color: green;">Test insert successful!</p>';
+                    }
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
+
+
+

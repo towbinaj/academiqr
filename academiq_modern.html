@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Academiq — Link-in-Bio Builder</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    /* =============================
+       Design Tokens / Theme Layer
+       ============================= */
+    :root{
+      /* Brand */
+      --brand-50:#eef2ff; --brand-100:#e0e7ff; --brand-200:#c7d2fe; --brand-300:#a5b4fc;
+      --brand-400:#818cf8; --brand-500:#6366f1; --brand-600:#4f46e5; --brand-700:#4338ca;
+
+      /* Neutrals */
+      --bg:#0b1020;                 /* page bg */
+      --panel:#ffffff;              /* surface */
+      --panel-muted:#f8fafc;        /* subtle surface */
+      --text:#0f172a;               /* primary text */
+      --muted:#64748b;              /* secondary text */
+      --border:#e2e8f0;             /* borders */
+
+      /* Signals */
+      --ok:#10b981; --warn:#f59e0b; --err:#ef4444;
+
+      /* Radii */
+      --r-xs:6px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px;
+
+      /* Elevation */
+      --e1:0 1px 2px rgb(0 0 0 / 0.06);
+      --e2:0 4px 10px rgb(0 0 0 / 0.10);
+      --e3:0 12px 24px rgb(0 0 0 / 0.14);
+
+      /* Motion */
+      --fast:140ms; --norm:220ms; --slow:380ms; --ease:cubic-bezier(.2,.7,.2,1);
+
+      /* Spacing */
+      --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
+
+      /* Phone preview sizes */
+      --phone-w:360px; --phone-h:720px;
+    }
+
+    @media (prefers-color-scheme: dark){
+      :root{
+        --panel:#121826; --panel-muted:#0f1522; --text:#e5e7eb; --muted:#9aa3b2; --border:#1f2937;
+      }
+      .btn-ghost{ background:#0f1522; color:#e5e7eb; border-color:#1f2937; }
+    }
+
+    /* Page background */
+    html,body{height:100%;}
+    body{
+      margin:0;
+      font-family:Inter,ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;
+      color:var(--text);
+      background:
+       radial-gradient(1200px 600px at 10% -10%, #1f2a66 0%, transparent 60%),
+       radial-gradient(900px 500px at 110% 10%, #5b21b6 0%, transparent 55%),
+       linear-gradient(180deg,#0b1020 0%, #0e1222 100%);
+    }
+
+    /* ======= Layout ======= */
+    .app{display:grid; grid-template-columns: 280px 1fr 400px; gap:24px; padding:24px;}
+    @media (max-width: 1200px){ .app{ grid-template-columns: 260px 1fr; } .right{ display:none; } }
+    @media (max-width: 880px){ .app{ grid-template-columns: 1fr; } .left{ order:2; } .main{ order:1;} }
+
+    .left{ background: linear-gradient(180deg,#0f152e 0%, #121735 100%); color:#c7d2fe; border:1px solid rgba(255,255,255,.06); border-radius:var(--r-lg); box-shadow:var(--e2); }
+    .main{ }
+    .right{ }
+
+    /* ======= Sidebar ======= */
+    .sidebar-header{ display:flex; align-items:center; justify-content:space-between; padding:16px; border-bottom:1px solid rgba(255,255,255,.08); }
+    .brand{ display:flex; gap:8px; align-items:center; }
+    .brand .dot{ width:10px; height:10px; border-radius:50%; background:linear-gradient(135deg,#60a5fa,#818cf8); box-shadow:0 0 10px rgba(129,140,248,.6);} 
+    .brand h2{ margin:0; font:600 18px/1 Inter; color:#fff; letter-spacing:.2px; }
+
+    .collections{ padding:12px; display:flex; flex-direction:column; gap:10px; }
+    .collection-item{ background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:var(--r-md); padding:10px; color:#e2e8f0; display:flex; align-items:center; justify-content:space-between; cursor:pointer; transition:background var(--fast) var(--ease), border var(--fast) var(--ease); }
+    .collection-item:hover{ background:rgba(255,255,255,.07);} 
+    .collection-item.active{ background:rgba(129,140,248,.18); border-color:rgba(129,140,248,.45); color:#fff; box-shadow: inset 0 0 0 1px rgba(99,102,241,.35); }
+
+    .left .footer{ margin:12px; margin-top:auto; padding:12px; color:#9aa3b2; font-size:12px; }
+
+    /* ======= Main header ======= */
+    .content{ display:flex; flex-direction:column; gap:16px; }
+    .content-header{ display:flex; align-items:center; justify-content:space-between; background:var(--panel); border:1px solid var(--border); border-radius:var(--r-lg); padding:14px 16px; box-shadow:var(--e1); }
+    .header-left{ display:flex; align-items:center; gap:10px; }
+    .badge{ padding:4px 8px; background:var(--brand-100); color:var(--brand-700); border-radius:999px; font:600 12px/1 Inter; }
+    .header-right{ display:flex; gap:10px; align-items:center; }
+
+    /* ======= Tabs ======= */
+    .tabs{ display:flex; align-items:center; gap:6px; padding:6px; background:var(--panel); border:1px solid var(--border); border-radius:var(--r-md); box-shadow:var(--e1); }
+    .tab{ position:relative; padding:10px 14px; border-radius:var(--r-sm); color:var(--muted); cursor:pointer; }
+    .tab.active{ color:var(--text); background:var(--panel-muted); }
+    .tab.active::after{ content:""; position:absolute; left:10px; right:10px; bottom:-1px; height:2px; background:var(--brand-600); border-radius:2px; }
+
+    /* ======= Panels ======= */
+    .grid{ display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+    @media (max-width: 1100px){ .grid{ grid-template-columns:1fr; } }
+    .section{ background:var(--panel); border:1px solid var(--border); border-radius:var(--r-lg); box-shadow:var(--e1); overflow:hidden; }
+    .section-header{ display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:linear-gradient(180deg,var(--panel-muted),#fff 70%); border-bottom:1px solid var(--border); cursor:pointer; }
+    .section-title{ display:flex; gap:10px; align-items:center; font-weight:600; }
+    .section-content{ padding:14px; }
+
+    /* ======= Buttons + Inputs ======= */
+    .btn{ border:none; border-radius:var(--r-sm); padding:10px 14px; background:var(--brand-600); color:#fff; box-shadow:var(--e1); cursor:pointer; transition: transform var(--fast) var(--ease), box-shadow var(--fast) var(--ease), background var(--fast) var(--ease); }
+    .btn:hover{ transform:translateY(-1px); box-shadow:var(--e2); background:var(--brand-700); }
+    .btn:active{ transform:translateY(0); box-shadow:var(--e1); }
+    .btn-ghost{ background:#fff; color:var(--text); border:1px solid var(--border); }
+    .row{ display:flex; gap:12px; align-items:center; }
+    .field{ display:flex; flex-direction:column; gap:6px; }
+    .label{ font:600 12px/1 Inter; color:var(--muted); }
+    input[type="text"], input[type="url"], input[type="email"], input[type="password"], select, textarea{
+      width:100%; background:#fff; border:1px solid var(--border); border-radius:var(--r-sm); padding:10px 12px; color:var(--text); transition:border var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+    }
+    input:focus, select:focus, textarea:focus{ outline:none; border-color:var(--brand-500); box-shadow:0 0 0 4px rgb(99 102 241 / .18); }
+
+    /* ======= Phone preview ======= */
+    .right .phone{ display:flex; justify-content:center; }
+    .phone-mockup{ width:var(--phone-w); height:var(--phone-h); border-radius:32px; background:linear-gradient(135deg,#0b0e1a,#141a2c); padding:10px; box-shadow:0 30px 70px rgba(0,0,0,.35); position:relative; }
+    .phone-mockup::before{ content:""; position:absolute; top:10px; left:50%; transform:translateX(-50%); width:120px; height:18px; background:#0b0e1a; border-radius:10px; }
+    .phone-screen{ width:100%; height:100%; border-radius:24px; overflow:hidden; background:#fff; display:flex; flex-direction:column; }
+
+    .preview-header{ padding:18px; text-align:center; background:linear-gradient(120deg,#e9ecff,#f7f8ff); border-bottom:1px solid var(--border); }
+    .preview-links{ padding:18px; display:flex; flex-direction:column; gap:12px; }
+    .preview-link{ display:flex; align-items:center; gap:12px; border-radius:12px; background:#fff; border:1px solid var(--border); box-shadow:var(--e1); padding:12px; cursor:pointer; transition: transform var(--fast) var(--ease), box-shadow var(--fast); }
+    .preview-link:hover{ transform:translateY(-1px); box-shadow:var(--e2); }
+
+    /* ======= Links table (Editor) ======= */
+    .links-list{ display:flex; flex-direction:column; gap:10px; }
+    .link-item{ display:grid; grid-template-columns: 22px 1fr 1fr 120px 110px 30px; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); background:#fff; border-radius:var(--r-sm); transition:transform var(--fast) var(--ease), box-shadow var(--fast); }
+    .link-item.dragging{ transform:scale(1.02); box-shadow:var(--e3); }
+    .drag-handle{ width:22px; height:22px; display:grid; place-items:center; color:var(--muted); border-radius:8px; }
+    .drag-handle:hover{ background:rgba(99,102,241,.12); color:var(--brand-600); }
+    .thumb{ width:36px; height:36px; border-radius:8px; background:#f1f5f9; display:grid; place-items:center; overflow:hidden; border:1px solid var(--border); }
+    .actions{ display:flex; gap:6px; justify-content:flex-end; }
+    .icon-btn{ width:30px; height:30px; border-radius:8px; border:1px solid var(--border); background:#fff; color:var(--muted); display:grid; place-items:center; cursor:pointer; }
+    .icon-btn:hover{ color:var(--brand-600); border-color:var(--brand-400); }
+
+    /* ======= Toast ======= */
+    .toast{ position:fixed; right:18px; bottom:18px; background:#0b172a; color:#fff; border-radius:999px; padding:10px 14px; box-shadow:var(--e2); opacity:0; transform:translateY(10px); pointer-events:none; transition:opacity var(--fast) var(--ease), transform var(--fast) var(--ease); }
+    .toast.show{ opacity:1; transform:translateY(0); }
+
+    /* ======= Utility ======= */
+    .muted{ color:var(--muted); }
+    .mt-8{ margin-top:var(--sp-8); }
+    .mb-0{ margin-bottom:0; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- ===================== LEFT: Collections / Navigation ===================== -->
+    <aside class="left">
+      <div class="sidebar-header">
+        <div class="brand"><span class="dot"></span><h2>Academiq</h2></div>
+        <button class="btn btn-ghost" id="newListBtn"><i class="fa fa-plus"></i></button>
+      </div>
+      <div class="collections" id="collections">
+        <!-- JS: user lists populate here -->
+        <div class="collection-item active"><span>My Links</span><i class="fa-regular fa-angle-right"></i></div>
+      </div>
+      <div class="footer">Signed in as <span id="userEmail">guest@example.com</span></div>
+    </aside>
+
+    <!-- ===================== MAIN: Editor ===================== -->
+    <main class="main content">
+      <header class="content-header">
+        <div class="header-left">
+          <h2 class="mb-0">Link-in-Bio Builder</h2>
+          <span class="badge">Editor</span>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-ghost" id="previewBtn"><i class="fa-regular fa-eye"></i> Preview</button>
+          <button class="btn" id="publishBtn"><i class="fa-solid fa-cloud-arrow-up"></i> Publish</button>
+        </div>
+      </header>
+
+      <nav class="tabs" id="tabs">
+        <div class="tab active" data-tab="links"><i class="fa-solid fa-link"></i> Links</div>
+        <div class="tab" data-tab="appearance"><i class="fa-regular fa-image"></i> Appearance</div>
+        <div class="tab" data-tab="media"><i class="fa-regular fa-folder-open"></i> Media</div>
+        <div class="tab" data-tab="analytics"><i class="fa-solid fa-chart-line"></i> Analytics</div>
+        <div class="tab" data-tab="settings"><i class="fa-solid fa-gear"></i> Settings</div>
+      </nav>
+
+      <!-- Sections grid -->
+      <div class="grid">
+        <!-- ========== Links Section ========== -->
+        <section class="section" data-panel="links">
+          <div class="section-header">
+            <div class="section-title"><i class="fa-solid fa-layer-group"></i> Links</div>
+            <button class="btn" id="addLinkBtn"><i class="fa fa-plus"></i> Add link</button>
+          </div>
+          <div class="section-content">
+            <div class="links-list" id="linksList">
+              <!-- JS: link rows insert here -->
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== Appearance Section ========== -->
+        <section class="section" data-panel="appearance" hidden>
+          <div class="section-header">
+            <div class="section-title"><i class="fa-regular fa-image"></i> Appearance</div>
+          </div>
+          <div class="section-content">
+            <div class="row">
+              <div class="field" style="flex:1">
+                <label class="label">Theme preset</label>
+                <select id="themePreset">
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                  <option value="sunset">Sunset</option>
+                  <option value="ocean">Ocean</option>
+                  <option value="gradient">Gradient</option>
+                </select>
+              </div>
+              <div class="field" style="width:200px">
+                <label class="label">Text color</label>
+                <input type="color" id="textColor" value="#0f172a" />
+              </div>
+            </div>
+            <div class="row mt-8">
+              <div class="field" style="flex:1">
+                <label class="label">Background (CSS)</label>
+                <input type="text" id="bgCssInput" placeholder="linear-gradient(135deg, #b993d6, #8ca6db)" />
+              </div>
+              <button class="btn" id="applyThemeBtn">Apply</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ========== Media Section ========== -->
+        <section class="section" data-panel="media" hidden>
+          <div class="section-header">
+            <div class="section-title"><i class="fa-regular fa-folder-open"></i> Media Library</div>
+            <button class="btn" id="uploadBtn"><i class="fa fa-upload"></i> Upload</button>
+          </div>
+          <div class="section-content" id="mediaGrid">
+            <p class="muted">Upload images and pick them for link thumbnails. (Cloud wiring placeholder)</p>
+          </div>
+        </section>
+
+        <!-- ========== Analytics Section ========== -->
+        <section class="section" data-panel="analytics" hidden>
+          <div class="section-header">
+            <div class="section-title"><i class="fa-solid fa-chart-line"></i> Analytics</div>
+            <div class="row">
+              <input type="date" id="startDate"> <input type="date" id="endDate"> <button class="btn-ghost" id="refreshAnalytics">Refresh</button>
+            </div>
+          </div>
+          <div class="section-content">
+            <div class="chart-container" style="height:220px; background:rgba(255,255,255,.8); border:1px solid var(--border); border-radius:var(--r-md);"></div>
+            <p class="muted">Simple run chart placeholder — wire to your analytics_events.</p>
+          </div>
+        </section>
+
+        <!-- ========== Settings Section ========== -->
+        <section class="section" data-panel="settings" hidden>
+          <div class="section-header"><div class="section-title"><i class="fa-solid fa-gear"></i> Settings</div></div>
+          <div class="section-content">
+            <div class="row">
+              <div class="field" style="flex:1">
+                <label class="label">Public URL</label>
+                <input id="publicUrl" type="text" readonly value="/u/alex/my-links" />
+              </div>
+              <button class="btn-ghost" id="copyUrlBtn"><i class="fa-regular fa-copy"></i> Copy</button>
+            </div>
+            <div class="row mt-8">
+              <div class="field"><label class="label">Visibility</label>
+                <select id="visibility">
+                  <option value="public">Public</option>
+                  <option value="unlisted">Unlisted</option>
+                  <option value="private">Private</option>
+                  <option value="passkey">Passkey</option>
+                </select>
+              </div>
+              <div class="field" style="flex:1">
+                <label class="label">Passkey</label>
+                <input type="text" id="passkey" placeholder="••••••" />
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ===================== RIGHT: Live Preview ===================== -->
+    <aside class="right">
+      <div class="phone">
+        <div class="phone-mockup">
+          <div class="phone-screen" id="phoneScreen">
+            <div class="preview-header">
+              <div id="profileName" style="font-weight:700">Alex Towbin</div>
+              <div id="profileBio" class="muted" style="margin-top:4px">Medical imaging • Interoperability • AI</div>
+            </div>
+            <div class="preview-links" id="previewLinks"></div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="toast" id="toast">Saved</div>
+
+  <!-- Optional: Supabase (wire when ready) -->
+  <!-- <script src="https://unpkg.com/@supabase/supabase-js@2"></script> -->
+
+  <script>
+    // ========= Tiny state & helpers =========
+    const $ = (sel, el=document) => el.querySelector(sel);
+    const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+    const toast = (msg) => { const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1200); };
+
+    // Demo data
+    let links = [
+      { id: crypto.randomUUID(), title:'Video: Radiology Standards', url:'https://youtu.be/czApoO5Nk98', image:null, visible:true },
+      { id: crypto.randomUUID(), title:'History of CT', url:'https://bshr.org.uk/IL49.pdf', image:null, visible:true },
+    ];
+
+    // ========= Tabs =========
+    $$('#tabs .tab').forEach(tab=>{
+      tab.addEventListener('click',()=>{
+        $$('#tabs .tab').forEach(t=>t.classList.remove('active'));
+        tab.classList.add('active');
+        const key = tab.dataset.tab;
+        $$('.section').forEach(sec=>sec.hidden = sec.dataset.panel !== key);
+      });
+    });
+
+    // ========= Links UI =========
+    const linksList = $('#linksList');
+    function renderLinks(){
+      linksList.innerHTML = '';
+      links.forEach((link, idx)=>{
+        const row = document.createElement('div');
+        row.className = 'link-item'; row.draggable = true; row.dataset.id = link.id;
+        row.innerHTML = `
+          <div class="drag-handle"><i class="fa-solid fa-grip-vertical"></i></div>
+          <div class="field"><input type="text" class="title" value="${link.title}" /></div>
+          <div class="field"><input type="url" class="url" value="${link.url}" /></div>
+          <div class="field"><select class="vis"><option value="true" ${link.visible? 'selected':''}>Visible</option><option value="false" ${!link.visible? 'selected':''}>Hidden</option></select></div>
+          <div class="actions">
+            <button class="icon-btn pick-media" title="Pick image"><i class="fa-regular fa-image"></i></button>
+            <button class="icon-btn del" title="Delete"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+        `;
+        // events
+        row.querySelector('.title').addEventListener('input', e=>{ link.title=e.target.value; renderPreview(); autosave(); });
+        row.querySelector('.url').addEventListener('change', e=>{ link.url=e.target.value.trim(); renderPreview(); autosave(); });
+        row.querySelector('.vis').addEventListener('change', e=>{ link.visible = e.target.value === 'true'; renderPreview(); autosave(); });
+        row.querySelector('.del').addEventListener('click', ()=>{ links = links.filter(l=>l.id!==link.id); renderLinks(); renderPreview(); autosave(); });
+        linksList.appendChild(row);
+        enableDrag(row);
+      });
+    }
+
+    function enableDrag(row){
+      row.addEventListener('dragstart', e=>{ row.classList.add('dragging'); e.dataTransfer.setData('text/plain', row.dataset.id); });
+      row.addEventListener('dragend', ()=> row.classList.remove('dragging'));
+      linksList.addEventListener('dragover', e=>{
+        e.preventDefault();
+        const after = Array.from(linksList.querySelectorAll('.link-item:not(.dragging)')).find(el=>{
+          const box = el.getBoundingClientRect();
+          return e.clientY < box.top + box.height/2;
+        });
+        const dragging = linksList.querySelector('.link-item.dragging');
+        if(!dragging) return;
+        if(after) linksList.insertBefore(dragging, after); else linksList.appendChild(dragging);
+      });
+      linksList.addEventListener('drop', ()=>{
+        const order = $$('.link-item').map(el=>el.dataset.id);
+        links.sort((a,b)=> order.indexOf(a.id) - order.indexOf(b.id));
+        renderPreview(); autosave();
+      }, { once:true });
+    }
+
+    $('#addLinkBtn').addEventListener('click', ()=>{ links.unshift({ id:crypto.randomUUID(), title:'New link', url:'https://', image:null, visible:true }); renderLinks(); renderPreview(); autosave(); });
+
+    // ========= Appearance =========
+    $('#applyThemeBtn').addEventListener('click', ()=>{
+      const css = $('#bgCssInput').value.trim();
+      const screen = $('#phoneScreen');
+      if(css) screen.style.background = css; else screen.style.background = '#fff';
+      const color = $('#textColor').value; document.documentElement.style.setProperty('--text', color);
+      autosave();
+    });
+
+    // ========= Preview =========
+    function renderPreview(){
+      const wrap = $('#previewLinks'); wrap.innerHTML = '';
+      links.filter(l=>l.visible).forEach(l=>{
+        const el = document.createElement('div');
+        el.className = 'preview-link';
+        el.innerHTML = `<div class="thumb"><i class="fa-regular fa-image"></i></div><div style="flex:1">${l.title}</div><i class="fa-solid fa-arrow-up-right-from-square" style="color:var(--muted)"></i>`;
+        el.addEventListener('click', ()=> window.open(l.url, '_blank')); 
+        wrap.appendChild(el);
+      });
+    }
+
+    function autosave(){ toast('Saved'); }
+
+    // ========= Init =========
+    renderLinks(); renderPreview();
+  </script>
+</body>
+</html>

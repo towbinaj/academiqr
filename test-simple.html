@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AcademiQR Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .hidden { display: none !important; }
+        .loading { display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #4f46e5; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .error { background: #fef2f2; color: #dc2626; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #fecaca; }
+        .success { background: #f0fdf4; color: #16a34a; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bbf7d0; }
+        .btn { width: 100%; padding: 12px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; transition: background-color 0.2s; }
+        .btn:hover { background: #4338ca; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; margin-bottom: 8px; color: #374151; font-weight: 600; font-size: 16px; }
+        .form-group input { width: 100%; padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 16px; transition: all 0.2s; background: #f8fafc; }
+        .form-group input:focus { outline: none; border-color: #4f46e5; background: white; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Loading Screen -->
+        <div id="loading" class="container">
+            <div class="loading"></div>
+            <p>Loading AcademiQR...</p>
+        </div>
+        
+        <!-- Login Screen -->
+        <div id="login" class="container hidden">
+            <h1>AcademiQR</h1>
+            <p>Link-in-Bio Builder</p>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+            <div id="message"></div>
+        </div>
+        
+        <!-- Main App -->
+        <div id="dashboard" class="hidden">
+            <h1>Dashboard</h1>
+            <p>Welcome to AcademiQR!</p>
+            <button class="btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
+        
+        let supabaseClient = null;
+        let currentUser = null;
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing...');
+            
+            // Try to load Supabase
+            function initSupabase() {
+                if (typeof window.supabase !== 'undefined') {
+                    console.log('Supabase loaded, creating client...');
+                    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    
+                    // Hide loading, show login
+                    document.getElementById('loading').classList.add('hidden');
+                    document.getElementById('login').classList.remove('hidden');
+                    
+                    console.log('App initialized successfully');
+                } else {
+                    console.log('Supabase not loaded yet, retrying...');
+                    setTimeout(initSupabase, 100);
+                }
+            }
+            
+            // Start initialization
+            initSupabase();
+        });
+        
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                console.log('Attempting login...');
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) throw error;
+                
+                currentUser = data.user;
+                showMessage('Login successful!', 'success');
+                
+                // Show dashboard
+                document.getElementById('login').classList.add('hidden');
+                document.getElementById('dashboard').classList.remove('hidden');
+                
+            } catch (error) {
+                showMessage('Login failed: ' + error.message, 'error');
+            }
+        });
+        
+        function logout() {
+            currentUser = null;
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('login').classList.remove('hidden');
+        }
+        
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+            messageDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+    
+    <!-- Load Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</body>
+</html>
+
+
+

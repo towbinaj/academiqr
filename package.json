@@ -1,0 +1,23 @@
+{
+  "name": "academiq",
+  "version": "0.4.1",
+  "description": "Link-in-bio builder with modern dark theme",
+  "type": "module",
+  "scripts": {
+    "dev": "npx vite",
+    "build": "npx vite build",
+    "preview": "npx vite preview",
+    "version:patch": "node scripts/version-bump.js patch",
+    "version:minor": "node scripts/version-bump.js minor",
+    "version:major": "node scripts/version-bump.js major"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.4"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "keywords": ["link-in-bio", "supabase", "vite", "dark-theme"],
+  "author": "Academiq Team",
+  "license": "MIT"
+}
