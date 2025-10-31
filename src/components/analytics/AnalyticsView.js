@@ -4,7 +4,8 @@ import {
     getClicksByLink, 
     getClicksByDevice, 
     getRecentClicks, 
-    getPageViews 
+    getPageViews,
+    supabase
 } from '../../utils/supabase.js';
 
 export class AnalyticsView {
@@ -165,6 +166,24 @@ export class AnalyticsView {
         this.showLoading();
 
         try {
+            // Log current user for debugging
+            try {
+                const { data: { user }, error: userError } = await supabase.auth.getUser();
+                if (userError) {
+                    console.error('❌ Error getting user:', userError);
+                } else if (user) {
+                    console.log('✅ Analytics - Current logged-in user:', {
+                        id: user.id,
+                        email: user.email
+                    });
+                    console.log('📋 User ID to look for in database:', user.id);
+                } else {
+                    console.warn('⚠️ No user found - you may not be logged in');
+                }
+            } catch (e) {
+                console.error('❌ Exception getting user info:', e);
+            }
+            
             // Fetch all analytics data in parallel
             const [summary, clicksByLink, clicksByDevice, recentClicks, pageViews] = await Promise.all([
                 getAnalyticsSummary(this.listId),
@@ -182,9 +201,17 @@ export class AnalyticsView {
                 pageViews
             };
 
+            console.log('📊 Analytics data loaded:', {
+                summary: summary.totalClicks,
+                clicksByLink: clicksByLink.length,
+                clicksByDevice: clicksByDevice.length,
+                recentClicks: recentClicks.length,
+                pageViews: pageViews
+            });
+            
             this.renderAnalytics();
         } catch (error) {
-            console.error('Error loading analytics:', error);
+            console.error('❌ Error loading analytics:', error);
             console.error('Error details:', {
                 message: error.message,
                 stack: error.stack,
