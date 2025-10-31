@@ -374,6 +374,236 @@ git push --tags  # When you create new version tags
 
 ---
 
+## When to Create a Branch
+
+Branches let you work on features, fixes, or experiments without affecting your main code. Here's when to use them:
+
+### ✅ **CREATE A BRANCH When:**
+
+#### 1. **Working on a New Feature**
+**Example:** Adding user profile image upload, implementing dark mode, adding analytics
+
+**Why:** Features can take multiple commits and might not work initially. Keep main branch stable.
+
+```bash
+git checkout -b feature/user-image-upload
+# Make changes, commit multiple times
+git checkout main  # Switch back when done
+git merge feature/user-image-upload
+```
+
+#### 2. **Fixing a Bug**
+**Example:** OAuth callback not working, database query failing
+
+**Why:** Bug fixes can break other things. Isolate the fix.
+
+```bash
+git checkout -b fix/oauth-callback
+# Fix the bug, test it
+git checkout main
+git merge fix/oauth-callback
+```
+
+#### 3. **Experimenting or Trying Something New**
+**Example:** Testing a new library, trying a different UI approach
+
+**Why:** You might want to throw it away if it doesn't work.
+
+```bash
+git checkout -b experiment/new-ui-library
+# Try it out
+# If it works: merge it
+# If it doesn't: just delete the branch
+```
+
+#### 4. **Working on Something That Takes Multiple Days**
+**Example:** Refactoring the entire authentication system
+
+**Why:** You might need to pause and work on something urgent on main.
+
+```bash
+git checkout -b refactor/auth-system
+# Work for days, commit as you go
+# Switch to main if urgent bug comes up
+```
+
+#### 5. **Collaborating with Others**
+**Example:** Multiple people working on different features
+
+**Why:** Everyone works in their own branch, then merges when ready.
+
+### ❌ **DON'T CREATE A BRANCH When:**
+
+#### 1. **Simple, Single-Edit Fixes**
+**Example:** Fixing a typo, updating documentation, small CSS tweak
+
+**Why:** Overhead isn't worth it. Just commit directly to main.
+
+```bash
+# Just do this:
+git add .
+git commit -m "fix: correct typo in README"
+git push
+```
+
+#### 2. **You're the Only Developer**
+**Example:** Personal project, solo work, quick iterations
+
+**Why:** If you're comfortable, work directly on main for speed.
+
+**Exception:** Still create branches for major features or experiments.
+
+#### 3. **Emergency Hotfix to Production**
+**Example:** Critical security fix that needs immediate deployment
+
+**Why:** Sometimes speed matters more. (But branches are still safer!)
+
+### Branch Naming Conventions
+
+Use clear, descriptive names:
+
+**Good Names:**
+- `feature/user-authentication`
+- `fix/login-redirect-bug`
+- `refactor/database-queries`
+- `experiment/new-framework`
+- `docs/update-readme`
+
+**Bad Names:**
+- `test` (too vague)
+- `stuff` (not descriptive)
+- `fix` (doesn't say what)
+- `feature1` (not clear)
+
+### Decision Flowchart
+
+```
+Start work on something
+    ↓
+Will this take more than 1 commit? ──NO──→ Commit directly to main
+    ↓ YES
+Will this take more than 1 hour? ──NO──→ Probably fine on main
+    ↓ YES
+Might this break things temporarily? ──NO──→ Could work on main
+    ↓ YES
+Do you need to switch tasks while working? ──NO──→ Could work on main
+    ↓ YES
+CREATE A BRANCH ✅
+```
+
+### Real-World Examples for Your Project
+
+#### Example 1: Adding Analytics Dashboard
+**Should you branch?** ✅ YES
+- Multiple files affected
+- Takes several commits
+- Might break existing features
+
+```bash
+git checkout -b feature/analytics-dashboard
+# Work on it
+git add src/components/analytics/*
+git commit -m "feat: add analytics dashboard component"
+# ... more commits ...
+git checkout main
+git merge feature/analytics-dashboard
+```
+
+#### Example 2: Fixing CSS Typo
+**Should you branch?** ❌ NO
+- Single line change
+- Quick fix
+- Low risk
+
+```bash
+# Just commit directly
+git add src/styles/main.css
+git commit -m "fix: correct padding typo"
+```
+
+#### Example 3: Testing New Supabase Feature
+**Should you branch?** ✅ YES
+- Experimental
+- Might not work
+- Easy to abandon
+
+```bash
+git checkout -b experiment/supabase-realtime
+# Try it out
+# If it works: merge
+# If not: git checkout main && git branch -D experiment/supabase-realtime
+```
+
+#### Example 4: Major Refactoring
+**Should you branch?** ✅ YES
+- Affects many files
+- Takes multiple days
+- High risk of breaking things
+
+```bash
+git checkout -b refactor/component-structure
+# Work for days
+# Multiple commits
+git checkout main
+git merge refactor/component-structure
+```
+
+### Branch Workflow Summary
+
+```
+main (stable, production-ready)
+  ├── feature/user-profiles (new feature)
+  ├── fix/database-error (bug fix)
+  └── experiment/new-ui (experiment)
+```
+
+**Lifecycle:**
+1. Create branch from main
+2. Work and commit on branch
+3. Switch back to main when needed
+4. Merge branch when complete
+5. Delete branch after merging
+
+### Quick Branch Commands Reference
+
+```bash
+# Create and switch to new branch
+git checkout -b feature/my-feature
+
+# List all branches
+git branch
+
+# Switch between branches
+git checkout main
+git checkout feature/my-feature
+
+# See which branch you're on
+git branch  # * shows current branch
+
+# Merge branch into main
+git checkout main
+git merge feature/my-feature
+
+# Delete branch (after merging)
+git branch -d feature/my-feature
+
+# Force delete (even if not merged)
+git branch -D feature/my-feature
+```
+
+### When in Doubt...
+
+**General Rule:** If you're asking "should I create a branch?", the answer is probably **YES**.
+
+- ✅ Creating branches is free (no cost)
+- ✅ It's easy to delete if you don't need it
+- ✅ It keeps your main branch clean
+- ✅ It's better to have it and not need it than need it and not have it
+
+**Exception:** For tiny, single-commit changes, working directly on main is fine.
+
+---
+
 ## Common Tasks
 
 ### Task 1: Undo Last Commit (Keep Changes)
