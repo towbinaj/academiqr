@@ -1,0 +1,11 @@
+# AcademiQR Analytics Tracking - Route /api/track/* to Supabase Edge Function
+# This file must be uploaded to the public_html folder on your server
+
+RewriteEngine On
+
+# Route tracking URLs to Supabase edge function
+# Format: /api/track/{link-id} -> https://natzpfyxpuycsuuzbqrd.supabase.co/functions/v1/track-click/{link-id}
+RewriteRule ^api/track/(.*)$ https://natzpfyxpuycsuuzbqrd.supabase.co/functions/v1/track-click/$1 [R=302,L]
+
+# Optional: If you have other routing needs, add them below
+
