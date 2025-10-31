@@ -65,31 +65,31 @@ serve(async (req) => {
       );
     }
 
-    // Create Supabase client with service role key (bypasses RLS)
-    // These environment variables are automatically available in edge functions
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? Deno.env.get('SUPABASE_SERVICE_URL') ?? '';
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    // Get Supabase credentials from environment variables
+    // In Supabase edge functions, these are automatically available
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 
+                       Deno.env.get('SUPABASE_SERVICE_URL') || 
+                       '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    
+    // Log for debugging (remove in production)
+    console.log('Supabase URL:', supabaseUrl ? 'Found' : 'Missing');
+    console.log('Service Key:', supabaseServiceKey ? 'Found' : 'Missing');
     
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing Supabase environment variables');
+      console.error('Available env vars:', Object.keys(Deno.env.toObject()));
       return new Response(
-        JSON.stringify({ error: 'Server configuration error' }),
+        JSON.stringify({ error: 'Server configuration error', details: 'Missing Supabase credentials' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
     
-    // Create Supabase client with service role key
-    // Use global fetch options to ensure proper headers
+    // Create Supabase client with service role key (bypasses RLS)
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
-      },
-      global: {
-        headers: {
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`
-        }
       }
     });
 

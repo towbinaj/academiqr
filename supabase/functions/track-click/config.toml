@@ -1,0 +1,5 @@
+# Configuration for track-click edge function
+# This disables JWT verification so anyone can track clicks (public endpoint)
+[functions]
+verify_jwt = false
+
