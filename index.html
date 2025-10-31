@@ -9957,18 +9957,27 @@
                 });
                 console.log('📋 User ID to look for in database:', user.id);
                 
-                // Fetch analytics data
-                const listId = getCurrentListId(); // Get the current list ID if available
+                // Get the current collection/list ID (required for collection-specific analytics)
+                const listId = getCurrentListId();
                 
-                // Get total clicks
-                let clicksQuery = supabaseClient
+                if (!listId) {
+                    console.warn('⚠️ No collection selected - cannot show analytics');
+                    showMessage('Please select a collection to view analytics');
+                    document.getElementById('total-clicks').textContent = '-';
+                    document.getElementById('total-views').textContent = '-';
+                    document.getElementById('unique-visitors').textContent = '-';
+                    document.getElementById('links-breakdown-list').innerHTML = '<p style="color: #6b7280; text-align: center; padding: 2rem;">Please select a collection to view analytics.</p>';
+                    return;
+                }
+                
+                console.log('📊 Analytics for collection ID:', listId);
+                
+                // Get total clicks (filtered by current collection)
+                const clicksQuery = supabaseClient
                     .from('link_clicks')
                     .select('*', { count: 'exact', head: true })
-                    .eq('owner_id', user.id);
-                    
-                if (listId) {
-                    clicksQuery = clicksQuery.eq('list_id', listId);
-                }
+                    .eq('owner_id', user.id)
+                    .eq('list_id', listId); // Always filter by collection
                 
                 const { count: totalClicks, error: clicksError } = await clicksQuery;
                 
@@ -9978,19 +9987,16 @@
                     return;
                 }
                 
-                // Get clicks by link
-                let linksQuery = supabaseClient
+                // Get clicks by link (filtered by current collection)
+                const linksQuery = supabaseClient
                     .from('link_clicks')
                     .select(`
                         link_id,
                         link_items:link_id (title, url)
                     `)
                     .eq('owner_id', user.id)
+                    .eq('list_id', listId) // Always filter by collection
                     .order('clicked_at', { ascending: false });
-                    
-                if (listId) {
-                    linksQuery = linksQuery.eq('list_id', listId);
-                }
                 
                 const { data: clicksData, error: linksError } = await linksQuery;
                 
@@ -9998,33 +10004,21 @@
                     console.error('❌ Error fetching clicks by link:', linksError);
                 }
                 
-                // Get page views
-                let viewsQuery = supabaseClient
+                // Get page views (filtered by current collection)
+                const viewsQuery = supabaseClient
                     .from('page_views')
                     .select('*', { count: 'exact', head: true })
-                    .eq('owner_id', user.id);
-                    
-                if (listId) {
-                    viewsQuery = viewsQuery.eq('list_id', listId);
-                }
+                    .eq('owner_id', user.id)
+                    .eq('list_id', listId); // Always filter by collection
                 
                 const { count: totalViews, error: viewsError } = await viewsQuery;
                 
-                // Calculate unique visitors (based on distinct IP addresses or sessions)
-                let uniqueVisitorsQuery = supabaseClient
-                    .from('page_views')
-                    .select('session_id', { count: 'exact' })
-                    .eq('owner_id', user.id);
-                    
-                if (listId) {
-                    uniqueVisitorsQuery = uniqueVisitorsQuery.eq('list_id', listId);
-                }
-                
-                // Get all page views to calculate unique sessions
+                // Get all page views to calculate unique sessions (filtered by current collection)
                 const { data: allPageViews, error: uniqueError } = await supabaseClient
                     .from('page_views')
                     .select('session_id')
-                    .eq('owner_id', user.id);
+                    .eq('owner_id', user.id)
+                    .eq('list_id', listId); // Always filter by collection
                     
                 let uniqueVisitors = 0;
                 if (allPageViews && !uniqueError) {
