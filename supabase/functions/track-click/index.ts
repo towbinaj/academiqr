@@ -110,7 +110,34 @@ serve(async (req) => {
 
     const destinationUrl = link.url;
     const listId = link.list_id;
-    const ownerId = link.link_lists.owner_id;
+    
+    // Extract owner_id from the joined link_lists
+    // Handle both object and array formats from Supabase join
+    let ownerId: string | null = null;
+    if (link.link_lists) {
+      if (Array.isArray(link.link_lists) && link.link_lists.length > 0) {
+        ownerId = link.link_lists[0].owner_id;
+      } else if (typeof link.link_lists === 'object' && 'owner_id' in link.link_lists) {
+        ownerId = (link.link_lists as any).owner_id;
+      }
+    }
+    
+    // Log for debugging
+    console.log('Link details:', {
+      linkId,
+      destinationUrl,
+      listId,
+      ownerId,
+      link_lists: link.link_lists
+    });
+    
+    if (!ownerId) {
+      console.error('Could not determine owner_id from link:', link);
+      return new Response(
+        JSON.stringify({ error: 'Could not determine link owner' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Parse visitor information
     const userAgent = req.headers.get('user-agent') || 'Unknown';
@@ -127,26 +154,39 @@ serve(async (req) => {
     const responseTime = Date.now() - startTime;
 
     // Track the click (fire and forget - don't wait for it)
+    const clickData = {
+      link_id: linkId,
+      list_id: listId,
+      owner_id: ownerId,
+      ip_address: ipAddress,
+      user_agent: userAgent,
+      device_type: deviceType,
+      browser: browser,
+      os: os,
+      referrer: referrer,
+      utm_source: utmParams.utm_source,
+      utm_medium: utmParams.utm_medium,
+      utm_campaign: utmParams.utm_campaign,
+      response_time: responseTime,
+    };
+    
+    console.log('Inserting click data:', clickData);
+    
     supabase
       .from('link_clicks')
-      .insert({
-        link_id: linkId,
-        list_id: listId,
-        owner_id: ownerId,
-        ip_address: ipAddress,
-        user_agent: userAgent,
-        device_type: deviceType,
-        browser: browser,
-        os: os,
-        referrer: referrer,
-        utm_source: utmParams.utm_source,
-        utm_medium: utmParams.utm_medium,
-        utm_campaign: utmParams.utm_campaign,
-        response_time: responseTime,
-      })
-      .then(({ error }) => {
-        if (error) console.error('Error tracking click:', error);
-        else console.log('Click tracked successfully for link:', linkId);
+      .insert(clickData)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error('Error tracking click:', error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
+        } else {
+          console.log('Click tracked successfully:', {
+            linkId,
+            ownerId,
+            listId,
+            insertedId: data
+          });
+        }
       });
 
     // Redirect to destination URL immediately (don't wait for tracking)
