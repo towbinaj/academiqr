@@ -6533,6 +6533,13 @@
         }
         
         function switchTab(tabName) {
+            // Auto-load analytics when tab is opened
+            if (tabName === 'analytics') {
+                // Small delay to ensure tab is visible
+                setTimeout(() => {
+                    refreshAnalytics();
+                }, 100);
+            }
             // Update tab buttons
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
@@ -9927,8 +9934,104 @@
             openMediaLibrary();
         }
         
-        function refreshAnalytics() {
-            showMessage('Analytics coming soon!');
+        async function refreshAnalytics() {
+            try {
+                // Get current user
+                const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+                
+                if (userError || !user) {
+                    console.error('❌ Error getting user:', userError);
+                    showMessage('Please log in to view analytics');
+                    return;
+                }
+                
+                console.log('✅ Analytics - Current logged-in user:', {
+                    id: user.id,
+                    email: user.email
+                });
+                console.log('📋 User ID to look for in database:', user.id);
+                
+                // Fetch analytics data
+                const listId = getCurrentListId(); // Get the current list ID if available
+                
+                // Get total clicks
+                let clicksQuery = supabaseClient
+                    .from('link_clicks')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('owner_id', user.id);
+                    
+                if (listId) {
+                    clicksQuery = clicksQuery.eq('list_id', listId);
+                }
+                
+                const { count: totalClicks, error: clicksError } = await clicksQuery;
+                
+                if (clicksError) {
+                    console.error('❌ Error fetching clicks:', clicksError);
+                    showMessage('Error loading analytics: ' + clicksError.message);
+                    return;
+                }
+                
+                // Get clicks by link
+                let linksQuery = supabaseClient
+                    .from('link_clicks')
+                    .select(`
+                        link_id,
+                        link_items:link_id (title, url)
+                    `)
+                    .eq('owner_id', user.id)
+                    .order('clicked_at', { ascending: false });
+                    
+                if (listId) {
+                    linksQuery = linksQuery.eq('list_id', listId);
+                }
+                
+                const { data: clicksData, error: linksError } = await linksQuery;
+                
+                if (linksError) {
+                    console.error('❌ Error fetching clicks by link:', linksError);
+                }
+                
+                // Get page views
+                let viewsQuery = supabaseClient
+                    .from('page_views')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('owner_id', user.id);
+                    
+                if (listId) {
+                    viewsQuery = viewsQuery.eq('list_id', listId);
+                }
+                
+                const { count: totalViews, error: viewsError } = await viewsQuery;
+                
+                // Update UI
+                document.getElementById('total-clicks').textContent = totalClicks || 0;
+                document.getElementById('total-views').textContent = totalViews || 0;
+                document.getElementById('unique-visitors').textContent = '0'; // TODO: Calculate unique visitors
+                
+                console.log('📊 Analytics data loaded:', {
+                    totalClicks: totalClicks || 0,
+                    totalViews: totalViews || 0,
+                    clicksByLink: clicksData?.length || 0
+                });
+                
+                if (totalClicks === 0) {
+                    showMessage('No analytics data yet. Start sharing your links!');
+                } else {
+                    showMessage('Analytics updated!');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error loading analytics:', error);
+                showMessage('Error loading analytics: ' + error.message);
+            }
+        }
+        
+        function getCurrentListId() {
+            // Try to get current list ID from the page context
+            // This might be stored in a variable or data attribute
+            // For now, return null to get all analytics
+            return null;
         }
         
         function togglePreviewTheme() {
