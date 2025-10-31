@@ -4440,6 +4440,12 @@
                                 <div class="chart-container">
                                     <canvas id="analytics-chart" width="400" height="200"></canvas>
                                 </div>
+                                <div class="links-breakdown" style="margin-top: 2rem;">
+                                    <h4 style="margin-bottom: 1rem; font-size: 1.125rem; font-weight: 600;">Clicks by Link</h4>
+                                    <div id="links-breakdown-list" style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                        <p style="color: #6b7280; text-align: center; padding: 2rem;">Loading link data...</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -10004,15 +10010,64 @@
                 
                 const { count: totalViews, error: viewsError } = await viewsQuery;
                 
+                // Calculate unique visitors (based on distinct IP addresses or sessions)
+                let uniqueVisitorsQuery = supabaseClient
+                    .from('page_views')
+                    .select('session_id', { count: 'exact' })
+                    .eq('owner_id', user.id);
+                    
+                if (listId) {
+                    uniqueVisitorsQuery = uniqueVisitorsQuery.eq('list_id', listId);
+                }
+                
+                // Get all page views to calculate unique sessions
+                const { data: allPageViews, error: uniqueError } = await supabaseClient
+                    .from('page_views')
+                    .select('session_id')
+                    .eq('owner_id', user.id);
+                    
+                let uniqueVisitors = 0;
+                if (allPageViews && !uniqueError) {
+                    // Count unique session IDs
+                    const uniqueSessions = new Set(allPageViews.map(pv => pv.session_id).filter(id => id));
+                    uniqueVisitors = uniqueSessions.size;
+                }
+                
+                // Process clicks by link
+                let linksBreakdown = {};
+                if (clicksData && clicksData.length > 0) {
+                    clicksData.forEach(click => {
+                        const linkId = click.link_id;
+                        const linkTitle = click.link_items?.title || 'Unknown Link';
+                        const linkUrl = click.link_items?.url || '';
+                        
+                        if (!linksBreakdown[linkId]) {
+                            linksBreakdown[linkId] = {
+                                title: linkTitle,
+                                url: linkUrl,
+                                clicks: 0
+                            };
+                        }
+                        linksBreakdown[linkId].clicks++;
+                    });
+                }
+                
+                // Sort by clicks (highest first)
+                const linksBreakdownArray = Object.values(linksBreakdown).sort((a, b) => b.clicks - a.clicks);
+                
+                // Render links breakdown
+                renderLinksBreakdown(linksBreakdownArray);
+                
                 // Update UI
                 document.getElementById('total-clicks').textContent = totalClicks || 0;
                 document.getElementById('total-views').textContent = totalViews || 0;
-                document.getElementById('unique-visitors').textContent = '0'; // TODO: Calculate unique visitors
+                document.getElementById('unique-visitors').textContent = uniqueVisitors || 0;
                 
                 console.log('📊 Analytics data loaded:', {
                     totalClicks: totalClicks || 0,
                     totalViews: totalViews || 0,
-                    clicksByLink: clicksData?.length || 0
+                    uniqueVisitors: uniqueVisitors || 0,
+                    linksBreakdown: linksBreakdownArray.length
                 });
                 
                 if (totalClicks === 0) {
@@ -10031,7 +10086,57 @@
             // Try to get current list ID from the page context
             // This might be stored in a variable or data attribute
             // For now, return null to get all analytics
-            return null;
+            return currentList ? currentList.id : null;
+        }
+        
+        function renderLinksBreakdown(linksArray) {
+            const container = document.getElementById('links-breakdown-list');
+            
+            if (!linksArray || linksArray.length === 0) {
+                container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 2rem;">No link clicks yet. Start sharing your links!</p>';
+                return;
+            }
+            
+            // Find max clicks for percentage calculation
+            const maxClicks = Math.max(...linksArray.map(link => link.clicks));
+            
+            let html = '<div style="display: flex; flex-direction: column; gap: 1rem;">';
+            
+            linksArray.forEach((link, index) => {
+                const percentage = maxClicks > 0 ? (link.clicks / maxClicks) * 100 : 0;
+                const truncatedUrl = link.url.length > 50 ? link.url.substring(0, 50) + '...' : link.url;
+                
+                html += `
+                    <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="font-weight: 600; color: #111827; margin-bottom: 0.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                    ${escapeHtml(link.title)}
+                                </div>
+                                <div style="font-size: 0.875rem; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(link.url)}">
+                                    ${escapeHtml(truncatedUrl)}
+                                </div>
+                            </div>
+                            <div style="margin-left: 1rem; font-weight: 600; color: #111827; font-size: 1.125rem;">
+                                ${link.clicks}
+                            </div>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
+                            <div style="height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); width: ${percentage}%; transition: width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
         
         function togglePreviewTheme() {

@@ -355,6 +355,9 @@
 
                 const collection = collections[0];
 
+                // Track page view
+                trackPageView(collection.id, collection.owner_id);
+
                 // Load links
                 const { data: links, error: linksError } = await supabase
                     .from('link_items')
@@ -818,6 +821,75 @@
             });
         }
 
+
+        // Track page view function
+        async function trackPageView(listId, ownerId) {
+            try {
+                // Get visitor information
+                const userAgent = navigator.userAgent || 'Unknown';
+                const referrer = document.referrer || null;
+                
+                // Parse device type
+                const isMobile = /Mobile|Android|iPhone|iPad|iPod/i.test(userAgent);
+                const isTablet = /iPad|Android(?!.*Mobile)/i.test(userAgent);
+                let deviceType = 'desktop';
+                if (isMobile && !isTablet) deviceType = 'mobile';
+                if (isTablet) deviceType = 'tablet';
+                
+                // Parse browser
+                let browser = 'Unknown';
+                if (userAgent.includes('Chrome')) browser = 'Chrome';
+                else if (userAgent.includes('Safari')) browser = 'Safari';
+                else if (userAgent.includes('Firefox')) browser = 'Firefox';
+                else if (userAgent.includes('Edge')) browser = 'Edge';
+                
+                // Parse OS
+                let os = 'Unknown';
+                if (userAgent.includes('Windows')) os = 'Windows';
+                else if (userAgent.includes('Mac OS')) os = 'macOS';
+                else if (userAgent.includes('Linux')) os = 'Linux';
+                else if (userAgent.includes('Android')) os = 'Android';
+                else if (userAgent.includes('iOS')) os = 'iOS';
+                
+                // Get UTM parameters from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const utmSource = urlParams.get('utm_source');
+                const utmMedium = urlParams.get('utm_medium');
+                const utmCampaign = urlParams.get('utm_campaign');
+                
+                // Generate session ID (simple implementation)
+                let sessionId = sessionStorage.getItem('page_session_id');
+                if (!sessionId) {
+                    sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    sessionStorage.setItem('page_session_id', sessionId);
+                }
+                
+                // Insert page view
+                const { error } = await supabase
+                    .from('page_views')
+                    .insert({
+                        list_id: listId,
+                        owner_id: ownerId,
+                        user_agent: userAgent,
+                        device_type: deviceType,
+                        browser: browser,
+                        os: os,
+                        referrer: referrer,
+                        utm_source: utmSource,
+                        utm_medium: utmMedium,
+                        utm_campaign: utmCampaign,
+                        session_id: sessionId
+                    });
+                
+                if (error) {
+                    console.error('Error tracking page view:', error);
+                } else {
+                    console.log('Page view tracked successfully');
+                }
+            } catch (error) {
+                console.error('Error in trackPageView:', error);
+            }
+        }
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
