@@ -25,27 +25,26 @@ Before starting, you'll need:
 
 ---
 
-## Step 2: Install Supabase CLI
+## Step 2: Verify You Can Use Supabase CLI
 
-Open PowerShell (or Command Prompt) and run:
+**IMPORTANT:** Supabase CLI cannot be installed globally with npm. Instead, we'll use `npx` to run it.
 
+**Verify you can use it:**
 ```bash
-npm install -g supabase
+npx supabase --version
 ```
 
-**Wait for installation to complete** - this may take 1-2 minutes.
+You should see a version number like `2.x.x`
 
-**Verify installation:**
-```bash
-supabase --version
-```
-
-You should see a version number like `v1.x.x`
+**What is `npx`?**
+- `npx` comes with Node.js automatically
+- It runs packages without installing them globally
+- We'll use `npx supabase` instead of just `supabase`
 
 **If you get an error:**
 - Make sure Node.js is installed: `node --version`
-- Try running PowerShell as Administrator
-- Restart your terminal after installation
+- If Node.js is installed, `npx` should work automatically
+- No need to install anything - `npx` handles it!
 
 ---
 
@@ -103,8 +102,10 @@ You should see `index.ts` in the directory.
 Authenticate with Supabase:
 
 ```bash
-supabase login
+npx supabase login
 ```
+
+**Note:** We use `npx supabase` instead of just `supabase` since we're not installing it globally.
 
 This will:
 1. Open your web browser
@@ -129,7 +130,7 @@ This will:
 Link your local project to your Supabase project:
 
 ```bash
-supabase link --project-ref YOUR_PROJECT_REF
+npx supabase link --project-ref YOUR_PROJECT_REF
 ```
 
 Replace `YOUR_PROJECT_REF` with your Reference ID from Step 1.
@@ -155,7 +156,7 @@ supabase link --project-ref natzpfyxpuycsuuzbqrd
 Now deploy your edge function:
 
 ```bash
-supabase functions deploy track-click --project-ref YOUR_PROJECT_REF
+npx supabase functions deploy track-click --project-ref YOUR_PROJECT_REF
 ```
 
 Replace `YOUR_PROJECT_REF` with your Reference ID.
@@ -200,7 +201,7 @@ Check that your function is deployed:
 
 **Option 1: List all functions**
 ```bash
-supabase functions list --project-ref YOUR_PROJECT_REF
+npx supabase functions list --project-ref YOUR_PROJECT_REF
 ```
 
 You should see `track-click` in the list.
@@ -336,18 +337,18 @@ After setting up routing:
 **Try:**
 ```bash
 # Logout and login again
-supabase logout
-supabase login
+npx supabase logout
+npx supabase login
 
 # Try deploying again
-supabase functions deploy track-click --project-ref YOUR_PROJECT_REF
+npx supabase functions deploy track-click --project-ref YOUR_PROJECT_REF
 ```
 
 ### Function deployed but returns 404
 
 **Check:**
 - Is the function name correct? Must be `track-click`
-- Check function exists: `supabase functions list`
+- Check function exists: `npx supabase functions list`
 
 **Try accessing directly:**
 ```
@@ -379,7 +380,7 @@ linkElement.href = `https://YOUR_PROJECT.supabase.co/functions/v1/track-click/${
 
 **View logs:**
 ```bash
-supabase functions logs track-click --project-ref YOUR_PROJECT_REF
+npx supabase functions logs track-click --project-ref YOUR_PROJECT_REF
 ```
 
 ### Getting CORS errors
@@ -393,27 +394,29 @@ The function already includes CORS headers. If you still get errors:
 
 ## Quick Command Reference
 
+**IMPORTANT:** Use `npx supabase` instead of installing globally.
+
 ```bash
-# Install CLI
-npm install -g supabase
+# Verify CLI works (no installation needed!)
+npx supabase --version
 
 # Login
-supabase login
+npx supabase login
 
 # Link project
-supabase link --project-ref YOUR_PROJECT_REF
+npx supabase link --project-ref YOUR_PROJECT_REF
 
 # Deploy function
-supabase functions deploy track-click --project-ref YOUR_PROJECT_REF
+npx supabase functions deploy track-click --project-ref YOUR_PROJECT_REF
 
 # List functions
-supabase functions list --project-ref YOUR_PROJECT_REF
+npx supabase functions list --project-ref YOUR_PROJECT_REF
 
 # View logs
-supabase functions logs track-click --project-ref YOUR_PROJECT_REF
+npx supabase functions logs track-click --project-ref YOUR_PROJECT_REF
 
 # Delete function (if needed)
-supabase functions delete track-click --project-ref YOUR_PROJECT_REF
+npx supabase functions delete track-click --project-ref YOUR_PROJECT_REF
 ```
 
 ---
@@ -429,7 +432,7 @@ After successfully deploying:
 
 **Remember:** Every time you update the function code, redeploy:
 ```bash
-supabase functions deploy track-click --project-ref YOUR_PROJECT_REF
+npx supabase functions deploy track-click --project-ref YOUR_PROJECT_REF
 ```
 
 ---

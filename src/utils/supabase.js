@@ -16,6 +16,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
+// Export supabase client for use in components
+export { supabase };
+
 export async function checkConnection() {
   try {
     const { data, error } = await supabase.from('link_lists').select('id').limit(1)
