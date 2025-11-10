@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Connection Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <div id="results"></div>
+    <script>
+        const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
+        
+        const results = document.getElementById('results');
+        
+        async function testConnection() {
+            results.innerHTML = '<p>Testing connection...</p>';
+            
+            try {
+                // Create client
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                results.innerHTML += '<p>✅ Supabase client created</p>';
+                
+                // Test 1: Check if we can reach the API
+                results.innerHTML += '<p>Testing API connection...</p>';
+                const { data: testData, error: testError } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .limit(1);
+                
+                if (testError) {
+                    results.innerHTML += `<p>❌ API Error: ${testError.message}</p>`;
+                    results.innerHTML += `<p>Error Code: ${testError.code || 'N/A'}</p>`;
+                    results.innerHTML += `<p>Error Details: ${JSON.stringify(testError, null, 2)}</p>`;
+                } else {
+                    results.innerHTML += '<p>✅ API connection successful!</p>';
+                }
+                
+                // Test 2: Check auth
+                results.innerHTML += '<p>Testing auth...</p>';
+                const { data: { session }, error: authError } = await supabase.auth.getSession();
+                
+                if (authError) {
+                    results.innerHTML += `<p>❌ Auth Error: ${authError.message}</p>`;
+                } else {
+                    results.innerHTML += `<p>✅ Auth check successful (Session: ${session ? 'Active' : 'None'})</p>`;
+                }
+                
+                // Test 3: Check storage
+                results.innerHTML += '<p>Testing storage...</p>';
+                try {
+                    const { data: buckets, error: storageError } = await supabase.storage.listBuckets();
+                    if (storageError) {
+                        results.innerHTML += `<p>⚠️ Storage Error: ${storageError.message}</p>`;
+                    } else {
+                        results.innerHTML += `<p>✅ Storage accessible (${buckets?.length || 0} buckets)</p>`;
+                    }
+                } catch (e) {
+                    results.innerHTML += `<p>⚠️ Storage test failed: ${e.message}</p>`;
+                }
+                
+            } catch (error) {
+                results.innerHTML += `<p>❌ Connection failed: ${error.message}</p>`;
+                results.innerHTML += `<p>Stack: ${error.stack}</p>`;
+            }
+        }
+        
+        // Run test when page loads
+        window.addEventListener('load', () => {
+            setTimeout(testConnection, 1000);
+        });
+    </script>
+</body>
+</html>
+

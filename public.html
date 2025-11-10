@@ -74,7 +74,7 @@
         .preview-header-content {
             padding: 20px;
             text-align: left;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid transparent;
             background: transparent;
             display: flex;
             flex-direction: column;
@@ -460,6 +460,10 @@
                     name = profile.handle;
                 }
                 displayName.textContent = name;
+                // Apply dynamic font size based on text length
+                if (typeof applyDynamicDisplayNameSize === 'function') {
+                    applyDynamicDisplayNameSize(displayName);
+                }
             }
 
             // Social links
@@ -553,6 +557,10 @@
                 const displayName = document.getElementById('preview-name');
                 if (displayName) {
                     displayName.textContent = presentationData.displayName;
+                    // Apply dynamic font size based on text length
+                    if (typeof applyDynamicDisplayNameSize === 'function') {
+                        applyDynamicDisplayNameSize(displayName);
+                    }
                 }
             }
             
@@ -591,7 +599,11 @@
                 const dateField = document.getElementById('preview-info-date');
                 const dateValue = document.getElementById('preview-date');
                 if (dateField && dateValue) {
-                    dateValue.textContent = presentationData.date;
+                    // Format date to match live preview: "Month Day, Year" (e.g., "January 15, 2024")
+                    const date = new Date(presentationData.date);
+                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                    const formattedDate = date.toLocaleDateString('en-US', options);
+                    dateValue.textContent = formattedDate;
                     dateField.style.display = 'block';
                 }
             }
@@ -608,46 +620,69 @@
             
             // Apply phone mockup border styling (full screen)
             const phoneMockup = document.querySelector('.phone-mockup');
-            if (phoneMockup) {
+            const phoneScreen = document.querySelector('.phone-screen');
+            
+            if (phoneMockup && phoneScreen) {
                 // Apply border styling to phone-mockup
                 console.log('Phone mockup element:', phoneMockup);
                 console.log('Border enabled:', theme.gradientBorderEnabled);
                 console.log('Border type:', theme.borderType);
+                console.log('Border style:', theme.borderStyle);
                 console.log('Border color:', theme.borderColor);
                 
-                // Check if border should be enabled (fallback logic)
-                const borderEnabled = theme.gradientBorderEnabled !== false && (theme.borderType || theme.borderColor || theme.borderGradientText);
-                console.log('Border enabled (with fallback):', borderEnabled);
-                console.log('Border gradient text:', theme.borderGradientText);
+                // Check gradientBorderEnabled from theme (default to true if not set)
+                const gradientBorderEnabled = theme.gradientBorderEnabled !== undefined 
+                    ? theme.gradientBorderEnabled 
+                    : true;
                 
-                if (borderEnabled) {
-                    const borderWidth = theme.borderWidth && theme.borderWidth !== '0px' ? theme.borderWidth : '8px';
-                    console.log('Border width:', borderWidth);
-                    
-                    if (theme.borderType === 'gradient' || theme.borderGradientText) {
-                        // Gradient border
-                        const gradientBg = theme.borderGradientText || theme.gradientText || 'linear-gradient(45deg, #8b5cf6 0%, #06b6d4 100%)';
-                        console.log('Applying gradient border:', gradientBg);
-                        phoneMockup.style.setProperty('background', gradientBg, 'important');
-                    } else if ((theme.borderType === 'solid' || theme.borderColor) && theme.borderColor) {
-                        // Solid border
-                        console.log('Applying solid border:', theme.borderColor);
-                        phoneMockup.style.setProperty('background', theme.borderColor, 'important');
+                // Determine border style (default to 'fill' if not set)
+                const borderStyle = theme.borderStyle || 'fill';
+                
+                if (gradientBorderEnabled) {
+                    if (borderStyle === 'thin') {
+                        // Thin border style: use inset box-shadow (doesn't affect layout, draws inside)
+                        phoneMockup.style.setProperty('border', 'none', 'important');
+                        phoneMockup.style.setProperty('border-image', 'none', 'important');
+                        phoneMockup.style.setProperty('outline', 'none', 'important');
+                        phoneScreen.style.setProperty('border', 'none', 'important');
+                        phoneScreen.style.setProperty('border-image', 'none', 'important');
+                        
+                        if (theme.borderType === 'gradient') {
+                            // Gradient borders: use padding + gradient background on mockup
+                            phoneMockup.style.setProperty('background', theme.borderGradientText || 'linear-gradient(45deg, #8b5cf6 0%, #06b6d4 100%)', 'important');
+                            phoneMockup.style.setProperty('padding', '8px', 'important');
+                            phoneMockup.style.setProperty('box-shadow', '0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
+                        } else if (theme.borderType === 'solid') {
+                            // Solid color border - use box-shadow for the border effect
+                            phoneMockup.style.setProperty('background', 'transparent', 'important');
+                            const borderColor = theme.borderColor || '#1f2937';
+                            phoneMockup.style.setProperty('box-shadow', `inset 0 0 0 8px ${borderColor}, 0 20px 40px rgba(0, 0, 0, 0.3)`, 'important');
+                        }
+                    } else {
+                        // Frame fill style: border fills the phone mockup background
+                        phoneMockup.style.setProperty('border', 'none', 'important');
+                        phoneMockup.style.setProperty('border-image', 'none', 'important');
+                        phoneMockup.style.setProperty('outline', 'none', 'important');
+                        phoneMockup.style.setProperty('box-shadow', '0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
+                        phoneMockup.style.setProperty('padding', '8px', 'important');
+                        phoneScreen.style.setProperty('border', 'none', 'important');
+                        phoneScreen.style.setProperty('border-image', 'none', 'important');
+                        
+                        if (theme.borderType === 'gradient') {
+                            phoneMockup.style.setProperty('background', theme.borderGradientText || 'linear-gradient(45deg, #8b5cf6 0%, #06b6d4 100%)', 'important');
+                        } else if (theme.borderType === 'solid') {
+                            phoneMockup.style.setProperty('background', theme.borderColor || '#1f2937', 'important');
+                        }
                     }
-                    
-                    phoneMockup.style.setProperty('padding', borderWidth, 'important');
-                    phoneMockup.style.setProperty('box-shadow', 'none', 'important');
-                    console.log('Applied border padding:', borderWidth);
                 } else {
-                    console.log('Border disabled, removing border');
+                    // Border disabled
                     phoneMockup.style.setProperty('background', 'transparent', 'important');
-                    phoneMockup.style.setProperty('box-shadow', 'none', 'important');
+                    phoneMockup.style.setProperty('box-shadow', 'inset 0 0 0 8px #1f2937, 0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
                     phoneMockup.style.setProperty('padding', '0', 'important');
                 }
             }
             
             // Apply background
-            const phoneScreen = document.querySelector('.phone-screen');
             if (phoneScreen) {
                 console.log('Phone screen element:', phoneScreen);
                 console.log('Background type:', theme.backgroundType);
@@ -714,7 +749,7 @@
                 }
             }
             
-            // Apply display name color
+            // Apply display name color and dynamic font size
             const displayName = document.querySelector('.preview-name-section h4');
             console.log('Display name element:', displayName);
             console.log('Profile text color:', theme.profileTextColor);
@@ -724,6 +759,15 @@
             if (displayName && profileColor) {
                 displayName.style.setProperty('color', profileColor, 'important');
                 console.log('Applied profile text color:', profileColor);
+            }
+            // Apply dynamic font size based on text length
+            if (displayName && typeof applyDynamicDisplayNameSize === 'function') {
+                try {
+                    // Pass theme to the function so it can get the max font size
+                    applyDynamicDisplayNameSize(displayName, theme);
+                } catch (e) {
+                    console.error('Error applying dynamic font size:', e);
+                }
             }
             
             // Apply presentation text colors
@@ -821,6 +865,86 @@
             });
         }
 
+
+        // Calculate dynamic font size for display name based on text length
+        // Minimum size is 1.125rem (same as presentation information font size in public.html)
+        function calculateDisplayNameFontSize(text, maxSize = '1.75rem', minSize = '1.125rem') {
+            if (!text || text.trim().length === 0) {
+                return maxSize;
+            }
+            
+            const textLength = text.length;
+            const maxSizeValue = parseFloat(maxSize); // Extract numeric value
+            const maxSizeUnit = maxSize.replace(/[0-9.]/g, ''); // Extract unit (rem, px, etc.)
+            const minSizeValue = parseFloat(minSize); // Extract numeric value for minimum
+            const minSizeUnit = minSize.replace(/[0-9.]/g, ''); // Extract unit for minimum
+            
+            // Ensure both sizes use the same unit (convert minSize to match maxSize unit if needed)
+            let minSizeConverted = minSizeValue;
+            if (minSizeUnit !== maxSizeUnit) {
+                // If units don't match, assume both are rem (default)
+                minSizeConverted = minSizeValue;
+            }
+            
+            // Define breakpoints for font size scaling
+            // Short names (0-15 chars): use max size
+            // Medium names (16-25 chars): scale down gradually
+            // Long names (26+ chars): use minimum size (presentation info font size)
+            let fontSize;
+            
+            if (textLength <= 15) {
+                // Short names: use maximum size
+                fontSize = maxSizeValue;
+            } else if (textLength <= 25) {
+                // Medium names: scale down proportionally
+                // Formula: maxSize - ((textLength - 15) / 10) * (maxSize - minSize)
+                const scaleFactor = (textLength - 15) / 10; // 0 to 1 for 16-25 chars
+                fontSize = maxSizeValue - (scaleFactor * (maxSizeValue - minSizeConverted));
+            } else {
+                // Long names: use minimum size (presentation info font size)
+                fontSize = minSizeConverted;
+            }
+            
+            // Ensure fontSize never goes below minimum
+            if (fontSize < minSizeConverted) {
+                fontSize = minSizeConverted;
+            }
+            
+            // Round to 2 decimal places and add unit
+            return Math.round(fontSize * 100) / 100 + maxSizeUnit;
+        }
+
+        // Apply dynamic font size to display name element
+        // Accepts optional theme parameter to get max font size
+        function applyDynamicDisplayNameSize(nameElement, themeParam) {
+            if (!nameElement) return;
+            
+            try {
+                const nameText = nameElement.textContent || '';
+                // Get the max size from theme parameter, global theme, or use default
+                let maxSize = '1.75rem';
+                try {
+                    // First try the passed theme parameter
+                    if (themeParam && themeParam.textFontSize) {
+                        maxSize = themeParam.textFontSize;
+                    } 
+                    // Then try global theme variable
+                    else if (typeof theme !== 'undefined' && theme && theme.textFontSize) {
+                        maxSize = theme.textFontSize;
+                    }
+                } catch (e) {
+                    // Theme not available yet, use default
+                }
+                // Minimum size is 1.125rem (presentation information font size in public.html)
+                const minSize = '1.125rem';
+                const dynamicSize = calculateDisplayNameFontSize(nameText, maxSize, minSize);
+                nameElement.style.setProperty('font-size', dynamicSize, 'important');
+            } catch (error) {
+                console.error('Error applying dynamic display name size:', error);
+                // Fallback to default size if there's an error
+                nameElement.style.setProperty('font-size', '1.75rem', 'important');
+            }
+        }
 
         // Track page view function
         async function trackPageView(listId, ownerId) {

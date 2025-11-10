@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Connection Test</title>
+</head>
+<body>
+    <h1>Network Connection Test</h1>
+    <div id="results"></div>
+    <script>
+        const results = document.getElementById('results');
+        
+        async function testConnection() {
+            results.innerHTML = '<p>Testing network connection to Supabase...</p>';
+            
+            const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
+            
+            // Test 1: Direct fetch to Supabase
+            try {
+                results.innerHTML += '<p>Test 1: Testing direct fetch to Supabase API...</p>';
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                    method: 'OPTIONS', // Preflight request
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'apikey,authorization'
+                    }
+                });
+                
+                results.innerHTML += `<p>Status: ${response.status}</p>`;
+                results.innerHTML += `<p>Headers: ${JSON.stringify([...response.headers.entries()], null, 2)}</p>`;
+                
+                if (response.redirected) {
+                    results.innerHTML += `<p>⚠️ WARNING: Request was redirected to: ${response.url}</p>`;
+                    results.innerHTML += `<p>❌ This is the problem! The request is being redirected, which breaks CORS.</p>`;
+                } else {
+                    results.innerHTML += '<p>✅ No redirect detected</p>';
+                }
+            } catch (error) {
+                results.innerHTML += `<p>❌ Error: ${error.message}</p>`;
+            }
+            
+            // Test 2: Check if we can reach Supabase at all
+            try {
+                results.innerHTML += '<p><br>Test 2: Testing basic connectivity...</p>';
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU'
+                    }
+                });
+                results.innerHTML += `<p>Status: ${response.status}</p>`;
+                if (response.redirected) {
+                    results.innerHTML += `<p>⚠️ Redirected to: ${response.url}</p>`;
+                }
+            } catch (error) {
+                results.innerHTML += `<p>❌ Connectivity error: ${error.message}</p>`;
+            }
+            
+            // Test 3: Check current location
+            results.innerHTML += `<p><br>Test 3: Current page origin: ${window.location.origin}</p>`;
+            results.innerHTML += `<p>Target Supabase URL: ${SUPABASE_URL}</p>`;
+        }
+        
+        window.addEventListener('load', testConnection);
+    </script>
+</body>
+</html>
+

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AcademiQR v0.4.1 - Link-in-Bio Builder</title>
+    <title>AcademiQR v0.4.2 - Link-in-Bio Builder</title>
     <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/sign/assets/AcademiQR%20logo_small.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wMDIxMjAxMi1mNWMwLTQ1ODMtOGIyZi02ZmE0NGI1NjY1YTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvQWNhZGVtaVFSIGxvZ29fc21hbGwucG5nIiwiaWF0IjoxNzYxNjcyMDM1LCJleHAiOjMzMjY2MTM2MDM1fQ.Aj53elwW_8v65gQ4qtYme2sJGG8TLuFOYvAmUxw0sds">
     <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/sign/assets/AcademiQR%20logo_small.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wMDIxMjAxMi1mNWMwLTQ1ODMtOGIyZi02ZmE0NGI1NjY1YTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvQWNhZGVtaVFSIGxvZ29fc21hbGwucG5nIiwiaWF0IjoxNzYxNjcyMDM1LCJleHAiOjMzMjY2MTM2MDM1fQ.Aj53elwW_8v65gQ4qtYme2sJGG8TLuFOYvAmUxw0sds">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1315,7 +1315,7 @@
         .preview-header-content {
             padding: 20px;
             text-align: left;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid transparent;
             background: transparent;
             display: flex;
             flex-direction: column;
@@ -1687,15 +1687,16 @@
         }
 
         .preview-link {
-            padding: 8px 12px;
+            padding: 12px 16px 12px 20px;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             text-decoration: none;
             color: #1e293b;
-            font-size: 1rem;
+            font-size: 1.125rem;
             transition: all 0.2s;
-            min-height: 48px;
+            min-height: 64px;
+            height: 64px;
             display: flex;
             align-items: center;
         }
@@ -3542,7 +3543,7 @@
                 <div class="login-logo-container" style="text-align: center; margin-bottom: 20px;">
                     <img id="login-logo" alt="AcademiQR" style="height: 120px; width: auto; max-height: 120px; margin: 0 auto; display: block;" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <div id="login-logo-fallback" style="display: block;">
-                        <h1 style="font-size: 2rem; margin-bottom: 10px; color: #1f2937;">AcademiQR <span style="font-size: 0.6em; color: #6b7280; font-weight: normal;">v0.4.1</span></h1>
+                        <h1 style="font-size: 2rem; margin-bottom: 10px; color: #1f2937;">AcademiQR <span style="font-size: 0.6em; color: #6b7280; font-weight: normal;">v0.4.2</span></h1>
                     </div>
                 </div>
                 <p class="subtitle">Amplify your impact</p>
@@ -5068,7 +5069,16 @@
                 const previewNameElement = document.getElementById('preview-name');
                 
                 if (displayNameElement) displayNameElement.value = displayName;
-                if (previewNameElement) previewNameElement.textContent = displayName;
+                if (previewNameElement) {
+                    previewNameElement.textContent = displayName;
+                    // Apply dynamic font size based on text length
+                    applyDynamicDisplayNameSize(previewNameElement);
+                }
+                
+                // Reapply theme to ensure display name color is correct
+                if (currentList && currentList.theme) {
+                    applyTheme();
+                }
                 
                 // Load all user collections from database
                 await loadUserCollections();
@@ -5304,7 +5314,11 @@
             const previewNameElement = document.getElementById('preview-name');
             
             if (displayNameElement) displayNameElement.value = displayName;
-            if (previewNameElement) previewNameElement.textContent = displayName;
+            if (previewNameElement) {
+                previewNameElement.textContent = displayName;
+                // Apply dynamic font size based on text length
+                applyDynamicDisplayNameSize(previewNameElement);
+            }
             // Note: preview-bio was removed, so we skip it
             
             const localCollection = {
@@ -5318,6 +5332,11 @@
             collections = [localCollection];
             currentList = localCollection;
             links = [];
+            
+            // Reapply theme to ensure display name color is correct
+            if (currentList && currentList.theme) {
+                applyTheme();
+            }
             
             document.getElementById('project-slug').value = localCollection.slug;
             
@@ -5581,8 +5600,12 @@
                 console.log('Theme stringified:', JSON.stringify(collection.theme, null, 2));
                 // Apply theme to the preview
                 applyThemeToPreview(collection.theme);
+                // Update currentTheme to match collection theme
+                currentTheme = { ...currentTheme, ...collection.theme };
                 // Load theme into UI controls
                 loadThemeIntoUI(collection.theme);
+                // Also update form from theme to ensure all settings are loaded
+                updateFormFromTheme();
             } else {
                 console.log('No theme data found in collection');
             }
@@ -7967,7 +7990,10 @@
                 borderTypeRadios.forEach(radio => {
                     if (radio.value === theme.borderType) {
                         radio.checked = true;
+                        // Trigger change event to update UI state
                         radio.dispatchEvent(new Event('change'));
+                        // Also call updateBorderType to ensure theme is updated
+                        updateBorderType();
                         console.log('🎨 Set border type radio:', radio.value);
                     }
                 });
@@ -7980,7 +8006,10 @@
                 borderStyleRadios.forEach(radio => {
                     if (radio.value === theme.borderStyle) {
                         radio.checked = true;
+                        // Trigger change event to update UI state
                         radio.dispatchEvent(new Event('change'));
+                        // Also call updateBorderStyle to ensure theme is updated
+                        updateBorderStyle();
                         console.log('🎨 Set border style radio:', radio.value);
                     }
                 });
@@ -8006,6 +8035,10 @@
                 const gradientBorderToggle = document.getElementById('gradient-border-toggle');
                 if (gradientBorderToggle) {
                     gradientBorderToggle.checked = theme.gradientBorderEnabled;
+                    // Trigger change event to update UI state
+                    gradientBorderToggle.dispatchEvent(new Event('change'));
+                    // Also call updateGradientBorder to ensure theme is updated
+                    updateGradientBorder();
                     console.log('🎨 Set gradient border toggle:', gradientBorderToggle.checked);
                 }
             }
@@ -9816,7 +9849,16 @@
                 
                 // Update preview name
                 const previewNameElement = document.getElementById('preview-name');
-                if (previewNameElement) previewNameElement.textContent = displayName || 'Your Name';
+                if (previewNameElement) {
+                    previewNameElement.textContent = displayName || 'Your Name';
+                    // Apply dynamic font size based on text length
+                    applyDynamicDisplayNameSize(previewNameElement);
+                }
+                
+                // Reapply theme to ensure display name color is correct
+                if (currentList && currentList.theme) {
+                    applyTheme();
+                }
                 
                 // Update profile photo in live preview
                 const previewAvatar = document.getElementById('preview-avatar');
@@ -12025,32 +12067,32 @@
             // Page description (name/title) formatting
             descriptionText: 'alexander.towbin',
             descriptionColor: '#000000',
-            descriptionFont: 'system-ui',
+            descriptionFont: 'Arial',
             descriptionBold: false,
             descriptionItalic: false,
             descriptionUnderline: false,
             // Bio text formatting
             bioText: 'Welcome to my page!',
             bioColor: '#000000',
-            bioFont: 'system-ui',
+            bioFont: 'Arial',
             bioBold: false,
             bioItalic: false,
             bioUnderline: false,
             // Presentation text formatting
             presentationColor: '#000000',
-            presentationFont: 'system-ui',
+            presentationFont: 'Arial',
             presentationBold: false,
             presentationItalic: false,
             presentationUnderline: false,
             // Legacy properties for backward compatibility
             textColor: '#000000',
-            textFont: 'system-ui',
+            textFont: 'Arial',
             textBold: false,
             textItalic: false,
             textUnderline: false,
             buttonStyle: 'soft',
             buttonTextColor: '#000000',
-            buttonTextFont: 'system-ui',
+            buttonTextFont: 'Arial',
             buttonTextBold: false,
             buttonTextItalic: false,
             buttonTextUnderline: false,
@@ -12084,6 +12126,20 @@
             try {
                 console.log('Initializing theming system...');
                 themingInitialized = true;
+                
+                // Set up event listener for display name input to update preview in real-time
+                const profileDisplayNameInput = document.getElementById('profileDisplayName');
+                if (profileDisplayNameInput) {
+                    profileDisplayNameInput.addEventListener('input', function() {
+                        const previewNameElement = document.getElementById('preview-name');
+                        if (previewNameElement) {
+                            previewNameElement.textContent = this.value || 'Your Name';
+                            // Apply dynamic font size based on text length
+                            applyDynamicDisplayNameSize(previewNameElement);
+                        }
+                    });
+                }
+                
                 // Set up event listeners for theming controls
                 const bgTypeRadios = document.querySelectorAll('input[name="bg-type"]');
             bgTypeRadios.forEach(radio => {
@@ -13271,7 +13327,7 @@
 
         function updateGradientBorder() {
             const enabled = document.getElementById('gradient-border-toggle').checked;
-            updateThemeProperty('gradientBorder', enabled);
+            updateThemeProperty('gradientBorderEnabled', enabled);
             console.log('Gradient border toggled:', enabled);
             
             // Show/hide border customization options
@@ -13303,6 +13359,14 @@
             if (borderType === 'solid') {
                 colorOptions.style.display = 'block';
                 gradientOptions.style.display = 'none';
+                
+                // Initialize borderColor from color picker if not already set in theme
+                if (!currentTheme.borderColor || currentTheme.borderColor === '#1f2937') {
+                    const borderColorPicker = document.getElementById('border-color-picker');
+                    if (borderColorPicker && borderColorPicker.value) {
+                        updateThemeProperty('borderColor', borderColorPicker.value);
+                    }
+                }
             } else {
                 colorOptions.style.display = 'none';
                 gradientOptions.style.display = 'block';
@@ -14719,16 +14783,30 @@
                         preview.style.setProperty('border', 'none', 'important');
                         preview.style.setProperty('border-image', 'none', 'important');
                         
-                        if (themeToApply.gradientBorderEnabled) {
+                        // Check gradientBorderEnabled from theme or checkbox as fallback
+                        const gradientBorderEnabled = themeToApply.gradientBorderEnabled !== undefined 
+                            ? themeToApply.gradientBorderEnabled 
+                            : (document.getElementById('gradient-border-toggle')?.checked || false);
+                        
+                        if (gradientBorderEnabled) {
                             if (themeToApply.borderType === 'gradient') {
                                 // Gradient borders: use padding + gradient background on mockup
                                 phoneMockup.style.setProperty('background', themeToApply.borderGradientText, 'important');
                                 phoneMockup.style.setProperty('padding', '8px', 'important');
                                 phoneMockup.style.setProperty('box-shadow', '0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
-                            } else {
-                                // Solid color border
+                            } else if (themeToApply.borderType === 'solid') {
+                                // Solid color border - use box-shadow for the border effect
                                 phoneMockup.style.setProperty('background', 'transparent', 'important');
-                                const borderColor = themeToApply.borderColor;
+                                let borderColor = themeToApply.borderColor;
+                                // Fallback to color picker if not set in theme
+                                if (!borderColor || borderColor === '#1f2937') {
+                                    const borderColorPicker = document.getElementById('border-color-picker');
+                                    if (borderColorPicker && borderColorPicker.value) {
+                                        borderColor = borderColorPicker.value;
+                                    } else {
+                                        borderColor = '#1f2937'; // Default
+                                    }
+                                }
                                 phoneMockup.style.setProperty('box-shadow', `inset 0 0 0 8px ${borderColor}, 0 20px 40px rgba(0, 0, 0, 0.3)`, 'important');
                             }
                         } else {
@@ -14805,11 +14883,27 @@
                         preview.style.setProperty('border', 'none', 'important');
                         preview.style.setProperty('border-image', 'none', 'important');
                         
-                        if (themeToApply.gradientBorderEnabled) {
+                        // Check gradientBorderEnabled from theme or checkbox as fallback
+                        const gradientBorderEnabledFrame = themeToApply.gradientBorderEnabled !== undefined 
+                            ? themeToApply.gradientBorderEnabled 
+                            : (document.getElementById('gradient-border-toggle')?.checked || false);
+                        
+                        if (gradientBorderEnabledFrame) {
                             if (themeToApply.borderType === 'gradient') {
                                 phoneMockup.style.setProperty('background', themeToApply.borderGradientText, 'important');
-                            } else {
-                                phoneMockup.style.setProperty('background', themeToApply.borderColor, 'important');
+                            } else if (themeToApply.borderType === 'solid') {
+                                // Solid color border for frame fill style
+                                let borderColor = themeToApply.borderColor;
+                                // Fallback to color picker if not set in theme
+                                if (!borderColor || borderColor === '#1f2937') {
+                                    const borderColorPicker = document.getElementById('border-color-picker');
+                                    if (borderColorPicker && borderColorPicker.value) {
+                                        borderColor = borderColorPicker.value;
+                                    } else {
+                                        borderColor = '#1f2937'; // Default
+                                    }
+                                }
+                                phoneMockup.style.setProperty('background', borderColor, 'important');
                             }
                         } else {
                             phoneMockup.style.setProperty('background', '#1f2937', 'important'); // Default dark border
@@ -14868,8 +14962,23 @@
                         preview.style.setProperty('border', 'none', 'important');
                         preview.style.setProperty('border-image', 'none', 'important');
                         
-                        if (themeToApply.gradientBorderEnabled) {
-                            const borderColor = themeToApply.borderColor;
+                        // Check gradientBorderEnabled from theme or checkbox as fallback
+                        const gradientBorderEnabledImage = themeToApply.gradientBorderEnabled !== undefined 
+                            ? themeToApply.gradientBorderEnabled 
+                            : (document.getElementById('gradient-border-toggle')?.checked || false);
+                        
+                        if (gradientBorderEnabledImage) {
+                            // For image backgrounds with thin border style, use solid border color
+                            let borderColor = themeToApply.borderColor;
+                            // Fallback to color picker if not set in theme
+                            if (!borderColor || borderColor === '#1f2937') {
+                                const borderColorPicker = document.getElementById('border-color-picker');
+                                if (borderColorPicker && borderColorPicker.value) {
+                                    borderColor = borderColorPicker.value;
+                                } else {
+                                    borderColor = '#1f2937'; // Default
+                                }
+                            }
                             phoneMockup.style.setProperty('box-shadow', `inset 0 0 0 8px ${borderColor}, 0 20px 40px rgba(0, 0, 0, 0.3)`, 'important');
                         } else {
                             phoneMockup.style.setProperty('box-shadow', 'inset 0 0 0 8px #1f2937, 0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
@@ -14884,11 +14993,27 @@
                         preview.style.setProperty('border', 'none', 'important');
                         preview.style.setProperty('border-image', 'none', 'important');
                         
-                        if (themeToApply.gradientBorderEnabled) {
+                        // Check gradientBorderEnabled from theme or checkbox as fallback
+                        const gradientBorderEnabledImageFrame = themeToApply.gradientBorderEnabled !== undefined 
+                            ? themeToApply.gradientBorderEnabled 
+                            : (document.getElementById('gradient-border-toggle')?.checked || false);
+                        
+                        if (gradientBorderEnabledImageFrame) {
                             if (themeToApply.borderType === 'gradient') {
                                 phoneMockup.style.setProperty('background', themeToApply.borderGradientText, 'important');
-                            } else {
-                                phoneMockup.style.setProperty('background', themeToApply.borderColor, 'important');
+                            } else if (themeToApply.borderType === 'solid') {
+                                // Solid color border for frame fill style with image background
+                                let borderColor = themeToApply.borderColor;
+                                // Fallback to color picker if not set in theme
+                                if (!borderColor || borderColor === '#1f2937') {
+                                    const borderColorPicker = document.getElementById('border-color-picker');
+                                    if (borderColorPicker && borderColorPicker.value) {
+                                        borderColor = borderColorPicker.value;
+                                    } else {
+                                        borderColor = '#1f2937'; // Default
+                                    }
+                                }
+                                phoneMockup.style.setProperty('background', borderColor, 'important');
                             }
                         } else {
                             phoneMockup.style.setProperty('background', '#1f2937', 'important'); // Default dark border
@@ -14903,25 +15028,46 @@
             const previewName = document.getElementById('preview-name');
             // Note: preview-bio was removed, so we skip it
             if (previewName) {
-                previewName.style.color = themeToApply.descriptionColor;
-                previewName.style.fontFamily = themeToApply.descriptionFont;
-                previewName.style.fontWeight = themeToApply.descriptionBold ? 'bold' : 'normal';
-                previewName.style.fontStyle = themeToApply.descriptionItalic ? 'italic' : 'normal';
-                previewName.style.textDecoration = themeToApply.descriptionUnderline ? 'underline' : 'none';
+                // Use presentationColor (same as presentation text) with fallback to descriptionColor
+                const nameColor = themeToApply.presentationColor || themeToApply.descriptionColor || '#000000';
+                previewName.style.setProperty('color', nameColor, 'important');
+                // Use presentationFont (same as presentation text) with fallback
+                const nameFont = themeToApply.presentationFont || themeToApply.descriptionFont || 'Arial';
+                previewName.style.setProperty('font-family', nameFont, 'important');
+                
+                // Apply dynamic font size based on text length
+                // Pass theme to applyDynamicDisplayNameSize so it can get the max font size
+                if (typeof applyDynamicDisplayNameSize === 'function') {
+                    applyDynamicDisplayNameSize(previewName, themeToApply);
+                } else {
+                    // Fallback to direct calculation if function not available
+                    const nameText = previewName.textContent || '';
+                    const maxFontSize = themeToApply.textFontSize || '1.75rem';
+                    const minFontSize = '1rem'; // Same as presentation info font size
+                    const dynamicFontSize = calculateDisplayNameFontSize(nameText, maxFontSize, minFontSize);
+                    previewName.style.setProperty('font-size', dynamicFontSize, 'important');
+                }
+                const nameText = previewName.textContent || '';
+                const maxFontSize = themeToApply.textFontSize || '1.75rem';
+                console.log('Applied dynamic font size to display name for text length:', nameText.length, 'max size:', maxFontSize);
+                
+                previewName.style.setProperty('font-weight', themeToApply.descriptionBold ? 'bold' : 'normal', 'important');
+                previewName.style.setProperty('font-style', themeToApply.descriptionItalic ? 'italic' : 'normal', 'important');
+                previewName.style.setProperty('text-decoration', themeToApply.descriptionUnderline ? 'underline' : 'none', 'important');
                 // Don't overwrite the display name - it's set by loadUserData and saveProfile
                 // previewName.innerHTML = themeToApply.descriptionText || 'alexander.towbin';
-                console.log('Applied description formatting to name:', themeToApply.descriptionColor, themeToApply.descriptionFont);
+                console.log('Applied presentation color to display name:', nameColor, 'font:', nameFont);
             }
             // Note: preview-bio was removed, so we skip bio formatting
 
             // Apply presentation information formatting
             const presentationFields = preview.querySelectorAll('.info-value');
             presentationFields.forEach(field => {
-                field.style.color = themeToApply.presentationColor;
-                field.style.fontFamily = themeToApply.presentationFont;
-                field.style.fontWeight = themeToApply.presentationBold ? 'bold' : 'normal';
-                field.style.fontStyle = themeToApply.presentationItalic ? 'italic' : 'normal';
-                field.style.textDecoration = themeToApply.presentationUnderline ? 'underline' : 'none';
+                field.style.setProperty('color', themeToApply.presentationColor || '#000000', 'important');
+                field.style.setProperty('font-family', themeToApply.presentationFont || 'Arial', 'important');
+                field.style.setProperty('font-weight', themeToApply.presentationBold ? 'bold' : 'normal', 'important');
+                field.style.setProperty('font-style', themeToApply.presentationItalic ? 'italic' : 'normal', 'important');
+                field.style.setProperty('text-decoration', themeToApply.presentationUnderline ? 'underline' : 'none', 'important');
             });
             console.log('Applied presentation formatting to', presentationFields.length, 'fields');
 
@@ -14930,24 +15076,203 @@
             console.log('Found buttons:', buttons.length);
             buttons.forEach(button => {
                 button.className = `preview-link ${themeToApply.buttonStyle}`;
-                button.style.setProperty('color', themeToApply.buttonTextColor, 'important');
-                button.style.setProperty('font-family', themeToApply.buttonTextFont, 'important');
-                button.style.setProperty('font-weight', themeToApply.buttonTextBold ? 'bold' : 'normal', 'important');
-                button.style.setProperty('font-style', themeToApply.buttonTextItalic ? 'italic' : 'normal', 'important');
-                button.style.setProperty('text-decoration', themeToApply.buttonTextUnderline ? 'underline' : 'none', 'important');
                 
+                // Find the text element inside the button
+                // Button structure can be:
+                // 1. With image: <a><div class="preview-link-content"><div class="preview-link-image">...</div><div class="preview-link-text">text</div></div></a>
+                // 2. Without image: <a>text</a> or <a><div class="preview-link-text">text</div></a>
+                let targetElement = null;
+                
+                // First, try to find .preview-link-text directly
+                targetElement = button.querySelector('.preview-link-text');
+                
+                // If not found, check if there's a .preview-link-content structure
+                if (!targetElement) {
+                    const linkContent = button.querySelector('.preview-link-content');
+                    if (linkContent && linkContent.children.length > 1) {
+                        // The text element is the second child (index 1) of .preview-link-content
+                        targetElement = linkContent.children[1];
+                    }
+                }
+                
+                // If still not found, check button.children[1] structure (for public.html compatibility)
+                if (!targetElement && button.children.length > 1) {
+                    const textContainer = button.children[1];
+                    if (textContainer && textContainer.children.length > 0) {
+                        // Check if it's the text element or if we need to go deeper
+                        if (textContainer.classList && textContainer.classList.contains('preview-link-text')) {
+                            targetElement = textContainer;
+                        } else if (textContainer.children.length > 0) {
+                            // Try the first child
+                            targetElement = textContainer.children[0];
+                        }
+                    }
+                }
+                
+                // Last resort: use button itself if it has direct text content
+                if (!targetElement) {
+                    targetElement = button;
+                }
+                
+                console.log('Button text element found:', targetElement, 'for button:', button);
+                
+                // Apply styles to the button container
                 // Apply background color for solid button style
                 if (themeToApply.buttonStyle === 'solid') {
-                    button.style.setProperty('background-color', themeToApply.buttonBgColor, 'important');
+                    button.style.setProperty('background-color', themeToApply.buttonBgColor || '#3b82f6', 'important');
                     button.style.setProperty('border', 'none', 'important');
+                } else if (themeToApply.buttonStyle === 'soft') {
+                    // For soft glass style, use semi-transparent background with blur effect
+                    button.style.setProperty('background', 'rgba(255, 255, 255, 0.1)', 'important');
+                    button.style.setProperty('backdrop-filter', 'blur(10px)', 'important');
+                    button.style.setProperty('border', '1px solid rgba(255, 255, 255, 0.2)', 'important');
+                    button.style.setProperty('box-shadow', '0 4px 15px rgba(0, 0, 0, 0.1)', 'important');
+                } else if (themeToApply.buttonStyle === 'outline' && themeToApply.buttonTextColor) {
+                    button.style.setProperty('background-color', 'transparent', 'important');
+                    button.style.setProperty('border', `2px solid ${themeToApply.buttonTextColor}`, 'important');
                 } else {
                     button.style.setProperty('background-color', 'transparent', 'important');
                     button.style.setProperty('border', '1px solid rgba(255, 255, 255, 0.2)', 'important');
                 }
                 
-                console.log('Applied button style:', themeToApply.buttonStyle, 'text color:', themeToApply.buttonTextColor, 'bg color:', themeToApply.buttonBgColor);
+                // Apply text styles to the text element
+                if (themeToApply.buttonTextColor) {
+                    targetElement.style.setProperty('color', themeToApply.buttonTextColor, 'important');
+                }
+                if (themeToApply.buttonTextFont) {
+                    targetElement.style.setProperty('font-family', themeToApply.buttonTextFont, 'important');
+                }
+                if (themeToApply.buttonFontSize) {
+                    targetElement.style.setProperty('font-size', themeToApply.buttonFontSize, 'important');
+                }
+                if (themeToApply.buttonFontWeight) {
+                    targetElement.style.setProperty('font-weight', themeToApply.buttonFontWeight, 'important');
+                } else {
+                    targetElement.style.setProperty('font-weight', themeToApply.buttonTextBold ? 'bold' : 'normal', 'important');
+                }
+                targetElement.style.setProperty('font-style', themeToApply.buttonTextItalic ? 'italic' : 'normal', 'important');
+                targetElement.style.setProperty('text-decoration', themeToApply.buttonTextUnderline ? 'underline' : 'none', 'important');
+                
+                // Apply button border radius and padding
+                if (themeToApply.buttonBorderRadius) {
+                    const borderRadius = themeToApply.buttonBorderRadius === '50%' ? '12px' : themeToApply.buttonBorderRadius;
+                    button.style.setProperty('border-radius', borderRadius, 'important');
+                }
+                if (themeToApply.buttonPadding) {
+                    button.style.setProperty('padding', themeToApply.buttonPadding, 'important');
+                }
+                
+                console.log('Applied button style:', themeToApply.buttonStyle, 'text color:', themeToApply.buttonTextColor, 'bg color:', themeToApply.buttonBgColor, 'font:', themeToApply.buttonTextFont);
             });
 
+        }
+
+        // Calculate dynamic font size for display name based on text length
+        // Minimum size is 1rem (same as presentation information font size)
+        function calculateDisplayNameFontSize(text, maxSize = '1.75rem', minSize = '1rem') {
+            if (!text || text.trim().length === 0) {
+                return maxSize;
+            }
+            
+            const textLength = text.length;
+            const maxSizeValue = parseFloat(maxSize); // Extract numeric value
+            const maxSizeUnit = maxSize.replace(/[0-9.]/g, ''); // Extract unit (rem, px, etc.)
+            const minSizeValue = parseFloat(minSize); // Extract numeric value for minimum
+            const minSizeUnit = minSize.replace(/[0-9.]/g, ''); // Extract unit for minimum
+            
+            // Convert both to pixels for comparison (assuming 1rem = 16px)
+            const REM_TO_PX = 16;
+            let maxSizePx, minSizePx;
+            
+            if (maxSizeUnit === 'rem') {
+                maxSizePx = maxSizeValue * REM_TO_PX;
+            } else if (maxSizeUnit === 'px') {
+                maxSizePx = maxSizeValue;
+            } else {
+                // Default to rem if unknown unit
+                maxSizePx = maxSizeValue * REM_TO_PX;
+            }
+            
+            if (minSizeUnit === 'rem') {
+                minSizePx = minSizeValue * REM_TO_PX;
+            } else if (minSizeUnit === 'px') {
+                minSizePx = minSizeValue;
+            } else {
+                // Default to rem if unknown unit
+                minSizePx = minSizeValue * REM_TO_PX;
+            }
+            
+            // Ensure minSize is not larger than maxSize
+            if (minSizePx > maxSizePx) {
+                minSizePx = maxSizePx;
+            }
+            
+            // Define breakpoints for font size scaling
+            // Short names (0-15 chars): use max size
+            // Medium names (16-25 chars): scale down gradually
+            // Long names (26+ chars): use minimum size (presentation info font size)
+            let fontSizePx;
+            
+            if (textLength <= 15) {
+                // Short names: use maximum size
+                fontSizePx = maxSizePx;
+            } else if (textLength <= 25) {
+                // Medium names: scale down proportionally
+                // Formula: maxSize - ((textLength - 15) / 10) * (maxSize - minSize)
+                const scaleFactor = (textLength - 15) / 10; // 0 to 1 for 16-25 chars
+                fontSizePx = maxSizePx - (scaleFactor * (maxSizePx - minSizePx));
+            } else {
+                // Long names: use minimum size (presentation info font size)
+                fontSizePx = minSizePx;
+            }
+            
+            // Ensure fontSize never goes below minimum
+            if (fontSizePx < minSizePx) {
+                fontSizePx = minSizePx;
+            }
+            
+            // Convert back to the original maxSize unit
+            let fontSize, fontSizeUnit = maxSizeUnit;
+            if (maxSizeUnit === 'rem') {
+                fontSize = fontSizePx / REM_TO_PX;
+            } else if (maxSizeUnit === 'px') {
+                fontSize = fontSizePx;
+            } else {
+                // Default to rem
+                fontSize = fontSizePx / REM_TO_PX;
+                fontSizeUnit = 'rem';
+            }
+            
+            // Round to 2 decimal places and add unit
+            return Math.round(fontSize * 100) / 100 + fontSizeUnit;
+        }
+
+        // Apply dynamic font size to display name element
+        // Accepts optional theme parameter to get max font size
+        // Minimum size is 1rem (same as presentation information font size in index.html)
+        function applyDynamicDisplayNameSize(nameElement, themeParam) {
+            if (!nameElement) return;
+            
+            try {
+                const nameText = nameElement.textContent || '';
+                // Get the max size from theme parameter, currentList theme, or use default
+                let maxSize = '1.75rem';
+                if (themeParam && themeParam.textFontSize) {
+                    maxSize = themeParam.textFontSize;
+                } else if (currentList && currentList.theme && currentList.theme.textFontSize) {
+                    maxSize = currentList.theme.textFontSize;
+                } else if (currentTheme && currentTheme.textFontSize) {
+                    maxSize = currentTheme.textFontSize;
+                }
+                // Minimum size is 1rem (presentation information font size in index.html)
+                const minSize = '1rem';
+                const dynamicSize = calculateDisplayNameFontSize(nameText, maxSize, minSize);
+                nameElement.style.setProperty('font-size', dynamicSize, 'important');
+            } catch (error) {
+                console.error('Error applying dynamic display name size:', error);
+                // Fallback to default size if there's an error
+                nameElement.style.setProperty('font-size', '1.75rem', 'important');
+            }
         }
 
         function isValidColor(color) {
@@ -15055,32 +15380,32 @@
                 // Page description (name/title) formatting
                 descriptionText: 'alexander.towbin',
                 descriptionColor: '#000000',
-                descriptionFont: 'system-ui',
+                descriptionFont: 'Arial',
                 descriptionBold: false,
                 descriptionItalic: false,
                 descriptionUnderline: false,
                 // Bio text formatting
                 bioText: 'Welcome to my page!',
                 bioColor: '#000000',
-                bioFont: 'system-ui',
+                bioFont: 'Arial',
                 bioBold: false,
                 bioItalic: false,
                 bioUnderline: false,
                 // Presentation text formatting
                 presentationColor: '#000000',
-                presentationFont: 'system-ui',
+                presentationFont: 'Arial',
                 presentationBold: false,
                 presentationItalic: false,
                 presentationUnderline: false,
                 // Legacy properties for backward compatibility
                 textColor: '#000000',
-                textFont: 'system-ui',
+                textFont: 'Arial',
                 textBold: false,
                 textItalic: false,
                 textUnderline: false,
                 buttonStyle: 'soft',
                 buttonTextColor: '#000000',
-                buttonTextFont: 'system-ui',
+                buttonTextFont: 'Arial',
                 buttonTextBold: false,
                 buttonTextItalic: false,
                 buttonTextUnderline: false,
@@ -15099,7 +15424,7 @@
             document.getElementById('gradient-text').value = 'linear-gradient(45deg, #ff6b6b, #4ecdc4)';
             // Reset description formatting
             document.getElementById('description-color').value = '#000000';
-            document.getElementById('description-font').value = 'system-ui';
+            document.getElementById('description-font').value = 'Arial';
             const descEditor = document.getElementById('description-text');
             if (descEditor) {
                 descEditor.innerHTML = 'alexander.towbin';
@@ -15107,7 +15432,7 @@
             
             // Reset bio formatting
             document.getElementById('bio-color').value = '#000000';
-            document.getElementById('bio-font').value = 'system-ui';
+            document.getElementById('bio-font').value = 'Arial';
             const bioEditor = document.getElementById('bio-text');
             if (bioEditor) {
                 bioEditor.innerHTML = 'Welcome to my page!';
@@ -15116,10 +15441,10 @@
             }
             // Reset presentation formatting
             document.getElementById('presentation-color').value = '#000000';
-            document.getElementById('presentation-font').value = 'system-ui';
+            document.getElementById('presentation-font').value = 'Arial';
             document.getElementById('button-style').value = 'soft';
             document.getElementById('button-text-color').value = '#000000';
-            document.getElementById('button-text-font').value = 'system-ui';
+            document.getElementById('button-text-font').value = 'Arial';
             document.getElementById('button-text-bold').checked = false;
             document.getElementById('button-text-italic').checked = false;
             document.getElementById('button-text-underline').checked = false;
@@ -15237,6 +15562,9 @@
         }
 
         function updateFormFromTheme() {
+            // Get theme from currentList or currentTheme
+            const themeToApply = (currentList && currentList.theme) || currentTheme || {};
+            
             // Update background type
             const bgTypeRadio = document.querySelector(`input[name="bg-type"][value="${themeToApply.backgroundType}"]`);
             if (bgTypeRadio) {
@@ -15339,10 +15667,25 @@
                 }
             }
 
+            // Update border style
+            if (themeToApply.borderStyle) {
+                const borderStyleRadio = document.querySelector(`input[name="border-style"][value="${themeToApply.borderStyle}"]`);
+                if (borderStyleRadio) {
+                    borderStyleRadio.checked = true;
+                    updateBorderStyle();
+                }
+            }
+
             // Update border color
             if (themeToApply.borderColor) {
-                document.getElementById('border-color-picker').value = themeToApply.borderColor;
-                document.getElementById('border-color-text').value = themeToApply.borderColor;
+                const borderColorPicker = document.getElementById('border-color-picker');
+                const borderColorText = document.getElementById('border-color-text');
+                if (borderColorPicker) {
+                    borderColorPicker.value = themeToApply.borderColor;
+                }
+                if (borderColorText) {
+                    borderColorText.value = themeToApply.borderColor;
+                }
             }
 
             // Update border gradient

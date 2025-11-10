@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Test - Run from Live Site</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <p><strong>IMPORTANT:</strong> Upload this file to your server and access it via https://academiqr.com/test-from-live-site.html</p>
+    <div id="results"></div>
+    <script>
+        const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
+        
+        const results = document.getElementById('results');
+        
+        async function testConnection() {
+            results.innerHTML = '<p>Testing from: ' + window.location.origin + '</p>';
+            results.innerHTML += '<p>Testing connection...</p>';
+            
+            try {
+                // Test 1: Direct fetch to see if there's a redirect
+                results.innerHTML += '<p><strong>Test 1: Checking for redirects...</strong></p>';
+                try {
+                    const testResponse = await fetch(SUPABASE_URL + '/rest/v1/', {
+                        method: 'OPTIONS',
+                        headers: {
+                            'Origin': window.location.origin,
+                            'Access-Control-Request-Method': 'GET'
+                        }
+                    });
+                    
+                    if (testResponse.redirected) {
+                        results.innerHTML += `<p>❌ REDIRECT DETECTED! Original: ${SUPABASE_URL}, Redirected to: ${testResponse.url}</p>`;
+                        results.innerHTML += '<p>This is causing the CORS error!</p>';
+                    } else {
+                        results.innerHTML += '<p>✅ No redirect detected</p>';
+                    }
+                } catch (e) {
+                    results.innerHTML += `<p>⚠️ Preflight test failed: ${e.message}</p>`;
+                }
+                
+                // Test 2: Create Supabase client
+                results.innerHTML += '<p><strong>Test 2: Creating Supabase client...</strong></p>';
+                const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                results.innerHTML += '<p>✅ Client created</p>';
+                
+                // Test 3: Try auth
+                results.innerHTML += '<p><strong>Test 3: Testing authentication endpoint...</strong></p>';
+                try {
+                    const { data: { session }, error: authError } = await supabase.auth.getSession();
+                    if (authError) {
+                        results.innerHTML += `<p>❌ Auth error: ${authError.message}</p>`;
+                    } else {
+                        results.innerHTML += '<p>✅ Auth endpoint accessible</p>';
+                    }
+                } catch (e) {
+                    results.innerHTML += `<p>❌ Auth test failed: ${e.message}</p>`;
+                }
+                
+                // Test 4: Try database query (unauthenticated)
+                results.innerHTML += '<p><strong>Test 4: Testing database query (unauthenticated)...</strong></p>';
+                try {
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .limit(1);
+                    
+                    if (error) {
+                        results.innerHTML += `<p>⚠️ Database query error: ${error.message}</p>`;
+                        results.innerHTML += `<p>Error code: ${error.code || 'N/A'}</p>`;
+                        if (error.message.includes('Failed to fetch')) {
+                            results.innerHTML += '<p><strong>❌ This is a network/CORS issue, not an RLS issue</strong></p>';
+                        } else {
+                            results.innerHTML += '<p>This might be an RLS (Row Level Security) issue - queries require authentication</p>';
+                        }
+                    } else {
+                        results.innerHTML += '<p>✅ Database query successful!</p>';
+                    }
+                } catch (e) {
+                    results.innerHTML += `<p>❌ Database test failed: ${e.message}</p>`;
+                    if (e.message.includes('Failed to fetch')) {
+                        results.innerHTML += '<p><strong>❌ This confirms a network/CORS issue blocking REST API requests</strong></p>';
+                    }
+                }
+                
+                // Test 5: Try a simple sign-in to see if that works
+                results.innerHTML += '<p><strong>Test 5: Testing sign-in (this is what your login does)...</strong></p>';
+                try {
+                    // Try with a test email (this will fail but should show if the endpoint is reachable)
+                    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                        email: 'test@example.com',
+                        password: 'wrongpassword'
+                    });
+                    
+                    if (signInError) {
+                        if (signInError.message.includes('Failed to fetch')) {
+                            results.innerHTML += `<p>❌ Sign-in endpoint blocked: ${signInError.message}</p>`;
+                            results.innerHTML += '<p><strong>This confirms the auth endpoint is being blocked by network/CORS</strong></p>';
+                        } else {
+                            results.innerHTML += `<p>✅ Sign-in endpoint reachable (got expected error: ${signInError.message})</p>`;
+                        }
+                    }
+                } catch (e) {
+                    results.innerHTML += `<p>❌ Sign-in test failed: ${e.message}</p>`;
+                }
+                
+            } catch (error) {
+                results.innerHTML += `<p>❌ Fatal error: ${error.message}</p>`;
+                results.innerHTML += `<p>Stack: ${error.stack}</p>`;
+            }
+        }
+        
+        window.addEventListener('load', () => {
+            setTimeout(testConnection, 500);
+        });
+    </script>
+</body>
+</html>
+
