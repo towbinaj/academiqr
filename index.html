@@ -6593,12 +6593,45 @@
             // Initialize theming when appearance tab is shown
             if (tabName === 'appearance') {
                 setTimeout(() => {
+                    // Set flag to prevent applyTheme() from running during initialization
+                    isInitializingTheme = true;
+                    
                     // Load theme into UI controls first, before setting up event listeners
                     if (currentList && currentList.theme) {
+                        // Update currentTheme FIRST to ensure it has the correct values
+                        currentTheme = { ...currentTheme, ...currentList.theme };
+                        // Then load theme into UI controls (this will set radio buttons, inputs, etc.)
                         loadThemeIntoUI(currentList.theme);
                     }
-                    // Then initialize theming system
-                    initTheming();
+                    
+                    // Wait a bit longer to ensure UI controls are fully populated
+                    setTimeout(() => {
+                        // Initialize theming system (if not already initialized)
+                        initTheming();
+                        
+                        // Apply theme directly from currentList.theme to ensure correct values are used
+                        // This is critical because getCurrentThemeFromUI() might read from UI controls
+                        // that haven't been fully populated yet, or might have default values
+                        if (currentList && currentList.theme) {
+                            let themeToApply;
+                            // Parse theme if it's a string
+                            if (typeof currentList.theme === 'string') {
+                                try {
+                                    themeToApply = JSON.parse(currentList.theme);
+                                } catch (e) {
+                                    themeToApply = currentList.theme;
+                                }
+                            } else {
+                                themeToApply = { ...currentList.theme };
+                            }
+                            applyTheme(themeToApply);
+                        }
+                        
+                        // Clear flag after initialization is complete
+                        setTimeout(() => {
+                            isInitializingTheme = false;
+                        }, 100);
+                    }, 50);
                 }, 100);
             }
             
@@ -6941,6 +6974,7 @@
         }
         // Flag to prevent theme updates during save
         let isSaving = false;
+        let isInitializingTheme = false; // Flag to prevent applyTheme() from running during initialization
         
         // Flag to prevent initTheming from being called multiple times
         let themingInitialized = false;
@@ -7964,14 +7998,16 @@
             }
             
             // Load text color settings
-            if (theme.presentationTextColor) {
+            // Check for presentationColor first (newer format), then fall back to presentationTextColor
+            const presentationColorValue = theme.presentationColor || theme.presentationTextColor;
+            if (presentationColorValue) {
                 const presentationColorInput = document.getElementById('presentation-color');
                 const presentationColorTextInput = document.getElementById('presentation-color-text');
                 if (presentationColorInput) {
-                    presentationColorInput.value = theme.presentationTextColor;
+                    presentationColorInput.value = presentationColorValue;
                 }
                 if (presentationColorTextInput) {
-                    presentationColorTextInput.value = theme.presentationTextColor;
+                    presentationColorTextInput.value = presentationColorValue;
                 }
             }
             
@@ -8214,8 +8250,21 @@
             // Capture all appearance settings from the appearance tab
             const preview = document.querySelector('.phone-screen');
             
-            // Default theme structure with all appearance settings
-            let theme = {
+            // During initialization, prioritize existing theme over UI controls
+            // This ensures we use the theme that was just loaded, not potentially stale UI control values
+            if (isInitializingTheme) {
+                const existingTheme = currentList?.theme ? { ...currentList.theme } : (currentTheme ? { ...currentTheme } : {});
+                if (Object.keys(existingTheme).length > 0) {
+                    return existingTheme;
+                }
+            }
+            
+            // Start with existing theme from currentList or currentTheme to preserve all properties
+            // This ensures we don't lose any theme properties that aren't in the UI controls
+            let theme = currentList?.theme ? { ...currentList.theme } : (currentTheme ? { ...currentTheme } : {});
+            
+            // Default theme structure with all appearance settings (used as fallback for missing values)
+            const defaultTheme = {
                 // Background settings
                 backgroundType: 'solid', // solid, gradient, image
                 backgroundColor: '#ffffff',
@@ -8247,57 +8296,10 @@
                 textFontWeight: '600'
             };
             
-            if (preview) {
-                const computedStyle = window.getComputedStyle(preview);
-                const background = computedStyle.background || computedStyle.backgroundColor;
-                
-                // Determine background type and capture background settings
-                // Only capture from preview container, not from child buttons
-                if (background.includes('gradient')) {
-                    theme.backgroundType = 'gradient';
-                    theme.gradientText = background;
-                    theme.backgroundColor = '#ffffff'; // Reset solid color when using gradient
-                } else if (background.includes('url(')) {
-                    theme.backgroundType = 'image';
-                    theme.backgroundImage = background;
-                    theme.backgroundColor = '#ffffff'; // Reset solid color when using image
-                } else {
-                    theme.backgroundType = 'solid';
-                    // Get only backgroundColor to avoid capturing button colors
-                    theme.backgroundColor = computedStyle.backgroundColor || background;
-                }
-                
-                // Capture button styles
-                const buttons = preview.querySelectorAll('a, button, .link, .preview-link, [class*="button"], [class*="link"]');
-                if (buttons.length > 0) {
-                    const firstButton = buttons[0];
-                    const buttonStyle = window.getComputedStyle(firstButton);
-                    theme.buttonTextColor = buttonStyle.color || '#000000';
-                    theme.buttonBackgroundColor = buttonStyle.backgroundColor || '#3b82f6';
-                    theme.buttonBorderRadius = buttonStyle.borderRadius || '8px';
-                    theme.buttonPadding = buttonStyle.padding || '12px 24px';
-                    theme.buttonFontSize = buttonStyle.fontSize || '16px';
-                    theme.buttonFontWeight = buttonStyle.fontWeight || '500';
-                }
-                
-                // Capture text styles
-                const textElements = preview.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, div, [class*="text"], [class*="name"], [class*="title"]');
-                if (textElements.length > 0) {
-                    const firstText = textElements[0];
-                    const textStyle = window.getComputedStyle(firstText);
-                    theme.profileTextColor = textStyle.color || '#000000';
-                    theme.presentationTextColor = textStyle.color || '#000000';
-                    theme.textFontSize = textStyle.fontSize || '18px';
-                    theme.textFontWeight = textStyle.fontWeight || '600';
-                }
-                
-                // Capture border styles
-                theme.borderType = computedStyle.borderStyle || 'solid';
-                theme.borderStyle = computedStyle.borderStyle || 'solid';
-                theme.borderWidth = computedStyle.borderWidth || '1px';
-                theme.borderRadius = computedStyle.borderRadius || '8px';
-                theme.borderColor = computedStyle.borderColor || '#1f2937';
-            }
+            // Merge defaults into theme for any missing values
+            theme = { ...defaultTheme, ...theme };
+            
+            // PRIORITIZE UI CONTROLS - Read from UI controls to override any existing values
             
             // Try to capture appearance tab form controls using actual IDs from HTML
             const appearanceControls = [
@@ -8387,8 +8389,11 @@
                                 break;
                             case 'presentation-color':
                             case 'presentation-color-text':
-                                theme.presentationTextColor = value;
-                                theme.profileTextColor = value; // Use same color for both
+                                if (value) {
+                                    theme.presentationTextColor = value;
+                                    theme.presentationColor = value; // Also set presentationColor
+                                    theme.profileTextColor = value; // Use same color for both
+                                }
                                 break;
                             case 'button-text-color':
                             case 'button-text-color-text':
@@ -8403,7 +8408,9 @@
                                 break;
                             case 'border-color-picker':
                             case 'border-color-text':
-                                theme.borderColor = value;
+                                if (value) {
+                                    theme.borderColor = value;
+                                }
                                 break;
                             case 'button-border-radius':
                                 theme.buttonBorderRadius = value;
@@ -12400,8 +12407,28 @@
             // Initialize image positioning values
             updateImagePosition();
             
-            // Apply initial theme
-            applyTheme();
+            // Apply initial theme - during initialization, use the theme directly from currentList
+            // This prevents the theme from reverting when the appearance tab is clicked
+            // We use currentList.theme directly instead of getCurrentThemeFromUI() to avoid
+            // reading from UI controls that might not be fully populated yet
+            let themeToApply;
+            if (isInitializingTheme && currentList && currentList.theme) {
+                // During initialization, use the theme directly from currentList
+                // Parse it if it's a string
+                if (typeof currentList.theme === 'string') {
+                    try {
+                        themeToApply = JSON.parse(currentList.theme);
+                    } catch (e) {
+                        themeToApply = currentList.theme;
+                    }
+                } else {
+                    themeToApply = { ...currentList.theme };
+                }
+            } else {
+                // After initialization, read from UI controls
+                themeToApply = getCurrentThemeFromUI();
+            }
+            applyTheme(themeToApply);
             } catch (error) {
                 console.error('Error in initTheming:', error);
                 showMessage('Error initializing theming system. Please refresh the page.', 'error');
@@ -14770,6 +14797,11 @@
             if (isSaving) {
                 return;
             }
+            // Skip applyTheme during initialization unless theme is explicitly provided
+            // This prevents stale theme data from being applied when loadThemeIntoUI triggers change events
+            if (isInitializingTheme && theme === null) {
+                return;
+            }
             const preview = document.querySelector('.phone-screen');
             if (!preview) {
                 console.log('Preview element not found!');
@@ -14819,16 +14851,8 @@
                             } else if (themeToApply.borderType === 'solid') {
                                 // Solid color border - use box-shadow for the border effect
                                 phoneMockup.style.setProperty('background', 'transparent', 'important');
-                                let borderColor = themeToApply.borderColor;
-                                // Fallback to color picker if not set in theme
-                                if (!borderColor || borderColor === '#1f2937') {
-                                    const borderColorPicker = document.getElementById('border-color-picker');
-                                    if (borderColorPicker && borderColorPicker.value) {
-                                        borderColor = borderColorPicker.value;
-                                    } else {
-                                        borderColor = '#1f2937'; // Default
-                                    }
-                                }
+                                // Use borderColor from theme - it should be set correctly from UI controls
+                                let borderColor = themeToApply.borderColor || '#1f2937';
                                 phoneMockup.style.setProperty('box-shadow', `inset 0 0 0 8px ${borderColor}, 0 20px 40px rgba(0, 0, 0, 0.3)`, 'important');
                             }
                         } else {
