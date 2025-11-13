@@ -1,6 +1,6 @@
 {
   "name": "academiq",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "description": "Link-in-bio builder with modern dark theme",
   "type": "module",
   "scripts": {
