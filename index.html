@@ -7185,23 +7185,17 @@
         }
         
         function copyPublicUrl() {
-            // Always decode first to handle any existing encoding, then encode properly
-            let cleanSlug = currentList.slug || '';
-            try {
-                // Try to decode first in case it's already encoded
-                const decoded = decodeURIComponent(cleanSlug);
-                if (decoded !== cleanSlug) {
-                    cleanSlug = decoded;
-                }
-            } catch (e) {
-                // Use as-is if decoding fails
+            if (!currentList || !currentList.id) {
+                showMessage('No collection selected', 'error');
+                return;
             }
             
-            // Now encode the clean slug
-            const encodedSlug = encodeURIComponent(cleanSlug);
-            const username = currentUser.email.split('@')[0];
+            // Use collection ID (UUID) instead of slug for guaranteed uniqueness
+            const collectionId = currentList.id;
+            // Use shortened user ID (first 12 chars of UUID) instead of email-based handle to avoid duplicates
+            const userId = currentUser.id.substring(0, 12);
             // Public page URL - displays the link list using public.html with query parameters
-            const url = `https://academiqr.com/public.html?handle=${username}&collection=${encodedSlug}`;
+            const url = `https://academiqr.com/public.html?user=${userId}&collection=${collectionId}`;
             navigator.clipboard.writeText(url);
             showMessage('Public URL copied to clipboard!', 'success');
         }
@@ -7242,22 +7236,16 @@
                 console.warn('Border elements not found:', { borderEnabled, borderOptions });
             }
             
-            // Always decode first to handle any existing encoding, then encode properly
-            let cleanSlug = currentList.slug || '';
-            try {
-                // Try to decode first in case it's already encoded
-                const decoded = decodeURIComponent(cleanSlug);
-                if (decoded !== cleanSlug) {
-                    cleanSlug = decoded;
-                }
-            } catch (e) {
-                // Use as-is if decoding fails
+            // Use collection ID (UUID) instead of slug for guaranteed uniqueness
+            if (!currentList.id) {
+                document.getElementById('qr-url').value = 'Collection ID not available';
+                return;
             }
             
-            // Now encode the clean slug
-            const encodedSlug = encodeURIComponent(cleanSlug);
-            const username = currentUser.email.split('@')[0];
-            const url = `https://academiqr.com/public.html?handle=${username}&collection=${encodedSlug}`;
+            const collectionId = currentList.id;
+            // Use shortened user ID (first 12 chars of UUID) instead of email-based handle to avoid duplicates
+            const userId = currentUser.id.substring(0, 12);
+            const url = `https://academiqr.com/public.html?user=${userId}&collection=${collectionId}`;
             document.getElementById('qr-url').value = url;
             
             // Load saved QR code settings if they exist
@@ -7360,22 +7348,17 @@
                 return;
             }
             
-            // Always decode first to handle any existing encoding, then encode properly
-            let cleanSlug = currentList.slug || '';
-            try {
-                // Try to decode first in case it's already encoded
-                const decoded = decodeURIComponent(cleanSlug);
-                if (decoded !== cleanSlug) {
-                    cleanSlug = decoded;
-                }
-            } catch (e) {
-                // Use as-is if decoding fails
+            // Use collection ID (UUID) instead of slug for guaranteed uniqueness
+            if (!currentList.id) {
+                console.error('Collection ID not available');
+                showMessage('Collection ID not available', 'error');
+                return;
             }
             
-            // Now encode the clean slug
-            const encodedSlug = encodeURIComponent(cleanSlug);
-            const username = currentUser.email.split('@')[0];
-            const url = `https://academiqr.com/public.html?handle=${username}&collection=${encodedSlug}`;
+            const collectionId = currentList.id;
+            // Use shortened user ID (first 12 chars of UUID) instead of email-based handle to avoid duplicates
+            const userId = currentUser.id.substring(0, 12);
+            const url = `https://academiqr.com/public.html?user=${userId}&collection=${collectionId}`;
             const size = parseInt(document.getElementById('qr-size').value);
             const color = document.getElementById('qr-color').value;
             const bgColor = document.getElementById('qr-bg-color').value;

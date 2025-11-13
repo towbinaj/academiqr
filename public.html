@@ -332,28 +332,40 @@
 
         // Get URL parameters
         const urlParams = new URLSearchParams(window.location.search);
-        const handle = urlParams.get('handle');
-        const collectionSlug = urlParams.get('collection');
+        const userId = urlParams.get('user'); // Shortened user ID (first 12 chars of UUID)
+        const collectionId = urlParams.get('collection'); // Collection ID (UUID)
 
         // Load profile and collection data
         async function loadProfile() {
             try {
+                if (!userId || !collectionId) {
+                    console.error('Missing user ID or collection ID parameter');
+                    return;
+                }
                 
-                // Load collection
-                const { data: collections, error: collectionsError } = await supabase
-                        .from('link_lists')
+                // Load collection by ID
+                const { data: collection, error: collectionError } = await supabase
+                    .from('link_lists')
                     .select('*')
-                    .eq('slug', collectionSlug);
+                    .eq('id', collectionId)
+                    .single();
 
-                    if (collectionsError) {
+                if (collectionError) {
+                    console.error('Error loading collection:', collectionError);
                     return;
                 }
 
-                if (!collections || collections.length === 0) {
+                if (!collection) {
+                    console.error('No collection found with ID:', collectionId);
                     return;
                 }
 
-                const collection = collections[0];
+                // Verify that the collection owner matches the provided user ID
+                // This adds a security check to ensure users can only access their own collections
+                if (!collection.owner_id || collection.owner_id.substring(0, 12) !== userId) {
+                    console.error('Collection owner does not match user ID');
+                    return;
+                }
 
                 // Track page view
                 trackPageView(collection.id, collection.owner_id);
@@ -1017,10 +1029,10 @@
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            if (handle && collectionSlug) {
+            if (userId && collectionId) {
                 loadProfile();
             } else {
-('Missing handle or collection parameter');
+                console.error('Missing user ID or collection ID parameter');
             }
         });
     </script>
