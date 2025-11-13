@@ -1361,7 +1361,7 @@
         }
 
         .preview-name-section h4 {
-            font-size: 1.5rem;
+            font-size: 1.5rem; /* Default max size, will be adjusted dynamically by JavaScript (smaller for preview) */
             font-weight: 600;
             color: #1f2937;
             margin: 0 0 12px 0;
@@ -1451,6 +1451,7 @@
         .preview-dynamic-info {
             margin: 0 0 16px 0;
             padding: 0;
+            display: none; /* Hidden by default, shown when fields are visible */
         }
 
         .info-field {
@@ -1465,9 +1466,9 @@
         }
 
         .info-value {
-            color: #4b5563;
-            font-weight: 400;
-            font-size: 1rem;
+            /* Color will be set by JavaScript from theme - no default to avoid conflicts */
+            font-weight: 600; /* Bold presentation information */
+            font-size: 1.25rem !important; /* Same as link descriptions for preview (smaller than public.html) */
         }
 
         .profile-info-section {
@@ -1693,12 +1694,15 @@
             border-radius: 8px;
             text-decoration: none;
             color: #1e293b;
-            font-size: 1.125rem;
+            font-size: 1.25rem; /* Slightly smaller than presentation info (matching public.html) */
             transition: all 0.2s;
             min-height: 64px;
-            height: 64px;
             display: flex;
             align-items: center;
+        }
+        
+        .preview-link-text {
+            font-size: inherit; /* Inherit from parent .preview-link */
         }
 
         .preview-link:hover {
@@ -2882,7 +2886,7 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            border-radius: 4px;
+            border-radius: 8px;
         }
 
         .preview-link-image img {
@@ -2897,10 +2901,6 @@
             max-height: 100% !important;
         }
 
-        .preview-link-text {
-            flex: 1;
-            min-width: 0;
-        }
 
         /* Link Image Editing Styling */
 
@@ -2935,34 +2935,11 @@
             max-height: 100% !important;
         }
 
-        #preview-links .preview-link-image img,
-        #preview-links .link-image-container img {
+        /* Link images in preview - border-radius is handled by container div */
+        #preview-links img {
             width: 100% !important;
             height: 100% !important;
             object-fit: cover !important;
-            border-radius: 4px !important;
-        }
-
-        /* Force all preview images to be square - ULTRA AGGRESSIVE */
-        img {
-            object-fit: cover !important;
-        }
-        
-        .preview-link img,
-        .preview-link-image img,
-        .link-image-container img,
-        #preview-links img,
-        #preview-links .preview-link img,
-        #preview-links .preview-link-image img,
-        #preview-links .link-image-container img {
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
-            border-radius: 4px !important;
-            max-width: 100% !important;
-            max-height: 100% !important;
-            min-width: 100% !important;
-            min-height: 100% !important;
         }
 
         .btn-remove-link-image {
@@ -6487,67 +6464,75 @@
                     console.log(`⚠️ Direct link (no tracking) for "${link.title}": ${link.url}`);
                 }
                 linkEl.target = '_blank';
+                linkEl.rel = 'noopener noreferrer';
                 
-                // Create link content with optional image
-                let linkContent = '';
+                // Set font size immediately on the link element (matching public.html)
+                linkEl.style.setProperty('font-size', '1.25rem', 'important'); // Match public.html - slightly smaller than presentation info
+                linkEl.style.fontSize = '1.25rem';
+                
+                // Create link structure matching public.html exactly
                 if (link.image) {
-                    const imagePosition = link.imagePosition || { x: 50, y: 50 };
-                    const imageScale = link.imageScale || 100;
-                    
-                    // For preview, use simple square images without transform
-                    const previewContent = document.createElement('div');
-                    previewContent.className = 'preview-link-content';
-                    
-                    const previewImage = document.createElement('div');
-                    previewImage.className = 'preview-link-image';
-                    
-                    const imageContainer = document.createElement('div');
-                    imageContainer.className = 'link-image-container';
+                    // Create the image div (matching public.html structure)
+                    const imageDiv = document.createElement('div');
+                    imageDiv.style.cssText = 'width: 48px; height: 48px; border-radius: 8px; margin-right: 12px; overflow: hidden; background: #e5e7eb; display: flex; align-items: center; justify-content: center;';
                     
                     const img = document.createElement('img');
                     img.src = link.image;
-                    img.alt = link.title || 'Link image';
-                    img.style.cssText = 'object-fit: cover !important; object-position: center center !important; width: 100% !important; height: 100% !important; border-radius: 4px !important; max-width: 100% !important; max-height: 100% !important; min-width: 100% !important; min-height: 100% !important;';
+                    img.alt = 'Link Icon';
+                    img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                    imageDiv.appendChild(img);
                     
-                    const previewText = document.createElement('div');
-                    previewText.className = 'preview-link-text';
-                    // Use innerHTML to preserve HTML formatting (bold, italic, underline)
-                    previewText.innerHTML = link.title || '';
-                    
-                    imageContainer.appendChild(img);
-                    previewImage.appendChild(imageContainer);
-                    previewContent.appendChild(previewImage);
-                    previewContent.appendChild(previewText);
-                    
-                    linkContent = previewContent;
-                } else {
-                    // When there's no image, create a text container to preserve HTML formatting
+                    // Create text container
                     const textContainer = document.createElement('div');
-                    textContainer.className = 'preview-link-text';
-                    textContainer.innerHTML = link.title || '';
-                    linkContent = textContainer;
-                }
-                if (typeof linkContent === 'string') {
-                    linkEl.innerHTML = linkContent;
+                    textContainer.style.cssText = 'flex: 1; min-width: 0;';
+                    
+                    // Create text element with proper styling
+                    const textElement = document.createElement('div');
+                    textElement.className = 'preview-link-text';
+                    textElement.style.cssText = 'font-weight: 600; font-size: 1.25rem !important;';
+                    // Use innerHTML to preserve HTML formatting (bold, italic, underline)
+                    textElement.innerHTML = link.title || '';
+                    
+                    textContainer.appendChild(textElement);
+                    linkEl.appendChild(imageDiv);
+                    linkEl.appendChild(textContainer);
+                    
+                    // Ensure font size is set (already set in cssText above, but double-check)
+                    textElement.style.setProperty('font-size', '1.25rem', 'important');
+                    textElement.style.fontSize = '1.25rem';
                 } else {
-                    linkEl.innerHTML = '';
-                    linkEl.appendChild(linkContent);
+                    // No image - create icon div and text container
+                    const imageDiv = document.createElement('div');
+                    imageDiv.style.cssText = 'width: 48px; height: 48px; border-radius: 8px; margin-right: 12px; overflow: hidden; background: #e5e7eb; display: flex; align-items: center; justify-content: center;';
+                    
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-link';
+                    icon.style.color = '#6b7280';
+                    imageDiv.appendChild(icon);
+                    
+                    // Create text container
+                    const textContainer = document.createElement('div');
+                    textContainer.style.cssText = 'flex: 1; min-width: 0;';
+                    
+                    // Create text element with proper styling
+                    const textElement = document.createElement('div');
+                    textElement.className = 'preview-link-text';
+                    textElement.style.cssText = 'font-weight: 600; font-size: 1.25rem !important;';
+                    // Use innerHTML to preserve HTML formatting
+                    textElement.innerHTML = link.title || '';
+                    
+                    textContainer.appendChild(textElement);
+                    linkEl.appendChild(imageDiv);
+                    linkEl.appendChild(textContainer);
+                    
+                    // Ensure font size is set (already set in cssText above, but double-check)
+                    textElement.style.setProperty('font-size', '1.25rem', 'important');
+                    textElement.style.fontSize = '1.25rem';
                 }
                 console.log(`Created link element for link ${index}:`, linkEl);
                 
-                // Apply individual link text formatting if available
-                if (link.font) {
-                    linkEl.style.fontFamily = link.font;
-                }
-                if (link.bold) {
-                    linkEl.style.fontWeight = 'bold';
-                }
-                if (link.italic) {
-                    linkEl.style.fontStyle = 'italic';
-                }
-                if (link.underline) {
-                    linkEl.style.textDecoration = 'underline';
-                }
+                // Note: Individual link formatting (font, bold, italic, underline) is now handled
+                // via HTML in the link.title field, so we don't need to apply it here
                 
                 previewLinks.appendChild(linkEl);
                 console.log(`Added link element to preview for link ${index}`);
@@ -6555,17 +6540,7 @@
             
             console.log('updatePreview complete, previewLinks children count:', previewLinks.children.length);
             
-            // Force square images after preview update
-            setTimeout(() => {
-                const previewImages = document.querySelectorAll('#preview-links img');
-                previewImages.forEach(img => {
-                    img.style.setProperty('object-fit', 'cover', 'important');
-                    img.style.setProperty('width', '100%', 'important');
-                    img.style.setProperty('height', '100%', 'important');
-                    img.style.setProperty('border-radius', '4px', 'important');
-                });
-                console.log('Forced square images after updatePreview:', previewImages.length);
-            }, 100);
+            // Images are now styled correctly in the structure above, no need for forced styling
             
             // Theme will be applied by the calling function if needed
         }
@@ -13089,6 +13064,43 @@
                 console.log('❌ Date preview elements not found:', { dateField: !!dateField, dateValue: !!dateValue });
             }
             
+            // Check if any fields are visible, and adjust spacing dynamically
+            const dynamicInfoContainer = document.getElementById('preview-dynamic-info');
+            if (dynamicInfoContainer) {
+                const fields = [
+                    document.getElementById('preview-info-title'),
+                    document.getElementById('preview-info-conference'),
+                    document.getElementById('preview-info-location'),
+                    document.getElementById('preview-info-date')
+                ];
+                
+                // Count visible fields
+                const visibleFieldsCount = fields.filter(field => {
+                    return field && field.style.display === 'block';
+                }).length;
+                
+                if (visibleFieldsCount === 0) {
+                    // No fields visible - hide container completely
+                    dynamicInfoContainer.style.display = 'none';
+                    dynamicInfoContainer.style.marginBottom = '0';
+                } else {
+                    // Show container and adjust margin based on number of visible fields
+                    dynamicInfoContainer.style.display = 'block';
+                    
+                    // Dynamic spacing: more fields = more space, fewer fields = less space
+                    // 1 field: 8px, 2 fields: 12px, 3+ fields: 16px
+                    let marginBottom;
+                    if (visibleFieldsCount === 1) {
+                        marginBottom = '8px';
+                    } else if (visibleFieldsCount === 2) {
+                        marginBottom = '12px';
+                    } else {
+                        marginBottom = '16px';
+                    }
+                    dynamicInfoContainer.style.marginBottom = marginBottom;
+                }
+            }
+            
             console.log('=== updateDynamicInfo complete ===');
         }
 
@@ -15082,20 +15094,20 @@
                 previewName.style.setProperty('font-family', nameFont, 'important');
                 
                 // Apply dynamic font size based on text length
-                // Pass theme to applyDynamicDisplayNameSize so it can get the max font size
+                // Use 1.5rem as default for preview (smaller than public.html's 1.75rem), don't use textFontSize from theme
                 if (typeof applyDynamicDisplayNameSize === 'function') {
                     applyDynamicDisplayNameSize(previewName, themeToApply);
                 } else {
                     // Fallback to direct calculation if function not available
                     const nameText = previewName.textContent || '';
-                    const maxFontSize = themeToApply.textFontSize || '1.75rem';
-                    const minFontSize = '1rem'; // Same as presentation info font size
+                    const maxFontSize = '1.5rem'; // Use 1.5rem default for preview (smaller than public.html)
+                    const minFontSize = '1.125rem'; // Smaller minimum for preview
                     const dynamicFontSize = calculateDisplayNameFontSize(nameText, maxFontSize, minFontSize);
                     previewName.style.setProperty('font-size', dynamicFontSize, 'important');
                 }
                 const nameText = previewName.textContent || '';
-                const maxFontSize = themeToApply.textFontSize || '1.75rem';
-                console.log('Applied dynamic font size to display name for text length:', nameText.length, 'max size:', maxFontSize);
+                const computedNameSize = window.getComputedStyle(previewName).fontSize;
+                console.log('Applied dynamic font size to display name for text length:', nameText.length, 'max size: 1.5rem', 'computed:', computedNameSize);
                 
                 previewName.style.setProperty('font-weight', themeToApply.descriptionBold ? 'bold' : 'normal', 'important');
                 previewName.style.setProperty('font-style', themeToApply.descriptionItalic ? 'italic' : 'normal', 'important');
@@ -15111,9 +15123,14 @@
             presentationFields.forEach(field => {
                 field.style.setProperty('color', themeToApply.presentationColor || '#000000', 'important');
                 field.style.setProperty('font-family', themeToApply.presentationFont || 'Arial', 'important');
-                field.style.setProperty('font-weight', themeToApply.presentationBold ? 'bold' : 'normal', 'important');
+                // Use 1.25rem for presentation info in preview (smaller than public.html's 1.375rem) - ignore any theme font size
+                field.style.setProperty('font-size', '1.25rem', 'important');
+                field.style.setProperty('font-weight', '600', 'important'); // Bold presentation information
                 field.style.setProperty('font-style', themeToApply.presentationItalic ? 'italic' : 'normal', 'important');
                 field.style.setProperty('text-decoration', themeToApply.presentationUnderline ? 'underline' : 'none', 'important');
+                // Verify the font size was applied
+                const computedSize = window.getComputedStyle(field).fontSize;
+                console.log('Presentation field font size:', computedSize, 'expected: 20px (1.25rem)');
             });
             console.log('Applied presentation formatting to', presentationFields.length, 'fields');
 
@@ -15188,9 +15205,23 @@
                 if (themeToApply.buttonTextFont) {
                     targetElement.style.setProperty('font-family', themeToApply.buttonTextFont, 'important');
                 }
+                // Apply font size with minimum of 1.25rem (20px) for readability (matching public.html)
                 if (themeToApply.buttonFontSize) {
-                    targetElement.style.setProperty('font-size', themeToApply.buttonFontSize, 'important');
+                    const themeSizeValue = parseFloat(themeToApply.buttonFontSize);
+                    const minSizeValue = 20; // 1.25rem = 20px
+                    // If theme size is smaller than minimum, use minimum instead
+                    if (themeSizeValue < minSizeValue) {
+                        targetElement.style.setProperty('font-size', '1.25rem', 'important');
+                    } else {
+                        targetElement.style.setProperty('font-size', themeToApply.buttonFontSize, 'important');
+                    }
+                } else {
+                    // Default to 1.25rem if no buttonFontSize is set (matching public.html - slightly smaller than presentation info)
+                    targetElement.style.setProperty('font-size', '1.25rem', 'important');
                 }
+                // Verify the font size was applied
+                const computedButtonSize = window.getComputedStyle(targetElement).fontSize;
+                console.log('Button text font size:', computedButtonSize, 'expected: 20px (1.25rem)');
                 if (themeToApply.buttonFontWeight) {
                     targetElement.style.setProperty('font-weight', themeToApply.buttonFontWeight, 'important');
                 } else {
@@ -15198,6 +15229,22 @@
                 }
                 targetElement.style.setProperty('font-style', themeToApply.buttonTextItalic ? 'italic' : 'normal', 'important');
                 targetElement.style.setProperty('text-decoration', themeToApply.buttonTextUnderline ? 'underline' : 'none', 'important');
+                
+                // Apply font size to button element itself (for consistency)
+                // Ensure minimum of 1.25rem (20px) for readability (matching public.html - slightly smaller than presentation info)
+                if (themeToApply.buttonFontSize) {
+                    const themeSizeValue = parseFloat(themeToApply.buttonFontSize);
+                    const minSizeValue = 20; // 1.25rem = 20px
+                    // If theme size is smaller than minimum, use minimum instead
+                    if (themeSizeValue < minSizeValue) {
+                        button.style.setProperty('font-size', '1.25rem', 'important');
+                    } else {
+                        button.style.setProperty('font-size', themeToApply.buttonFontSize, 'important');
+                    }
+                } else {
+                    // Default to 1.25rem if no buttonFontSize is set (matching public.html - slightly smaller than presentation info)
+                    button.style.setProperty('font-size', '1.25rem', 'important');
+                }
                 
                 // Apply button border radius and padding
                 if (themeToApply.buttonBorderRadius) {
@@ -15210,12 +15257,38 @@
                 
                 console.log('Applied button style:', themeToApply.buttonStyle, 'text color:', themeToApply.buttonTextColor, 'bg color:', themeToApply.buttonBgColor, 'font:', themeToApply.buttonTextFont);
             });
+            
+            // Final safeguard: Re-apply font sizes after a short delay to ensure they stick
+            // This handles cases where other code might override the font sizes
+            setTimeout(() => {
+                // Re-apply display name font size
+                if (previewName && typeof applyDynamicDisplayNameSize === 'function') {
+                    applyDynamicDisplayNameSize(previewName, themeToApply);
+                }
+                
+                // Re-apply presentation info font sizes
+                const presentationFields = preview.querySelectorAll('.info-value');
+                presentationFields.forEach(field => {
+                    field.style.setProperty('font-size', '1.25rem', 'important');
+                    field.style.setProperty('font-weight', '600', 'important');
+                });
+                
+                // Re-apply button font sizes (keep at 1.25rem to match public.html)
+                const buttons = preview.querySelectorAll('.preview-link');
+                buttons.forEach(button => {
+                    button.style.setProperty('font-size', '1.25rem', 'important');
+                    const textElement = button.querySelector('.preview-link-text');
+                    if (textElement) {
+                        textElement.style.setProperty('font-size', '1.25rem', 'important');
+                    }
+                });
+            }, 100);
 
         }
 
         // Calculate dynamic font size for display name based on text length
         // Minimum size is 1rem (same as presentation information font size)
-        function calculateDisplayNameFontSize(text, maxSize = '1.75rem', minSize = '1rem') {
+        function calculateDisplayNameFontSize(text, maxSize = '1.75rem', minSize = '1.25rem') {
             if (!text || text.trim().length === 0) {
                 return maxSize;
             }
@@ -15301,23 +15374,28 @@
             
             try {
                 const nameText = nameElement.textContent || '';
-                // Get the max size from theme parameter, currentList theme, or use default
-                let maxSize = '1.75rem';
-                if (themeParam && themeParam.textFontSize) {
-                    maxSize = themeParam.textFontSize;
-                } else if (currentList && currentList.theme && currentList.theme.textFontSize) {
-                    maxSize = currentList.theme.textFontSize;
-                } else if (currentTheme && currentTheme.textFontSize) {
-                    maxSize = currentTheme.textFontSize;
+                // Use 1.5rem as default max size for display name in preview (smaller than public.html's 1.75rem)
+                // Don't use textFontSize from theme as it's meant for other text elements
+                let maxSize = '1.5rem';
+                
+                // Ensure max size is at least 1.25rem for readability
+                const maxSizeValue = parseFloat(maxSize);
+                const maxSizeUnit = maxSize.replace(/[0-9.]/g, '') || 'rem';
+                const minMaxSize = 1.25; // Minimum max size for readability in preview
+                
+                // If somehow maxSize is smaller than 1.25rem, use 1.25rem instead
+                if (maxSizeValue < minMaxSize) {
+                    maxSize = minMaxSize + maxSizeUnit;
                 }
-                // Minimum size is 1rem (presentation information font size in index.html)
-                const minSize = '1rem';
+                
+                // Minimum size is 1.125rem for preview (smaller than public.html)
+                const minSize = '1.125rem';
                 const dynamicSize = calculateDisplayNameFontSize(nameText, maxSize, minSize);
                 nameElement.style.setProperty('font-size', dynamicSize, 'important');
             } catch (error) {
                 console.error('Error applying dynamic display name size:', error);
                 // Fallback to default size if there's an error
-                nameElement.style.setProperty('font-size', '1.75rem', 'important');
+                nameElement.style.setProperty('font-size', '1.5rem', 'important');
             }
         }
 
