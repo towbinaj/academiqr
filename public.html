@@ -126,7 +126,7 @@
         .preview-name-section h4 {
             font-size: 1.75rem !important;
             font-weight: 600;
-            color: #1f2937;
+            /* Color will be set by JavaScript from theme - no default to avoid conflicts */
             margin: 0 0 12px 0;
             line-height: 1.2;
             word-wrap: break-word;
@@ -221,7 +221,7 @@
         }
 
         .info-value {
-            color: #4b5563;
+            /* Color will be set by JavaScript from theme - no default to avoid conflicts */
             font-weight: 400;
             font-size: 1.125rem !important;
         }
@@ -419,6 +419,65 @@
                     console.log('Final theme to apply:', themeToApply);
                     console.log('Theme keys:', Object.keys(themeToApply));
                     applyTheme(themeToApply);
+                    
+                    // Re-apply font size and color after theme to ensure they're not overridden
+                    // This ensures the font size and color are correct even if theme has issues
+                    const displayName = document.getElementById('preview-name');
+                    if (displayName) {
+                        // Re-apply font size
+                        if (typeof applyDynamicDisplayNameSize === 'function') {
+                            console.log('Re-applying font size after theme, displayName text:', displayName.textContent);
+                            console.log('Theme textFontSize:', themeToApply.textFontSize);
+                            applyDynamicDisplayNameSize(displayName, themeToApply);
+                            // Force a reflow to ensure the style is applied
+                            displayName.offsetHeight;
+                            console.log('Final computed font-size:', window.getComputedStyle(displayName).fontSize);
+                        }
+                        
+                        // Re-apply color with aggressive approach
+                        // Prioritize presentationColor if it exists, as it's the main color setting
+                        const profileColor = themeToApply.presentationColor || themeToApply.profileTextColor || themeToApply.textColor || '#1f2937';
+                        console.log('Re-applying profile text color:', profileColor, '(from presentationColor:', themeToApply.presentationColor, 'or profileTextColor:', themeToApply.profileTextColor, ')');
+                        // Remove any existing inline color styles first
+                        displayName.style.removeProperty('color');
+                        displayName.style.setProperty('color', profileColor, 'important');
+                        displayName.style.color = profileColor;
+                        // Also set as attribute for maximum priority
+                        const currentStyle = displayName.getAttribute('style') || '';
+                        displayName.setAttribute('style', currentStyle + '; color: ' + profileColor + ' !important;');
+                        // Force a reflow
+                        void displayName.offsetHeight;
+                        
+                        // Also re-apply presentation colors
+                        // Prioritize presentationColor if it exists, as it's the main color setting
+                        const presentationColor = themeToApply.presentationColor || themeToApply.presentationTextColor || themeToApply.textColor || '#4b5563';
+                        const presentationValues = document.querySelectorAll('.info-value');
+                        presentationValues.forEach(field => {
+                            field.style.removeProperty('color');
+                            field.style.setProperty('color', presentationColor, 'important');
+                            field.style.color = presentationColor;
+                            const fieldStyle = field.getAttribute('style') || '';
+                            field.setAttribute('style', fieldStyle + '; color: ' + presentationColor + ' !important;');
+                        });
+                        
+                        // Verify and re-apply if needed
+                        setTimeout(() => {
+                            const computedColor = window.getComputedStyle(displayName).color;
+                            console.log('Final computed color:', computedColor);
+                            // Re-apply to ensure it sticks
+                            displayName.style.removeProperty('color');
+                            displayName.style.setProperty('color', profileColor, 'important');
+                            displayName.style.color = profileColor;
+                            displayName.setAttribute('style', displayName.getAttribute('style') + '; color: ' + profileColor + ' !important;');
+                            
+                            // Re-apply presentation colors too
+                            presentationValues.forEach(field => {
+                                field.style.removeProperty('color');
+                                field.style.setProperty('color', presentationColor, 'important');
+                                field.style.color = presentationColor;
+                            });
+                        }, 100);
+                    }
                 } else {
                     console.log('No theme found in collection');
                 }
@@ -767,10 +826,20 @@
             console.log('Profile text color:', theme.profileTextColor);
             console.log('Presentation color:', theme.presentationColor);
             console.log('Text color fallback:', theme.textColor);
-            const profileColor = theme.profileTextColor || theme.presentationColor || theme.textColor;
-            if (displayName && profileColor) {
+            // Prioritize presentationColor if it exists, as it's the main color setting
+            // Otherwise fall back to profileTextColor, then textColor
+            const profileColor = theme.presentationColor || theme.profileTextColor || theme.textColor || '#1f2937';
+            if (displayName) {
+                // Remove any existing inline color styles first
+                displayName.style.removeProperty('color');
+                // Apply color with multiple methods to ensure it sticks
                 displayName.style.setProperty('color', profileColor, 'important');
-                console.log('Applied profile text color:', profileColor);
+                displayName.style.color = profileColor;
+                // Also set as attribute for maximum priority
+                displayName.setAttribute('style', displayName.getAttribute('style') + '; color: ' + profileColor + ' !important;');
+                // Force a reflow
+                void displayName.offsetHeight;
+                console.log('Applied profile text color:', profileColor, '(from presentationColor:', theme.presentationColor, 'or profileTextColor:', theme.profileTextColor, ')');
             }
             // Apply dynamic font size based on text length
             if (displayName && typeof applyDynamicDisplayNameSize === 'function') {
@@ -804,12 +873,19 @@
                 buttonBgColor: theme.buttonBgColor,
                 buttonBackgroundColor: theme.buttonBackgroundColor
             });
-            const presentationColor = theme.presentationTextColor || theme.presentationColor || theme.textColor;
+            // Prioritize presentationColor if it exists, as it's the main color setting
+            // Otherwise fall back to presentationTextColor, then textColor
+            const presentationColor = theme.presentationColor || theme.presentationTextColor || theme.textColor || '#4b5563';
             presentationValues.forEach(field => {
-                if (presentationColor) {
-                    field.style.setProperty('color', presentationColor, 'important');
-                    console.log('Applied presentation text color:', presentationColor, 'to:', field);
-                }
+                // Remove any existing inline color styles first
+                field.style.removeProperty('color');
+                // Apply color with multiple methods to ensure it sticks
+                field.style.setProperty('color', presentationColor, 'important');
+                field.style.color = presentationColor;
+                // Also set as attribute for maximum priority
+                const currentStyle = field.getAttribute('style') || '';
+                field.setAttribute('style', currentStyle + '; color: ' + presentationColor + ' !important;');
+                console.log('Applied presentation text color:', presentationColor, '(from presentationColor:', theme.presentationColor, 'or presentationTextColor:', theme.presentationTextColor, ') to:', field);
             });
             
             // Apply button styling
@@ -879,8 +955,8 @@
 
 
         // Calculate dynamic font size for display name based on text length
-        // Minimum size is 1.125rem (same as presentation information font size in public.html)
-        function calculateDisplayNameFontSize(text, maxSize = '1.75rem', minSize = '1.125rem') {
+        // Minimum size is 1.25rem (20px) to ensure readability even for long names
+        function calculateDisplayNameFontSize(text, maxSize = '1.75rem', minSize = '1.25rem') {
             if (!text || text.trim().length === 0) {
                 return maxSize;
             }
@@ -899,27 +975,36 @@
             }
             
             // Define breakpoints for font size scaling
-            // Short names (0-15 chars): use max size
+            // Short names (0-15 chars): use max size (but ensure at least 1.5rem for readability)
             // Medium names (16-25 chars): scale down gradually
-            // Long names (26+ chars): use minimum size (presentation info font size)
+            // Long names (26+ chars): use minimum size (1.25rem)
             let fontSize;
             
+            // Ensure max size is at least 1.5rem (24px) for readability
+            const minMaxSize = 1.5; // 1.5rem minimum for max size
+            const effectiveMaxSize = Math.max(maxSizeValue, minMaxSize);
+            
             if (textLength <= 15) {
-                // Short names: use maximum size
-                fontSize = maxSizeValue;
+                // Short names: use maximum size (but ensure at least 1.5rem)
+                fontSize = effectiveMaxSize;
             } else if (textLength <= 25) {
                 // Medium names: scale down proportionally
                 // Formula: maxSize - ((textLength - 15) / 10) * (maxSize - minSize)
                 const scaleFactor = (textLength - 15) / 10; // 0 to 1 for 16-25 chars
-                fontSize = maxSizeValue - (scaleFactor * (maxSizeValue - minSizeConverted));
+                fontSize = effectiveMaxSize - (scaleFactor * (effectiveMaxSize - minSizeConverted));
             } else {
-                // Long names: use minimum size (presentation info font size)
+                // Long names: use minimum size (1.25rem)
                 fontSize = minSizeConverted;
             }
             
             // Ensure fontSize never goes below minimum
             if (fontSize < minSizeConverted) {
                 fontSize = minSizeConverted;
+            }
+            
+            // Ensure short names (<= 15 chars) never go below 1.5rem for readability
+            if (textLength <= 15 && fontSize < 1.5) {
+                fontSize = 1.5;
             }
             
             // Round to 2 decimal places and add unit
@@ -947,10 +1032,47 @@
                 } catch (e) {
                     // Theme not available yet, use default
                 }
-                // Minimum size is 1.125rem (presentation information font size in public.html)
-                const minSize = '1.125rem';
+                
+                // Ensure max size is at least 1.5rem for short names (readability)
+                // Parse the maxSize to ensure it's at least 1.5rem
+                const maxSizeValue = parseFloat(maxSize);
+                const maxSizeUnit = maxSize.replace(/[0-9.]/g, '') || 'rem';
+                const minMaxSize = 1.5; // Minimum max size for readability
+                
+                // If the theme's max size is smaller than 1.5rem, use 1.5rem instead
+                if (maxSizeValue < minMaxSize) {
+                    maxSize = minMaxSize + maxSizeUnit;
+                }
+                
+                // Minimum size is 1.25rem (20px) to ensure readability even for long names
+                const minSize = '1.25rem';
                 const dynamicSize = calculateDisplayNameFontSize(nameText, maxSize, minSize);
+                console.log('applyDynamicDisplayNameSize:', {
+                    nameText: nameText,
+                    nameLength: nameText.length,
+                    maxSize: maxSize,
+                    minSize: minSize,
+                    calculatedSize: dynamicSize
+                });
+                // Apply font size with maximum priority
                 nameElement.style.setProperty('font-size', dynamicSize, 'important');
+                // Also set directly to ensure it's applied
+                nameElement.style.fontSize = dynamicSize;
+                // Force a reflow to ensure browser applies the style
+                void nameElement.offsetHeight;
+                
+                // Double-check and re-apply if needed (for stubborn cases)
+                setTimeout(() => {
+                    const computedSize = window.getComputedStyle(nameElement).fontSize;
+                    const computedSizeValue = parseFloat(computedSize);
+                    const expectedSizeValue = parseFloat(dynamicSize);
+                    // If computed size is smaller than expected, force re-apply
+                    if (computedSizeValue < expectedSizeValue - 0.1) {
+                        console.warn('Font size not applied correctly, re-applying. Computed:', computedSize, 'Expected:', dynamicSize);
+                        nameElement.style.setProperty('font-size', dynamicSize, 'important');
+                        nameElement.style.fontSize = dynamicSize;
+                    }
+                }, 100);
             } catch (error) {
                 console.error('Error applying dynamic display name size:', error);
                 // Fallback to default size if there's an error
