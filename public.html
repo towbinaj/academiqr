@@ -245,11 +245,15 @@
             border-radius: 8px;
             text-decoration: none;
             color: #1e293b;
-            font-size: 1.125rem;
+            font-size: 1.375rem; /* Increased for better readability */
             transition: all 0.2s;
             min-height: 64px;
             display: flex;
             align-items: center;
+        }
+        
+        .preview-link-text {
+            font-size: inherit; /* Inherit from parent .preview-link */
         }
 
         .preview-link:hover {
@@ -434,6 +438,69 @@
                             console.log('Final computed font-size:', window.getComputedStyle(displayName).fontSize);
                         }
                         
+                        // Re-apply link button font sizes with aggressive approach
+                        const allButtons = document.querySelectorAll('.preview-link');
+                        allButtons.forEach(button => {
+                            const textElement = button.querySelector('.preview-link-text') || button.querySelector('div[style*="flex: 1"] > div');
+                            
+                            // Ensure minimum font size of 1.375rem (22px) for readability
+                            let fontSizeToApply = '1.375rem';
+                            if (themeToApply.buttonFontSize) {
+                                const themeSizeValue = parseFloat(themeToApply.buttonFontSize);
+                                const minSizeValue = 22; // 1.375rem = 22px
+                                // If theme size is smaller than minimum, use minimum instead
+                                if (themeSizeValue < minSizeValue) {
+                                    fontSizeToApply = '1.375rem';
+                                } else {
+                                    fontSizeToApply = themeToApply.buttonFontSize;
+                                }
+                            }
+                            
+                            // Apply font size with multiple methods
+                            button.style.setProperty('font-size', fontSizeToApply, 'important');
+                            button.style.fontSize = fontSizeToApply;
+                            if (textElement) {
+                                textElement.style.setProperty('font-size', fontSizeToApply, 'important');
+                                textElement.style.fontSize = fontSizeToApply;
+                            }
+                            // Force a reflow
+                            void button.offsetHeight;
+                        });
+                        
+                        // Verify and re-apply link font sizes after a delay
+                        setTimeout(() => {
+                            allButtons.forEach(button => {
+                                const textElement = button.querySelector('.preview-link-text') || button.querySelector('div[style*="flex: 1"] > div');
+                                const computedSize = window.getComputedStyle(button).fontSize;
+                                
+                                // Ensure minimum font size of 1.375rem (22px)
+                                let expectedSize = '1.375rem';
+                                if (themeToApply.buttonFontSize) {
+                                    const themeSizeValue = parseFloat(themeToApply.buttonFontSize);
+                                    const minSizeValue = 22; // 1.375rem = 22px
+                                    if (themeSizeValue < minSizeValue) {
+                                        expectedSize = '1.375rem';
+                                    } else {
+                                        expectedSize = themeToApply.buttonFontSize;
+                                    }
+                                }
+                                
+                                const expectedSizePx = 22; // Always use minimum of 22px
+                                const computedSizePx = parseFloat(computedSize);
+                                
+                                // If computed size is smaller than minimum, force re-apply
+                                if (computedSizePx < expectedSizePx - 1) {
+                                    console.warn('Link font size not applied correctly, re-applying. Computed:', computedSize, 'Expected:', expectedSize);
+                                    button.style.setProperty('font-size', expectedSize, 'important');
+                                    button.style.fontSize = expectedSize;
+                                    if (textElement) {
+                                        textElement.style.setProperty('font-size', expectedSize, 'important');
+                                        textElement.style.fontSize = expectedSize;
+                                    }
+                                }
+                            });
+                        }, 100);
+                        
                         // Re-apply color with aggressive approach
                         // Prioritize presentationColor if it exists, as it's the main color setting
                         const profileColor = themeToApply.presentationColor || themeToApply.profileTextColor || themeToApply.textColor || '#1f2937';
@@ -597,6 +664,8 @@
             }
 
             links.forEach(link => {
+                console.log('Rendering link:', link.id, 'Title:', link.title, 'Title type:', typeof link.title);
+                
                 const linkElement = document.createElement('a');
                 // Use tracking URL for analytics
                 const baseUrl = window.location.origin;
@@ -604,15 +673,44 @@
                 linkElement.target = '_blank';
                 linkElement.rel = 'noopener noreferrer';
                 linkElement.className = 'preview-link';
+                
+                // Set font size immediately on the link element
+                linkElement.style.setProperty('font-size', '1.375rem', 'important');
+                linkElement.style.fontSize = '1.375rem';
 
-                linkElement.innerHTML = `
-                    <div style="width: 48px; height: 48px; border-radius: 8px; margin-right: 12px; overflow: hidden; background: #e5e7eb; display: flex; align-items: center; justify-content: center;">
-                        ${link.image ? `<img src="${link.image}" alt="Link Icon" style="width: 100%; height: 100%; object-fit: cover;">` : '<i class="fas fa-link" style="color: #6b7280;"></i>'}
-                    </div>
-                    <div style="flex: 1;">
-                        <div style="font-weight: 600; font-size: 0.875rem;">${link.title}</div>
-                    </div>
-                `;
+                // Create the link structure
+                const imageDiv = document.createElement('div');
+                imageDiv.style.cssText = 'width: 48px; height: 48px; border-radius: 8px; margin-right: 12px; overflow: hidden; background: #e5e7eb; display: flex; align-items: center; justify-content: center;';
+                
+                if (link.image) {
+                    const img = document.createElement('img');
+                    img.src = link.image;
+                    img.alt = 'Link Icon';
+                    img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                    imageDiv.appendChild(img);
+                } else {
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-link';
+                    icon.style.color = '#6b7280';
+                    imageDiv.appendChild(icon);
+                }
+                
+                const textContainer = document.createElement('div');
+                textContainer.style.cssText = 'flex: 1;';
+                
+                const textElement = document.createElement('div');
+                textElement.className = 'preview-link-text';
+                textElement.style.cssText = 'font-weight: 600; font-size: inherit !important;';
+                // Use innerHTML to preserve HTML formatting (bold, italic, underline)
+                textElement.innerHTML = link.title || '';
+                
+                textContainer.appendChild(textElement);
+                linkElement.appendChild(imageDiv);
+                linkElement.appendChild(textContainer);
+                
+                // Set font size on the text element
+                textElement.style.setProperty('font-size', '1.375rem', 'important');
+                textElement.style.fontSize = '1.375rem';
 
                 container.appendChild(linkElement);
             });
@@ -930,16 +1028,29 @@
                     button.style.setProperty('padding', theme.buttonPadding, 'important');
                 }
                 
+                // Apply font size - apply directly to button and text element for consistency
+                const textElement = button.querySelector('.preview-link-text') || button.querySelector('div[style*="flex: 1"] > div');
+                
+                // Ensure minimum font size of 1.375rem (22px) for readability
+                let fontSizeToApply = '1.375rem';
                 if (theme.buttonFontSize) {
-                    // Apply font size to the text element inside the button
-                    const textContainer = button.children[1]; // Second child div (text container)
-                    const textElement = textContainer ? textContainer.children[0] : null; // First child of text container
-                    if (textElement) {
-                        // Increase font size by adding 4px to make it bigger
-                        const currentSize = parseFloat(theme.buttonFontSize);
-                        const newSize = (currentSize + 4) + 'px';
-                        textElement.style.setProperty('font-size', newSize, 'important');
+                    const themeSizeValue = parseFloat(theme.buttonFontSize);
+                    const minSizeValue = 22; // 1.375rem = 22px
+                    // If theme size is smaller than minimum, use minimum instead
+                    if (themeSizeValue < minSizeValue) {
+                        fontSizeToApply = '1.375rem';
+                    } else {
+                        fontSizeToApply = theme.buttonFontSize;
                     }
+                }
+                
+                // Apply font size with multiple methods
+                button.style.setProperty('font-size', fontSizeToApply, 'important');
+                button.style.fontSize = fontSizeToApply;
+                // Also apply to text element inside
+                if (textElement) {
+                    textElement.style.setProperty('font-size', fontSizeToApply, 'important');
+                    textElement.style.fontSize = fontSizeToApply;
                 }
                 
                 if (theme.buttonFontWeight) {

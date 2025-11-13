@@ -5723,7 +5723,8 @@
                 titleDiv.contentEditable = true;
                 titleDiv.dataset.field = 'title';
                 titleDiv.dataset.index = index;
-                titleDiv.textContent = link.title || 'Untitled Link';
+                // Use innerHTML to preserve HTML formatting (bold, italic, underline)
+                titleDiv.innerHTML = link.title || 'Untitled Link';
                 
                 const rtfToolbar = document.createElement('div');
                 rtfToolbar.className = 'link-rtf-toolbar';
@@ -5872,6 +5873,12 @@
                     if (links[index] && links[index][field] !== newValue) {
                         links[index][field] = newValue;
                         updatePreview();
+                        
+                        // Save link to database immediately
+                        if (links[index].id && !links[index].id.startsWith('local-')) {
+                            saveLinkToDatabase(links[index]);
+                        }
+                        
                         showMessage('Link updated!', 'success');
                     }
                     
@@ -6504,7 +6511,8 @@
                     
                     const previewText = document.createElement('div');
                     previewText.className = 'preview-link-text';
-                    previewText.textContent = link.title;
+                    // Use innerHTML to preserve HTML formatting (bold, italic, underline)
+                    previewText.innerHTML = link.title || '';
                     
                     imageContainer.appendChild(img);
                     previewImage.appendChild(imageContainer);
@@ -6513,7 +6521,11 @@
                     
                     linkContent = previewContent;
                 } else {
-                    linkContent = link.title;
+                    // When there's no image, create a text container to preserve HTML formatting
+                    const textContainer = document.createElement('div');
+                    textContainer.className = 'preview-link-text';
+                    textContainer.innerHTML = link.title || '';
+                    linkContent = textContainer;
                 }
                 if (typeof linkContent === 'string') {
                     linkEl.innerHTML = linkContent;
@@ -6932,6 +6944,33 @@
         
         // Flag to prevent initTheming from being called multiple times
         let themingInitialized = false;
+        
+        // Function to save a single link to the database
+        async function saveLinkToDatabase(link) {
+            if (!link || !link.id || link.id.startsWith('local-')) {
+                return; // Don't save local/unsaved links
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('link_items')
+                    .update({
+                        title: link.title, // Save HTML as-is
+                        url: link.url,
+                        image_url: link.image_url || link.image,
+                        order_index: link.order_index
+                    })
+                    .eq('id', link.id);
+                
+                if (error) {
+                    console.error('Error saving link to database:', error);
+                } else {
+                    console.log('Link saved to database:', link.id, 'Title:', link.title);
+                }
+            } catch (error) {
+                console.error('Exception saving link to database:', error);
+            }
+        }
         
         async function saveChanges() {
             try {
