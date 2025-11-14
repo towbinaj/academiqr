@@ -5606,7 +5606,6 @@
             // If QR code tab is active, refresh it to update URL
             const qrTab = document.getElementById('tab-qrcode');
             if (qrTab && qrTab.classList.contains('active')) {
-                console.log('QR tab is active, regenerating QR code for new collection');
                 initQRCodeTab();
             }
         }
@@ -7161,7 +7160,6 @@
                 }
                 
                 // Save QR code style data
-                console.log('Saving QR code style...');
                 const qrCodeData = {
                     size: document.getElementById('qr-size')?.value || '300',
                     pattern: 'square', // Always square pattern
@@ -7175,7 +7173,6 @@
                     borderStyle: document.getElementById('qr-border-style')?.value || 'solid',
                     borderRadius: document.getElementById('qr-border-radius')?.value || '8'
                 };
-                console.log('QR code data:', qrCodeData);
                 
                 // Update collection with QR code data
                 const { error: qrError } = await supabaseClient
@@ -7188,7 +7185,6 @@
                 if (qrError) {
                     console.warn('QR code data update failed:', qrError);
                 } else {
-                    console.log('QR code data saved successfully');
                     // Update currentList with QR code data
                     currentList.qr_code_data = qrCodeData;
                 }
@@ -7715,8 +7711,6 @@
                         const R = Math.ceil(0.5 * Math.SQRT2 * qrSide) + ringGap; // radius
                         const canvasSize = 2 * R; // SVG width/height
                         
-                        console.log('Circular QR: modules=' + n + ', moduleSize=' + moduleSize + ', qrSide=' + qrSide + ', radius=' + R + ', canvas=' + canvasSize);
-                        
                         // 3) SVG
                         const svgNS = 'http://www.w3.org/2000/svg';
                         const svg = document.createElementNS(svgNS, 'svg');
@@ -8041,8 +8035,6 @@
                             oldImg.remove();
                         }
                         container.appendChild(svg);
-                        
-                        console.log('Generated circular SVG QR code with finder cutouts');
                     }, 150);
                 }
                 // QR code generated successfully - hide img element and show canvas
@@ -8051,29 +8043,19 @@
                     const img = container.querySelector('img');
                     const canvas = container.querySelector('canvas');
                     
-                    console.log('QR Code elements after generation:');
-                    console.log('- Container children:', container.children.length);
-                    console.log('- IMG element:', img);
-                    console.log('- Canvas element:', canvas);
-                    console.log('- Container innerHTML length:', container.innerHTML.length);
-                    
                     if (img) {
-                        console.log('Hiding QR code img element');
                         img.style.display = 'none';
                     }
                     
                     if (canvas) {
-                        console.log('Canvas found, ensuring it\'s visible');
                         canvas.style.display = 'block';
                         canvas.style.width = '100%';
                         canvas.style.height = '100%';
                         
                         // Apply logo overlay if present
                         if (currentQRLogo) {
-                            console.log('Applying logo overlay to QR code');
                             try {
                                 await overlayLogoOnQR(canvas, currentQRLogo);
-                                console.log('Logo overlay applied successfully');
                             } catch (error) {
                                 console.error('Failed to apply logo overlay:', error);
                             }
@@ -8083,15 +8065,8 @@
                     }
                     
                     // Monitor the container for changes
-                    const observer = new MutationObserver((mutations) => {
-                        mutations.forEach((mutation) => {
-                            if (mutation.type === 'childList') {
-                                console.log('QR Container children changed!');
-                                console.log('- Added nodes:', mutation.addedNodes.length);
-                                console.log('- Removed nodes:', mutation.removedNodes.length);
-                                console.log('- Current children:', container.children.length);
-                            }
-                        });
+                    const observer = new MutationObserver(() => {
+                        // Monitoring for container changes (no logging needed)
                     });
                     
                     observer.observe(container, { childList: true, subtree: true });
@@ -8099,7 +8074,6 @@
                     // Stop observing after 5 seconds
                     setTimeout(() => {
                         observer.disconnect();
-                        console.log('Stopped monitoring QR container');
                     }, 5000);
                 }, 100);
                 
@@ -8674,35 +8648,29 @@
         }
 
         async function applyQRPattern(pattern, container) {
-            console.log('=== applyQRPattern called with pattern:', pattern);
             const canvas = container.querySelector('canvas');
             if (!canvas) {
                 console.error('Canvas not found in container');
                 return;
             }
             
-            console.log('Canvas found, dimensions:', canvas.width, 'x', canvas.height);
             const ctx = canvas.getContext('2d');
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             
             switch(pattern) {
                 case 'rounded':
-                    console.log('Applying rounded pattern');
                     container.classList.add('qr-rounded');
                     applyRoundedPattern(ctx, imageData, canvas.width, canvas.height);
                     break;
                 case 'dots':
-                    console.log('Applying dots pattern');
                     container.classList.add('qr-dots');
                     applyDotsPattern(ctx, imageData, canvas.width, canvas.height);
                     break;
                 case 'extra-rounded':
-                    console.log('Applying extra-rounded pattern');
                     container.classList.add('qr-extra-rounded');
                     applyExtraRoundedPattern(ctx, imageData, canvas.width, canvas.height);
                     break;
                 default:
-                    console.log('Using default square pattern');
                     container.classList.add('qr-square');
                     // Keep default square pattern
                     break;
