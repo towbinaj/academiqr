@@ -9337,108 +9337,91 @@
         }
         // Update header logo to use online URL
         async function updateHeaderLogo() {
-            // Set logo src from ASSET_URLS to avoid CORS issues
+            // Load logo as blob to bypass ORB restrictions
             const loginLogo = document.getElementById('login-logo');
-            if (loginLogo && ASSET_URLS.logoDark) {
-                // Set src from Supabase URL (loaded via JavaScript to avoid CORS)
-                loginLogo.src = ASSET_URLS.logoDark;
-            }
-            
-            // Ensure fallback is hidden if logo is loaded
-            if (loginLogo && loginLogo.complete && loginLogo.naturalHeight !== 0) {
-                const fallback = document.getElementById('login-logo-fallback');
-                if (fallback) {
-                    fallback.style.display = 'none';
-                }
-            }
-            
-            // Sidebar logo - set src from ASSET_URLS
             const sidebarLogo = document.getElementById('sidebar-logo');
-            if (sidebarLogo && ASSET_URLS.logoDark) {
-                // Set src from Supabase URL (loaded via JavaScript to avoid CORS)
-                sidebarLogo.src = ASSET_URLS.logoDark;
-                
-                // Set up the onload event to resize after image loads (if not already loaded)
-                if (!sidebarLogo.complete || sidebarLogo.naturalHeight === 0) {
-                    sidebarLogo.onload = function() {
-                        // Force parent containers to have proper dimensions
-                        const logoContainer = sidebarLogo.parentElement;
-                        const logoSection = sidebarLogo.closest('.logo-section');
-                        const sidebarHeader = sidebarLogo.closest('.sidebar-header');
-                        const sidebar = sidebarLogo.closest('.sidebar');
+            
+            if (ASSET_URLS.logoDark) {
+                try {
+                    // Fetch image as blob to avoid ORB issues
+                    const response = await fetch(ASSET_URLS.logoDark);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const objectUrl = URL.createObjectURL(blob);
                         
-                        if (logoContainer) {
-                            logoContainer.style.setProperty('width', '280px', 'important');
-                            logoContainer.style.setProperty('height', 'auto', 'important');
-                            logoContainer.style.setProperty('min-width', '280px', 'important');
-                            logoContainer.style.setProperty('min-height', '20px', 'important');
+                        // Set both logos to use the object URL
+                        if (loginLogo) {
+                            loginLogo.src = objectUrl;
+                            loginLogo.onload = function() {
+                                this.style.display = 'block';
+                                const fallback = document.getElementById('login-logo-fallback');
+                                if (fallback) {
+                                    fallback.style.display = 'none';
+                                }
+                            };
                         }
                         
-                        if (logoSection) {
-                            logoSection.style.setProperty('width', '280px', 'important');
-                            logoSection.style.setProperty('height', 'auto', 'important');
-                            logoSection.style.setProperty('min-width', '280px', 'important');
-                            logoSection.style.setProperty('min-height', '20px', 'important');
+                        if (sidebarLogo) {
+                            sidebarLogo.src = objectUrl;
+                            
+                            // Set up the onload event to resize after image loads
+                            sidebarLogo.onload = function() {
+                                // Force parent containers to have proper dimensions
+                                const logoContainer = sidebarLogo.parentElement;
+                                const logoSection = sidebarLogo.closest('.logo-section');
+                                const sidebarHeader = sidebarLogo.closest('.sidebar-header');
+                                const sidebar = sidebarLogo.closest('.sidebar');
+                                
+                                if (logoContainer) {
+                                    logoContainer.style.setProperty('width', '280px', 'important');
+                                    logoContainer.style.setProperty('height', 'auto', 'important');
+                                    logoContainer.style.setProperty('min-width', '280px', 'important');
+                                    logoContainer.style.setProperty('min-height', '20px', 'important');
+                                }
+                                
+                                if (logoSection) {
+                                    logoSection.style.setProperty('width', '280px', 'important');
+                                    logoSection.style.setProperty('height', 'auto', 'important');
+                                    logoSection.style.setProperty('min-width', '280px', 'important');
+                                    logoSection.style.setProperty('min-height', '20px', 'important');
+                                }
+                                
+                                if (sidebarHeader) {
+                                    sidebarHeader.style.setProperty('width', '280px', 'important');
+                                    sidebarHeader.style.setProperty('height', 'auto', 'important');
+                                    sidebarHeader.style.setProperty('min-width', '280px', 'important');
+                                    sidebarHeader.style.setProperty('min-height', '300px', 'important');
+                                }
+                                
+                                if (sidebar) {
+                                    sidebar.style.setProperty('width', '280px', 'important');
+                                    sidebar.style.setProperty('height', '100vh', 'important');
+                                    sidebar.style.setProperty('min-width', '280px', 'important');
+                                }
+                                
+                                // Force the logo to be visible and sized
+                                sidebarLogo.style.setProperty('display', 'block', 'important');
+                                sidebarLogo.style.setProperty('visibility', 'visible', 'important');
+                                sidebarLogo.style.setProperty('opacity', '1', 'important');
+                                sidebarLogo.style.setProperty('height', '100px', 'important');
+                                sidebarLogo.style.setProperty('width', 'auto', 'important');
+                                sidebarLogo.style.setProperty('max-height', '100px', 'important');
+                                sidebarLogo.style.setProperty('min-height', '100px', 'important');
+                                sidebarLogo.style.setProperty('margin', '0 auto 4px auto', 'important');
+                                
+                                sidebarLogo.setAttribute('height', '100');
+                                sidebarLogo.removeAttribute('width');
+                            };
                         }
-                        
-                        if (sidebarHeader) {
-                            sidebarHeader.style.setProperty('width', '280px', 'important');
-                            sidebarHeader.style.setProperty('height', 'auto', 'important');
-                            sidebarHeader.style.setProperty('min-width', '280px', 'important');
-                            sidebarHeader.style.setProperty('min-height', '300px', 'important');
-                        }
-                        
-                        if (sidebar) {
-                            sidebar.style.setProperty('width', '280px', 'important');
-                            sidebar.style.setProperty('height', '100vh', 'important');
-                            sidebar.style.setProperty('min-width', '280px', 'important');
-                        }
-                        
-                        // Force the logo to be visible and sized
-                        sidebarLogo.style.setProperty('display', 'block', 'important');
-                        sidebarLogo.style.setProperty('visibility', 'visible', 'important');
-                        sidebarLogo.style.setProperty('opacity', '1', 'important');
-                        sidebarLogo.style.setProperty('height', '100px', 'important');
-                        sidebarLogo.style.setProperty('width', 'auto', 'important');
-                        sidebarLogo.style.setProperty('max-height', '100px', 'important');
-                        sidebarLogo.style.setProperty('min-height', '100px', 'important');
-                        sidebarLogo.style.setProperty('margin', '0 auto 4px auto', 'important');
-                        
-                        sidebarLogo.setAttribute('height', '100');
-                        sidebarLogo.removeAttribute('width');
-                    };
-                } else {
-                    // Image already loaded, apply sizing immediately
-                    const logoContainer = sidebarLogo.parentElement;
-                    const logoSection = sidebarLogo.closest('.logo-section');
-                    const sidebarHeader = sidebarLogo.closest('.sidebar-header');
-                    const sidebar = sidebarLogo.closest('.sidebar');
-                    
-                    if (logoContainer) {
-                        logoContainer.style.setProperty('width', '280px', 'important');
-                        logoContainer.style.setProperty('height', 'auto', 'important');
-                        logoContainer.style.setProperty('min-width', '280px', 'important');
-                        logoContainer.style.setProperty('min-height', '20px', 'important');
                     }
-                    
-                    if (logoSection) {
-                        logoSection.style.setProperty('width', '280px', 'important');
-                        logoSection.style.setProperty('height', 'auto', 'important');
-                        logoSection.style.setProperty('min-width', '280px', 'important');
-                        logoSection.style.setProperty('min-height', '20px', 'important');
+                } catch (error) {
+                    console.error('Error loading logo:', error);
+                    // Fallback: try direct URL if blob fetch fails
+                    if (loginLogo && ASSET_URLS.logoDark) {
+                        loginLogo.src = ASSET_URLS.logoDark;
                     }
-                    
-                    if (sidebarHeader) {
-                        sidebarHeader.style.setProperty('width', '280px', 'important');
-                        sidebarHeader.style.setProperty('height', 'auto', 'important');
-                        sidebarHeader.style.setProperty('min-width', '280px', 'important');
-                        sidebarHeader.style.setProperty('min-height', '300px', 'important');
-                    }
-                    
-                    if (sidebar) {
-                        sidebar.style.setProperty('width', '280px', 'important');
-                        sidebar.style.setProperty('height', '100vh', 'important');
-                        sidebar.style.setProperty('min-width', '280px', 'important');
+                    if (sidebarLogo && ASSET_URLS.logoDark) {
+                        sidebarLogo.src = ASSET_URLS.logoDark;
                     }
                 }
             }
