@@ -1239,6 +1239,13 @@
             margin: 0 auto;
         }
         
+        #qr-code-container canvas[data-hidden="true"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        
 
         .stat-number {
             font-size: 2rem;
@@ -7425,11 +7432,15 @@
             // Clear currentQRCode reference
             currentQRCode = null;
             
-            // Remove all existing canvases and images
+            // Remove all existing canvases and images (including composite images)
             const existingCanvases = container.querySelectorAll('canvas');
             const existingImages = container.querySelectorAll('img');
             existingCanvases.forEach(canvas => canvas.remove());
             existingImages.forEach(img => img.remove());
+            
+            // Clear composite canvas data attributes
+            delete container.dataset.compositeCanvas;
+            delete container.dataset.originalCanvas;
             
             // Clear container innerHTML to remove any leftover elements
             container.innerHTML = '';
@@ -7441,17 +7452,16 @@
             container.classList.remove('qr-square', 'qr-rounded', 'qr-dots', 'qr-extra-rounded');
             
             // Ensure container maintains its styling (square shape)
-            const qrPadding = document.getElementById('qr-padding').value + 'px';
+            // Container padding is set to 0 since composite image includes padding and border
             container.style.background = 'white';
-            container.style.padding = qrPadding;
+            container.style.padding = '0';
             container.style.display = 'flex';
             container.style.alignItems = 'center';
             container.style.justifyContent = 'center';
             container.style.width = '400px';
             container.style.height = '400px';
             container.style.margin = '0 auto';
-            container.style.boxSizing = 'border-box'; // Include padding and border in width/height
-            console.log('Applied padding:', qrPadding);
+            container.style.boxSizing = 'border-box';
             
             // Apply shape (circular clipping)
             if (shape === 'circle') {
@@ -7463,44 +7473,40 @@
             }
             
             // Apply border settings to container
+            // Note: The decorative border is drawn on the composite canvas, not as a CSS border
+            // So we always use the default dashed border for the container
             const borderEnabled = document.getElementById('qr-border-enabled').checked;
             if (borderEnabled) {
-                const borderWidth = document.getElementById('qr-border-width').value + 'px';
-                const borderColor = document.getElementById('qr-border-color').value;
-                const borderStyle = document.getElementById('qr-border-style').value;
-                const borderRadius = document.getElementById('qr-border-radius').value + 'px';
-                
                 // Sync border color text input
+                const borderColor = document.getElementById('qr-border-color').value;
                 document.getElementById('qr-border-color-text').value = borderColor;
-                
-                container.style.border = `${borderWidth} ${borderStyle} ${borderColor}`;
-                // Only apply custom border radius if shape is square
-                if (shape !== 'circle') {
-                    container.style.borderRadius = borderRadius;
-                }
-                console.log('Applied border:', { borderWidth, borderColor, borderStyle, borderRadius });
-            } else {
-                // Keep the default dashed border for the container background
-                container.style.border = '2px dashed #e5e7eb';
-                // Only apply default border radius if shape is square
-                if (shape !== 'circle') {
-                    container.style.borderRadius = '12px';
-                }
+                console.log('Border will be drawn on composite canvas:', { borderEnabled });
+            }
+            
+            // Always use the default dashed border for the container (decorative border is in the image)
+            container.style.border = '2px dashed #e5e7eb';
+            // Only apply default border radius if shape is square
+            if (shape !== 'circle') {
+                container.style.borderRadius = '12px';
             }
             
             // Generate new QR code
             try {
+                // Start with outer container size and work inward
+                const containerSize = 400; // Fixed container size
+                const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
+                const borderEnabled = document.getElementById('qr-border-enabled').checked;
+                const borderWidth = borderEnabled ? parseInt(document.getElementById('qr-border-width').value) : 0;
+                
                 console.log('Creating QRCode with settings:', { url, size, color, bgColor, shape, padding: qrPadding });
                 console.log('Container element:', container);
                 
-                // Calculate available space for QR code after padding
-                const paddingValue = parseInt(document.getElementById('qr-padding').value);
-                const containerSize = 400; // Fixed container size
-                const availableSpace = containerSize - (paddingValue * 2); // Subtract padding from both sides
+                // Calculate QR code size: container - border - padding
+                // Border takes borderWidth on each side = borderWidth * 2 total
+                // Padding takes qrPadding on each side = qrPadding * 2 total
+                const qrSize = containerSize - (borderWidth * 2) - (qrPadding * 2);
                 
-                // Make QR code smaller to ensure it fits with some margin
-                const qrSize = Math.floor(availableSpace * 0.75); // Use 75% of available space for better fit
-                console.log('Container:', containerSize, 'Padding:', paddingValue, 'Available:', availableSpace, 'QR size:', qrSize, 'Shape:', shape);
+                console.log('Container:', containerSize, 'Border:', borderWidth, 'Padding:', qrPadding, 'QR size:', qrSize, 'Shape:', shape);
                 
                 currentQRCode = new QRCode(container, {
                     text: url,
@@ -7515,6 +7521,206 @@
                 console.log('Container after QRCode creation:', container);
                 console.log('Container children after QRCode creation:', container.children.length);
                 console.log('Container innerHTML after QRCode creation:', container.innerHTML.substring(0, 200) + '...');
+                
+                // Create composite image with padding for right-click copy functionality
+                // Wait a bit for the canvas to be fully rendered
+                setTimeout(() => {
+                    const canvas = container.querySelector('canvas');
+                    if (!canvas) {
+                        console.warn('Canvas not found for composite image creation');
+                        return;
+                    }
+                    
+                    // Get padding and border settings (same as calculated above)
+                    const containerSize = 400; // Fixed container size
+                    const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
+                    const borderEnabled = document.getElementById('qr-border-enabled').checked;
+                    const borderWidth = borderEnabled ? parseInt(document.getElementById('qr-border-width').value) : 0;
+                    
+                    // Remove any existing composite images first (in case of regeneration)
+                    const existingCompositeImgs = container.querySelectorAll('img[data-composite="true"]');
+                    existingCompositeImgs.forEach(img => img.remove());
+                    
+                    // Only create composite if there's padding or border
+                    if (qrPadding > 0 || borderEnabled) {
+                        // Make sure canvas is visible first (in case it was hidden before)
+                        canvas.style.display = '';
+                        canvas.style.visibility = '';
+                        canvas.style.position = '';
+                        canvas.style.opacity = '';
+                        canvas.style.pointerEvents = '';
+                        
+                        // Create composite canvas at exact container size
+                        const compositeCanvas = document.createElement('canvas');
+                        compositeCanvas.width = containerSize;
+                        compositeCanvas.height = containerSize;
+                        const ctx = compositeCanvas.getContext('2d');
+                        
+                        // Fill with background color
+                        const bgColor = document.getElementById('qr-bg-color').value;
+                        ctx.fillStyle = bgColor;
+                        ctx.fillRect(0, 0, compositeCanvas.width, compositeCanvas.height);
+                        
+                        // Calculate positions: border is outermost, then padding, then QR code
+                        // Border stroke is centered on the path, so draw at borderWidth/2
+                        // QR code position: borderWidth (to be inside border) + qrPadding
+                        const qrX = borderWidth + qrPadding;
+                        const qrY = borderWidth + qrPadding;
+                        
+                        // Draw border if enabled (around the padding area)
+                        if (borderEnabled) {
+                            const borderColor = document.getElementById('qr-border-color').value;
+                            const borderStyle = document.getElementById('qr-border-style').value;
+                            const borderRadius = parseInt(document.getElementById('qr-border-radius').value);
+                            
+                            ctx.strokeStyle = borderColor;
+                            ctx.lineWidth = borderWidth;
+                            
+                            if (borderStyle === 'dashed') {
+                                ctx.setLineDash([borderWidth * 2, borderWidth]);
+                            } else if (borderStyle === 'dotted') {
+                                ctx.setLineDash([borderWidth, borderWidth]);
+                            } else if (borderStyle === 'double') {
+                                ctx.lineWidth = borderWidth / 3;
+                                // Border path at borderWidth/2, width includes borderWidth to reach container edge
+                                const borderX = borderWidth / 2;
+                                const borderY = borderWidth / 2;
+                                const borderW = canvas.width + (qrPadding * 2) + borderWidth;
+                                const borderH = canvas.height + (qrPadding * 2) + borderWidth;
+                                ctx.strokeRect(borderX, borderY, borderW, borderH);
+                                ctx.strokeRect(borderX + borderWidth, borderY + borderWidth, borderW - borderWidth * 2, borderH - borderWidth * 2);
+                            }
+                            
+                            if (borderStyle !== 'double') {
+                                if (borderRadius > 0) {
+                                    ctx.beginPath();
+                                    // Border path at borderWidth/2, width includes borderWidth to reach container edge
+                                    const x = borderWidth / 2;
+                                    const y = borderWidth / 2;
+                                    const width = canvas.width + (qrPadding * 2) + borderWidth;
+                                    const height = canvas.height + (qrPadding * 2) + borderWidth;
+                                    ctx.moveTo(x + borderRadius, y);
+                                    ctx.lineTo(x + width - borderRadius, y);
+                                    ctx.arcTo(x + width, y, x + width, y + borderRadius, borderRadius);
+                                    ctx.lineTo(x + width, y + height - borderRadius);
+                                    ctx.arcTo(x + width, y + height, x + width - borderRadius, y + height, borderRadius);
+                                    ctx.lineTo(x + borderRadius, y + height);
+                                    ctx.arcTo(x, y + height, x, y + borderRadius, borderRadius);
+                                    ctx.lineTo(x, y + borderRadius);
+                                    ctx.arcTo(x, y, x + borderRadius, y, borderRadius);
+                                    ctx.closePath();
+                                    ctx.stroke();
+                                } else {
+                                    // Border path at borderWidth/2, width includes borderWidth to reach container edge
+                                    const borderX = borderWidth / 2;
+                                    const borderY = borderWidth / 2;
+                                    const borderW = canvas.width + (qrPadding * 2) + borderWidth;
+                                    const borderH = canvas.height + (qrPadding * 2) + borderWidth;
+                                    ctx.strokeRect(borderX, borderY, borderW, borderH);
+                                }
+                            }
+                            
+                            ctx.setLineDash([]);
+                        }
+                        
+                        // Draw the QR code canvas at the calculated position (inside padding, inside border)
+                        ctx.drawImage(canvas, qrX, qrY);
+                        
+                        // Create an img element from the composite canvas
+                        const compositeImg = document.createElement('img');
+                        
+                        // Apply logo to composite canvas if it exists
+                        if (currentQRLogo) {
+                            const logo = new Image();
+                            logo.onload = function() {
+                                // Calculate logo size (max 20% of QR code size for scannability)
+                                const qrCodeSize = canvas.width;
+                                const maxLogoSize = qrCodeSize * 0.20;
+                                let logoWidth = logo.width;
+                                let logoHeight = logo.height;
+                                
+                                // Scale logo to fit within max size while maintaining aspect ratio
+                                if (logoWidth > maxLogoSize || logoHeight > maxLogoSize) {
+                                    const scale = Math.min(maxLogoSize / logoWidth, maxLogoSize / logoHeight);
+                                    logoWidth = logoWidth * scale;
+                                    logoHeight = logoHeight * scale;
+                                }
+                                
+                                // Calculate position (center of QR code, using same coordinates as QR code)
+                                const qrXPos = qrX;
+                                const qrYPos = qrY;
+                                const x = qrXPos + (canvas.width - logoWidth) / 2;
+                                const y = qrYPos + (canvas.height - logoHeight) / 2;
+                                
+                                // Draw white background circle/square for logo (for better visibility)
+                                const padding = 8;
+                                const centerX = qrXPos + canvas.width / 2;
+                                const centerY = qrYPos + canvas.height / 2;
+                                ctx.fillStyle = '#ffffff';
+                                ctx.beginPath();
+                                ctx.arc(centerX, centerY, (Math.max(logoWidth, logoHeight) / 2) + padding, 0, Math.PI * 2);
+                                ctx.fill();
+                                
+                                // Draw logo
+                                ctx.drawImage(logo, x, y, logoWidth, logoHeight);
+                                
+                                // Update the composite image src with the logo
+                                compositeImg.src = compositeCanvas.toDataURL('image/png');
+                            };
+                            logo.onerror = function() {
+                                console.error('Failed to load logo for composite image');
+                                // Still create the image without logo
+                                compositeImg.src = compositeCanvas.toDataURL('image/png');
+                            };
+                            logo.src = currentQRLogo;
+                        }
+                        
+                        // Set initial src (will be updated if logo is being loaded)
+                        compositeImg.src = compositeCanvas.toDataURL('image/png');
+                        // Composite canvas is exactly container size (400x400), so set explicit dimensions
+                        compositeImg.style.width = containerSize + 'px';
+                        compositeImg.style.height = containerSize + 'px';
+                        compositeImg.style.display = 'block';
+                        compositeImg.style.margin = '0 auto';
+                        compositeImg.alt = 'QR Code';
+                        compositeImg.title = 'Right-click to copy image';
+                        
+                        // Hide the original canvas completely and show the composite image
+                        canvas.setAttribute('data-hidden', 'true');
+                        canvas.style.setProperty('display', 'none', 'important');
+                        canvas.style.setProperty('visibility', 'hidden', 'important');
+                        canvas.style.setProperty('opacity', '0', 'important');
+                        canvas.style.setProperty('pointer-events', 'none', 'important');
+                        
+                        // Mark this as a composite image
+                        compositeImg.setAttribute('data-composite', 'true');
+                        container.appendChild(compositeImg);
+                        
+                        // Container padding is already 0, but ensure it stays that way
+                        container.style.padding = '0';
+                        
+                        // Store the composite canvas in a data attribute for potential future use
+                        container._compositeCanvas = compositeCanvas;
+                        
+                        // Store reference to composite canvas for download function
+                        container.dataset.compositeCanvas = 'true';
+                        container.dataset.originalCanvas = 'true'; // Mark that original canvas exists but is hidden
+                        
+                        console.log('Composite image created with padding for right-click copy');
+                    } else {
+                        // No padding/border - ensure canvas is visible and no composite images exist
+                        canvas.removeAttribute('data-hidden');
+                        canvas.style.removeProperty('display');
+                        canvas.style.removeProperty('visibility');
+                        canvas.style.removeProperty('position');
+                        canvas.style.removeProperty('opacity');
+                        canvas.style.removeProperty('pointer-events');
+                        
+                        // Remove any leftover composite images
+                        const existingCompositeImgs = container.querySelectorAll('img[data-composite="true"]');
+                        existingCompositeImgs.forEach(img => img.remove());
+                    }
+                }, 100);
                 
                 // Circular QR code functionality removed
                 if (false) {
@@ -8796,32 +9002,62 @@
             
             if (format === 'png') {
                 // Download as PNG
-                // Create a temporary canvas that includes the border
+                // Get padding (quiet zone) and border settings
+                const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
                 const borderEnabled = document.getElementById('qr-border-enabled').checked;
+                const borderWidth = borderEnabled ? parseInt(document.getElementById('qr-border-width').value) : 0;
                 
+                // Total padding is just the QR padding (quiet zone) - border is drawn inside/around QR code
+                const totalPadding = qrPadding * 2;
+                
+                // Calculate total canvas size: QR code + padding + border (if enabled, border is drawn around QR code)
+                const compositeWidth = canvas.width + totalPadding + (borderEnabled ? borderWidth * 2 : 0);
+                const compositeHeight = canvas.height + totalPadding + (borderEnabled ? borderWidth * 2 : 0);
+                
+                // Always create a temporary canvas that includes padding
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = compositeWidth;
+                tempCanvas.height = compositeHeight;
+                const ctx = tempCanvas.getContext('2d');
+                
+                // Get the user's selected background color
+                const bgColor = document.getElementById('qr-bg-color').value;
+                
+                // Fill entire canvas with background color (includes padding area)
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                
+                // Calculate QR code position
+                // Structure: border (outermost) -> padding -> QR code (innermost)
+                // QR code is positioned after border and padding
+                // The border stroke is centered on the line, so when drawn at (borderWidth/2, borderWidth/2),
+                // it extends from 0 to borderWidth on the left, and the padded area is inside the border stroke.
+                // Padded area: from borderWidth/2 to borderWidth/2 + canvas.width + qrPadding*2
+                // QR code position: borderWidth/2 + qrPadding (to have qrPadding on left)
+                const qrX = (borderEnabled ? borderWidth / 2 : 0) + qrPadding;
+                const qrY = (borderEnabled ? borderWidth / 2 : 0) + qrPadding;
+                
+                // Draw border if enabled (around the padding area, border is OUTSIDE the padding)
                 if (borderEnabled) {
-                    const tempCanvas = document.createElement('canvas');
-                    const borderWidth = parseInt(document.getElementById('qr-border-width').value);
-                    const padding = borderWidth * 2;
-                    
-                    tempCanvas.width = canvas.width + padding;
-                    tempCanvas.height = canvas.height + padding;
-                    const ctx = tempCanvas.getContext('2d');
-                    
-                    // Get the user's selected background color
-                    const bgColor = document.getElementById('qr-bg-color').value;
-                    
-                    // Fill with background color (PNG supports transparency, but we use bg color for consistency)
-                    ctx.fillStyle = bgColor;
-                    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-                    
-                    // Draw border
                     const borderColor = document.getElementById('qr-border-color').value;
                     const borderStyle = document.getElementById('qr-border-style').value;
                     const borderRadius = parseInt(document.getElementById('qr-border-radius').value);
                     
                     ctx.strokeStyle = borderColor;
                     ctx.lineWidth = borderWidth;
+                    
+                            // Border is drawn around the padded area
+                            // The padded area is: QR code + padding on all sides
+                            // Border stroke is centered on the line, so we need to account for that
+                            // The padded area starts at (borderWidth, borderWidth) and has size (canvas.width + qrPadding*2, canvas.height + qrPadding*2)
+                            // The border should be drawn around this area, so the border line is at the edge of the padded area
+                            // Since stroke is centered, borderX = borderWidth - borderWidth/2 = borderWidth/2
+                            const paddedAreaWidth = canvas.width + (qrPadding * 2);
+                            const paddedAreaHeight = canvas.height + (qrPadding * 2);
+                            const borderX = borderWidth / 2;
+                            const borderY = borderWidth / 2;
+                            const borderW = paddedAreaWidth - borderWidth;
+                            const borderH = paddedAreaHeight - borderWidth;
                     
                     // Set line dash for dashed/dotted borders
                     if (borderStyle === 'dashed') {
@@ -8830,73 +9066,65 @@
                         ctx.setLineDash([borderWidth, borderWidth]);
                     } else if (borderStyle === 'double') {
                         ctx.lineWidth = borderWidth / 3;
-                        ctx.strokeRect(borderWidth / 2, borderWidth / 2, tempCanvas.width - borderWidth, tempCanvas.height - borderWidth);
-                        ctx.strokeRect(borderWidth * 1.5, borderWidth * 1.5, tempCanvas.width - borderWidth * 3, tempCanvas.height - borderWidth * 3);
+                        ctx.strokeRect(borderX, borderY, borderW, borderH);
+                        ctx.strokeRect(borderX + borderWidth, borderY + borderWidth, borderW - borderWidth * 2, borderH - borderWidth * 2);
                     }
                     
                     if (borderStyle !== 'double') {
                         if (borderRadius > 0) {
                             ctx.beginPath();
-                            const x = borderWidth / 2;
-                            const y = borderWidth / 2;
-                            const width = tempCanvas.width - borderWidth;
-                            const height = tempCanvas.height - borderWidth;
-                            ctx.moveTo(x + borderRadius, y);
-                            ctx.lineTo(x + width - borderRadius, y);
-                            ctx.arcTo(x + width, y, x + width, y + borderRadius, borderRadius);
-                            ctx.lineTo(x + width, y + height - borderRadius);
-                            ctx.arcTo(x + width, y + height, x + width - borderRadius, y + height, borderRadius);
-                            ctx.lineTo(x + borderRadius, y + height);
-                            ctx.arcTo(x, y + height, x, y + height - borderRadius, borderRadius);
-                            ctx.lineTo(x, y + borderRadius);
-                            ctx.arcTo(x, y, x + borderRadius, y, borderRadius);
+                            ctx.moveTo(borderX + borderRadius, borderY);
+                            ctx.lineTo(borderX + borderW - borderRadius, borderY);
+                            ctx.arcTo(borderX + borderW, borderY, borderX + borderW, borderY + borderRadius, borderRadius);
+                            ctx.lineTo(borderX + borderW, borderY + borderH - borderRadius);
+                            ctx.arcTo(borderX + borderW, borderY + borderH, borderX + borderW - borderRadius, borderY + borderH, borderRadius);
+                            ctx.lineTo(borderX + borderRadius, borderY + borderH);
+                            ctx.arcTo(borderX, borderY + borderH, borderX, borderY + borderH - borderRadius, borderRadius);
+                            ctx.lineTo(borderX, borderY + borderRadius);
+                            ctx.arcTo(borderX, borderY, borderX + borderRadius, borderY, borderRadius);
                             ctx.closePath();
                             ctx.stroke();
                         } else {
-                            ctx.strokeRect(borderWidth / 2, borderWidth / 2, tempCanvas.width - borderWidth, tempCanvas.height - borderWidth);
+                            ctx.strokeRect(borderX, borderY, borderW, borderH);
                         }
                     }
                     
                     ctx.setLineDash([]);
-                    
-                    // Draw the QR code
-                    ctx.drawImage(canvas, padding / 2, padding / 2);
-                    
-                    // Download
-                    const link = document.createElement('a');
-                    link.download = (currentList ? currentList.slug : 'qrcode') + '-qrcode.png';
-                    link.href = tempCanvas.toDataURL('image/png');
-                    link.click();
-                } else {
-                    // No border, just download the canvas as-is
-                    const link = document.createElement('a');
-                    link.download = (currentList ? currentList.slug : 'qrcode') + '-qrcode.png';
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
                 }
+                
+                // Draw the QR code canvas at the calculated position (inside padding, inside border)
+                ctx.drawImage(canvas, qrX, qrY);
+                
+                // Download
+                const link = document.createElement('a');
+                link.download = (currentList ? currentList.slug : 'qrcode') + '-qrcode.png';
+                link.href = tempCanvas.toDataURL('image/png');
+                link.click();
                 showMessage('QR Code downloaded as PNG', 'success');
             } else if (format === 'jpeg') {
                 // Download as JPEG
-                // Create a temporary canvas with the QR code's background color (JPEG doesn't support transparency)
-                const tempCanvas = document.createElement('canvas');
-                
-                // Include border in the canvas if border is enabled
+                // Get padding (quiet zone) and border settings
+                const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
                 const borderEnabled = document.getElementById('qr-border-enabled').checked;
                 const borderWidth = borderEnabled ? parseInt(document.getElementById('qr-border-width').value) : 0;
-                const padding = borderWidth * 2; // Extra padding for border
                 
-                tempCanvas.width = canvas.width + padding;
-                tempCanvas.height = canvas.height + padding;
+                // Calculate total padding: QR padding (quiet zone) + border width on each side
+                const totalPadding = qrPadding * 2 + (borderWidth * 2);
+                
+                // Create a temporary canvas with the QR code's background color (JPEG doesn't support transparency)
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = canvas.width + totalPadding;
+                tempCanvas.height = canvas.height + totalPadding;
                 const ctx = tempCanvas.getContext('2d');
                 
                 // Get the user's selected background color
                 const bgColor = document.getElementById('qr-bg-color').value;
                 
-                // Fill with background color
+                // Fill entire canvas with background color (includes padding area)
                 ctx.fillStyle = bgColor;
                 ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
                 
-                // Draw border if enabled
+                // Draw border if enabled (on top of padding)
                 if (borderEnabled) {
                     const borderColor = document.getElementById('qr-border-color').value;
                     const borderStyle = document.getElementById('qr-border-style').value;
@@ -8914,19 +9142,23 @@
                     } else if (borderStyle === 'double') {
                         // Draw first border
                         ctx.lineWidth = borderWidth / 3;
-                        ctx.strokeRect(borderWidth / 2, borderWidth / 2, tempCanvas.width - borderWidth, tempCanvas.height - borderWidth);
+                        const borderX = qrPadding + borderWidth / 2;
+                        const borderY = qrPadding + borderWidth / 2;
+                        const borderW = canvas.width + borderWidth;
+                        const borderH = canvas.height + borderWidth;
+                        ctx.strokeRect(borderX, borderY, borderW, borderH);
                         // Draw second border
-                        ctx.strokeRect(borderWidth * 1.5, borderWidth * 1.5, tempCanvas.width - borderWidth * 3, tempCanvas.height - borderWidth * 3);
+                        ctx.strokeRect(borderX + borderWidth, borderY + borderWidth, borderW - borderWidth * 2, borderH - borderWidth * 2);
                     }
                     
                     if (borderStyle !== 'double') {
                         // Draw rounded rectangle for border
                         if (borderRadius > 0) {
                             ctx.beginPath();
-                            const x = borderWidth / 2;
-                            const y = borderWidth / 2;
-                            const width = tempCanvas.width - borderWidth;
-                            const height = tempCanvas.height - borderWidth;
+                            const x = qrPadding + borderWidth / 2;
+                            const y = qrPadding + borderWidth / 2;
+                            const width = canvas.width + borderWidth;
+                            const height = canvas.height + borderWidth;
                             ctx.moveTo(x + borderRadius, y);
                             ctx.lineTo(x + width - borderRadius, y);
                             ctx.arcTo(x + width, y, x + width, y + borderRadius, borderRadius);
@@ -8939,15 +9171,19 @@
                             ctx.closePath();
                             ctx.stroke();
                         } else {
-                            ctx.strokeRect(borderWidth / 2, borderWidth / 2, tempCanvas.width - borderWidth, tempCanvas.height - borderWidth);
+                            const borderX = qrPadding + borderWidth / 2;
+                            const borderY = qrPadding + borderWidth / 2;
+                            const borderW = canvas.width + borderWidth;
+                            const borderH = canvas.height + borderWidth;
+                            ctx.strokeRect(borderX, borderY, borderW, borderH);
                         }
                     }
                     
                     ctx.setLineDash([]); // Reset line dash
                 }
                 
-                // Draw the QR code on top (centered if border exists)
-                ctx.drawImage(canvas, padding / 2, padding / 2);
+                // Draw the QR code canvas in the center (after padding and border)
+                ctx.drawImage(canvas, qrPadding + borderWidth, qrPadding + borderWidth);
                 
                 // Download as JPEG with quality setting (0.95 = 95% quality)
                 const link = document.createElement('a');

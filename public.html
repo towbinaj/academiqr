@@ -350,7 +350,7 @@
                 
                 // Load collection by ID
                 const { data: collection, error: collectionError } = await supabase
-                    .from('link_lists')
+                        .from('link_lists')
                     .select('*')
                     .eq('id', collectionId)
                     .single();
@@ -674,7 +674,7 @@
                 linkElement.target = '_blank';
                 linkElement.rel = 'noopener noreferrer';
                 linkElement.className = 'preview-link';
-                
+
                 // Set font size immediately on the link element
                 linkElement.style.setProperty('font-size', '1.25rem', 'important');
                 linkElement.style.fontSize = '1.25rem';
@@ -853,7 +853,7 @@
                         phoneMockup.style.setProperty('outline', 'none', 'important');
                         phoneScreen.style.setProperty('border', 'none', 'important');
                         phoneScreen.style.setProperty('border-image', 'none', 'important');
-                        
+                    
                         if (theme.borderType === 'gradient') {
                             // Gradient borders: use padding + gradient background on mockup
                             phoneMockup.style.setProperty('background', theme.borderGradientText || 'linear-gradient(45deg, #8b5cf6 0%, #06b6d4 100%)', 'important');
@@ -1016,7 +1016,7 @@
                 // Remove any existing inline color styles first
                 field.style.removeProperty('color');
                 // Apply color with multiple methods to ensure it sticks
-                field.style.setProperty('color', presentationColor, 'important');
+                    field.style.setProperty('color', presentationColor, 'important');
                 field.style.color = presentationColor;
                 // Also set as attribute for maximum priority
                 const currentStyle = field.getAttribute('style') || '';
