@@ -3579,7 +3579,7 @@
                     <div class="sidebar-header">
                         <div class="logo-section">
                             <div id="sidebar-logo-container" style="text-align: center; min-width: 200px; width: 100%;">
-                                <img id="sidebar-logo" alt="AcademiQR" style="height: 100px !important; width: auto !important; max-height: 100px !important; min-height: 100px !important; margin: 0 auto 4px auto !important; display: block !important; flex-shrink: 0 !important; flex-grow: 0 !important; object-fit: contain !important;" onload="" onerror=" this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <img id="sidebar-logo" src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png" alt="AcademiQR" fetchpriority="high" style="height: 100px !important; width: auto !important; max-height: 100px !important; min-height: 100px !important; margin: 0 auto 4px auto !important; display: block !important; flex-shrink: 0 !important; flex-grow: 0 !important; object-fit: contain !important;" onload="" onerror=" this.style.display='none'; this.nextElementSibling.style.display='block';">
                                 <div id="sidebar-logo-fallback" style="display: none; text-align: center;">
                                     <div style="font-size: 0.2rem; margin-bottom: 8px;">🎓</div>
                                     <h1 style="font-size: 1.2rem; margin: 0; color: #1f2937;">AcademiQR <span style="font-size: 0.6em; color: #6b7280;">v0.4.1</span></h1>
@@ -9323,39 +9323,71 @@
                 }
             }
             
-            // Load the sidebar logo with JavaScript
+            // Sidebar logo is now loaded directly in HTML for better LCP performance
+            // Only set src if not already set, and handle sizing on load
             const sidebarLogo = document.getElementById('sidebar-logo');
             if (sidebarLogo) {
-                console.log('🔄 Loading sidebar logo with JavaScript...');
+                // Only set src if not already set (shouldn't happen with HTML src)
+                if (!sidebarLogo.src) {
+                    sidebarLogo.src = 'https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png';
+                }
                 
-                // Set up the onload event to resize after image loads
-                sidebarLogo.onload = function() {
-                    console.log('🖼️ Logo image loaded, setting size to 250px...');
-                    console.log('🔍 Natural dimensions:', sidebarLogo.naturalWidth, 'x', sidebarLogo.naturalHeight);
-                    
-                    // Check what's constraining the logo
-                    const computedStyle = window.getComputedStyle(sidebarLogo);
-                    console.log('🔍 BEFORE - Computed height:', computedStyle.height);
-                    console.log('🔍 BEFORE - Computed max-height:', computedStyle.maxHeight);
-                    console.log('🔍 BEFORE - Computed min-height:', computedStyle.minHeight);
-                    console.log('🔍 BEFORE - Computed display:', computedStyle.display);
-                    console.log('🔍 BEFORE - Computed visibility:', computedStyle.visibility);
-                    console.log('🔍 BEFORE - Computed opacity:', computedStyle.opacity);
-                    console.log('🔍 BEFORE - Actual dimensions:', sidebarLogo.offsetWidth, 'x', sidebarLogo.offsetHeight);
-                    
-                    // Check parent container dimensions
+                // Set up the onload event to resize after image loads (if not already loaded)
+                if (!sidebarLogo.complete || sidebarLogo.naturalHeight === 0) {
+                    sidebarLogo.onload = function() {
+                        // Force parent containers to have proper dimensions
+                        const logoContainer = sidebarLogo.parentElement;
+                        const logoSection = sidebarLogo.closest('.logo-section');
+                        const sidebarHeader = sidebarLogo.closest('.sidebar-header');
+                        const sidebar = sidebarLogo.closest('.sidebar');
+                        
+                        if (logoContainer) {
+                            logoContainer.style.setProperty('width', '280px', 'important');
+                            logoContainer.style.setProperty('height', 'auto', 'important');
+                            logoContainer.style.setProperty('min-width', '280px', 'important');
+                            logoContainer.style.setProperty('min-height', '20px', 'important');
+                        }
+                        
+                        if (logoSection) {
+                            logoSection.style.setProperty('width', '280px', 'important');
+                            logoSection.style.setProperty('height', 'auto', 'important');
+                            logoSection.style.setProperty('min-width', '280px', 'important');
+                            logoSection.style.setProperty('min-height', '20px', 'important');
+                        }
+                        
+                        if (sidebarHeader) {
+                            sidebarHeader.style.setProperty('width', '280px', 'important');
+                            sidebarHeader.style.setProperty('height', 'auto', 'important');
+                            sidebarHeader.style.setProperty('min-width', '280px', 'important');
+                            sidebarHeader.style.setProperty('min-height', '300px', 'important');
+                        }
+                        
+                        if (sidebar) {
+                            sidebar.style.setProperty('width', '280px', 'important');
+                            sidebar.style.setProperty('height', '100vh', 'important');
+                            sidebar.style.setProperty('min-width', '280px', 'important');
+                        }
+                        
+                        // Force the logo to be visible and sized
+                        sidebarLogo.style.setProperty('display', 'block', 'important');
+                        sidebarLogo.style.setProperty('visibility', 'visible', 'important');
+                        sidebarLogo.style.setProperty('opacity', '1', 'important');
+                        sidebarLogo.style.setProperty('height', '100px', 'important');
+                        sidebarLogo.style.setProperty('width', 'auto', 'important');
+                        sidebarLogo.style.setProperty('max-height', '100px', 'important');
+                        sidebarLogo.style.setProperty('min-height', '100px', 'important');
+                        sidebarLogo.style.setProperty('margin', '0 auto 4px auto', 'important');
+                        
+                        sidebarLogo.setAttribute('height', '100');
+                        sidebarLogo.removeAttribute('width');
+                    };
+                } else {
+                    // Image already loaded, apply sizing immediately
                     const logoContainer = sidebarLogo.parentElement;
                     const logoSection = sidebarLogo.closest('.logo-section');
                     const sidebarHeader = sidebarLogo.closest('.sidebar-header');
                     const sidebar = sidebarLogo.closest('.sidebar');
                     
-                    console.log('🔍 Parent container:', logoContainer?.tagName, logoContainer?.className);
-                    console.log('🔍 Parent dimensions:', logoContainer?.offsetWidth, 'x', logoContainer?.offsetHeight);
-                    console.log('🔍 Logo section dimensions:', logoSection?.offsetWidth, 'x', logoSection?.offsetHeight);
-                    console.log('🔍 Sidebar header dimensions:', sidebarHeader?.offsetWidth, 'x', sidebarHeader?.offsetHeight);
-                    console.log('🔍 Sidebar dimensions:', sidebar?.offsetWidth, 'x', sidebar?.offsetHeight);
-                    
-                    // Force parent containers to have proper dimensions
                     if (logoContainer) {
                         logoContainer.style.setProperty('width', '280px', 'important');
                         logoContainer.style.setProperty('height', 'auto', 'important');
@@ -9382,33 +9414,7 @@
                         sidebar.style.setProperty('height', '100vh', 'important');
                         sidebar.style.setProperty('min-width', '280px', 'important');
                     }
-                    
-                    // Force the logo to be visible and sized
-                    sidebarLogo.style.setProperty('display', 'block', 'important');
-                    sidebarLogo.style.setProperty('visibility', 'visible', 'important');
-                    sidebarLogo.style.setProperty('opacity', '1', 'important');
-                    sidebarLogo.style.setProperty('height', '100px', 'important');
-                    sidebarLogo.style.setProperty('width', 'auto', 'important');
-                    sidebarLogo.style.setProperty('max-height', '100px', 'important');
-                    sidebarLogo.style.setProperty('min-height', '100px', 'important');
-                    sidebarLogo.style.setProperty('margin', '0 auto 4px auto', 'important');
-                    
-                    // Try setting height directly via attribute
-                    sidebarLogo.setAttribute('height', '100');
-                    sidebarLogo.removeAttribute('width');
-                    
-                    console.log('🔍 AFTER - Parent dimensions:', logoContainer?.offsetWidth, 'x', logoContainer?.offsetHeight);
-                    console.log('🔍 AFTER - Logo section dimensions:', logoSection?.offsetWidth, 'x', logoSection?.offsetHeight);
-                    console.log('🔍 AFTER - Sidebar header dimensions:', sidebarHeader?.offsetWidth, 'x', sidebarHeader?.offsetHeight);
-                    console.log('🔍 AFTER - Sidebar dimensions:', sidebar?.offsetWidth, 'x', sidebar?.offsetHeight);
-                    console.log('🔍 AFTER - Actual dimensions:', sidebarLogo.offsetWidth, 'x', sidebarLogo.offsetHeight);
-                    
-                    console.log('✅ Logo sizing complete');
-                    
-                };
-                
-                sidebarLogo.src = 'https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/sign/assets/AcademiQR_logo_Dark.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wMDIxMjAxMi1mNWMwLTQ1ODMtOGIyZi02ZmE0NGI1NjY1YTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvQWNhZGVtaVFSX2xvZ29fRGFyay5wbmciLCJpYXQiOjE3NjEzNDY2MTEsImV4cCI6MzMyNjU4MTA2MTF9.-NVxTGvLFoPgvuJ_kwQD91Q-Z_6VTIW2eVVKxYxWMwI';
-                console.log('✅ Sidebar logo src set to:', sidebarLogo.src);
+                }
             }
         }
         
