@@ -4933,6 +4933,21 @@
         async function initApp() {
             console.log('initApp called');
             
+            // Immediately check for saved login and hide login screen if found
+            // This improves UX by hiding login screen quickly if user is already logged in
+            try {
+                const { email: savedEmail, isLoggedIn } = getPersistentLogin();
+                if (savedEmail && isLoggedIn === 'true') {
+                    // Hide login screen immediately - session check will confirm
+                    const loginElement = document.getElementById('login');
+                    if (loginElement) {
+                        loginElement.classList.add('hidden');
+                    }
+                }
+            } catch (error) {
+                // Ignore errors in this check
+            }
+            
             // Check for OAuth callback
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             const accessToken = hashParams.get('access_token');
@@ -4987,7 +5002,7 @@
             try {
                 const checkLoginPromise = checkSavedLogin();
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Login check timeout')), 3000)
+                    setTimeout(() => reject(new Error('Login check timeout')), 6000)
                 );
                 
                 const savedLoginResult = await Promise.race([checkLoginPromise, timeoutPromise]);
@@ -4997,7 +5012,8 @@
                     return;
                 }
             } catch (error) {
-                console.log('Login check failed or timed out, showing login screen:', error.message);
+                console.log('Login check failed or timed out, continuing to session check:', error.message);
+                // Don't show login yet - continue to session check
             }
             
             try {
@@ -5006,7 +5022,7 @@
                 // Add timeout to prevent hanging
                 const sessionPromise = supabaseClient.auth.getSession();
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Session check timeout')), 3000)
+                    setTimeout(() => reject(new Error('Session check timeout')), 5000)
                 );
                 
                 const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
@@ -5016,6 +5032,11 @@
                     currentUser = session.user;
                     await loadUserData();
                     showDashboard();
+                    // Ensure login screen is hidden
+                    const loginElement = document.getElementById('login');
+                    if (loginElement) {
+                        loginElement.classList.add('hidden');
+                    }
                 } else {
                     console.log('No session found, showing login');
                     showLogin();
@@ -12205,7 +12226,7 @@
                         
                         const sessionPromise = supabaseClient.auth.getSession();
                         const timeoutPromise = new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Session check timeout')), 2000)
+                            setTimeout(() => reject(new Error('Session check timeout')), 5000)
                         );
                         
                         const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
@@ -12214,6 +12235,11 @@
                         if (session && session.user && session.user.email === savedEmail) {
                             console.log('Found existing session, logging in automatically');
                             currentUser = session.user;
+                            // Hide login screen immediately
+                            const loginElement = document.getElementById('login');
+                            if (loginElement) {
+                                loginElement.classList.add('hidden');
+                            }
                             await loadUserData();
                             showDashboard();
                             return true;
@@ -12224,8 +12250,9 @@
                         }
                     } catch (error) {
                         console.log('Session check failed:', error.message);
-                        showLogin();
-                        return true;
+                        // Don't show login here - let the main flow handle it
+                        // The session might still be valid, just slow to respond
+                        return false;
                     }
                 } else {
                     console.log('No saved login found');
