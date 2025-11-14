@@ -3526,8 +3526,8 @@
         <div id="login" class="container">
             <div class="card">
                 <div class="login-logo-container" style="text-align: center; margin-bottom: 20px;">
-                    <img id="login-logo" alt="AcademiQR" fetchpriority="high" style="height: 120px; width: auto; max-height: 120px; margin: 0 auto; display: block;" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div id="login-logo-fallback" style="display: none;">
+                    <img id="login-logo" alt="AcademiQR" fetchpriority="high" style="height: 120px; width: auto; max-height: 120px; margin: 0 auto; display: none;" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div id="login-logo-fallback" style="display: block;">
                         <h1 style="font-size: 2rem; margin-bottom: 10px; color: #1f2937;">AcademiQR <span style="font-size: 0.6em; color: #6b7280; font-weight: normal;">v0.4.2</span></h1>
                     </div>
                 </div>
@@ -3578,8 +3578,8 @@
                     <div class="sidebar-header">
                         <div class="logo-section">
                             <div id="sidebar-logo-container" style="text-align: center; min-width: 200px; width: 100%;">
-                                <img id="sidebar-logo" alt="AcademiQR" fetchpriority="high" style="height: 100px !important; width: auto !important; max-height: 100px !important; min-height: 100px !important; margin: 0 auto 4px auto !important; display: block !important; flex-shrink: 0 !important; flex-grow: 0 !important; object-fit: contain !important;" onload="" onerror=" this.style.display='none'; this.nextElementSibling.style.display='block';">
-                                <div id="sidebar-logo-fallback" style="display: none; text-align: center;">
+                                <img id="sidebar-logo" alt="AcademiQR" fetchpriority="high" style="height: 100px !important; width: auto !important; max-height: 100px !important; min-height: 100px !important; margin: 0 auto 4px auto !important; display: none !important; flex-shrink: 0 !important; flex-grow: 0 !important; object-fit: contain !important;" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                                <div id="sidebar-logo-fallback" style="display: block; text-align: center;">
                                     <div style="font-size: 0.2rem; margin-bottom: 8px;">🎓</div>
                                     <h1 style="font-size: 1.2rem; margin: 0; color: #1f2937;">AcademiQR <span style="font-size: 0.6em; color: #6b7280;">v0.4.1</span></h1>
                                 </div>
@@ -9379,6 +9379,13 @@
                     
                     // Set up the onload event to resize after image loads
                     sidebarLogo.onload = function() {
+                        // Show logo and hide fallback
+                        this.style.display = 'block';
+                        const fallback = document.getElementById('sidebar-logo-fallback');
+                        if (fallback) {
+                            fallback.style.display = 'none';
+                        }
+                        
                         // Force parent containers to have proper dimensions
                         const logoContainer = sidebarLogo.parentElement;
                         const logoSection = sidebarLogo.closest('.logo-section');
