@@ -9337,21 +9337,21 @@
         }
         // Update header logo to use online URL
         async function updateHeaderLogo() {
-            // Load logo using Supabase download to bypass ORB restrictions
+            // Load logo using Supabase signed URL to bypass ORB restrictions
             const loginLogo = document.getElementById('login-logo');
             const sidebarLogo = document.getElementById('sidebar-logo');
             
             if (!loginLogo && !sidebarLogo) return;
             
             try {
-                // Download image blob directly from Supabase storage
-                const { data: blobData, error: downloadError } = await supabaseClient.storage
+                // Create signed URL for the logo (valid for 1 hour)
+                const { data: signedUrlData, error: signedUrlError } = await supabaseClient.storage
                     .from('assets')
-                    .download('AcademiQR_logo_Dark.png');
+                    .createSignedUrl('AcademiQR_logo_Dark.png', 3600);
                 
-                if (downloadError) {
-                    console.error('Error downloading logo:', downloadError);
-                    // Fallback: try public URL if download fails
+                if (signedUrlError || !signedUrlData?.signedUrl) {
+                    console.error('Error creating signed URL for logo:', signedUrlError);
+                    // Fallback: try public URL if signed URL fails
                     if (ASSET_URLS.logoDark) {
                         if (loginLogo) loginLogo.src = ASSET_URLS.logoDark;
                         if (sidebarLogo) sidebarLogo.src = ASSET_URLS.logoDark;
@@ -9359,12 +9359,12 @@
                     return;
                 }
                 
-                // Create object URL from blob
-                const objectUrl = URL.createObjectURL(blobData);
+                // Use the signed URL directly
+                const logoUrl = signedUrlData.signedUrl;
                 
-                // Set both logos to use the object URL
+                // Set both logos to use the signed URL
                 if (loginLogo) {
-                    loginLogo.src = objectUrl;
+                    loginLogo.src = logoUrl;
                     loginLogo.onload = function() {
                         this.style.display = 'block';
                         const fallback = document.getElementById('login-logo-fallback');
@@ -9375,7 +9375,7 @@
                 }
                 
                 if (sidebarLogo) {
-                    sidebarLogo.src = objectUrl;
+                    sidebarLogo.src = logoUrl;
                     
                     // Set up the onload event to resize after image loads
                     sidebarLogo.onload = function() {
