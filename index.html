@@ -7260,10 +7260,6 @@
         let currentQRLogo = null; // Store the logo image data
         
         function initQRCodeTab() {
-            console.log('=== initQRCodeTab called ===');
-            console.log('currentList:', currentList);
-            console.log('currentUser:', currentUser);
-            
             if (!currentList || !currentUser) {
                 document.getElementById('qr-url').value = 'Please select a collection first';
                 return;
@@ -7279,7 +7275,6 @@
                 
                 // Add fresh listener
                 newBorderEnabled.addEventListener('change', function() {
-                    console.log('Border checkbox changed:', this.checked);
                     if (this.checked) {
                         borderOptions.style.display = 'block';
                     } else {
@@ -7287,8 +7282,6 @@
                     }
                     generateQRCode();
                 });
-            } else {
-                console.warn('Border elements not found:', { borderEnabled, borderOptions });
             }
             
             // Use collection ID (UUID) instead of slug for guaranteed uniqueness
@@ -7305,7 +7298,6 @@
             
             // Load saved QR code settings if they exist
             if (currentList.qr_code_data) {
-                console.log('Loading saved QR code settings:', currentList.qr_code_data);
                 const qrData = currentList.qr_code_data;
                 
                 // Update size dropdown
@@ -7346,7 +7338,6 @@
                     const img = document.getElementById('qr-logo-img');
                     img.src = currentQRLogo;
                     preview.style.display = 'block';
-                    console.log('Loaded saved QR logo');
                 } else {
                     currentQRLogo = null;
                     document.getElementById('qr-logo-preview').style.display = 'none';
@@ -7370,7 +7361,6 @@
                 }
             } else {
                 // Set default values if no saved settings
-                console.log('No saved QR code settings, using defaults');
                 document.getElementById('qr-size').value = '300';
                 // Pattern is always square (no pattern selector)
                 document.getElementById('qr-color').value = '#000000';
@@ -7393,19 +7383,13 @@
             generateQRCode();
         }
         function generateQRCode() {
-            console.log('=== generateQRCode called ===');
-            console.log('currentList:', currentList);
-            console.log('currentUser:', currentUser);
-            
             if (!currentList || !currentUser) {
-                console.error('Missing currentList or currentUser');
                 showMessage('Please select a collection first', 'error');
                 return;
             }
             
             // Use collection ID (UUID) instead of slug for guaranteed uniqueness
             if (!currentList.id) {
-                console.error('Collection ID not available');
                 showMessage('Collection ID not available', 'error');
                 return;
             }
@@ -7419,8 +7403,6 @@
             const bgColor = document.getElementById('qr-bg-color').value;
             const pattern = 'square'; // Always use square pattern
             const shape = 'square'; // Always square
-            
-            console.log('QR Code settings:', { size, color, bgColor, pattern, shape });
             
             // Sync color text inputs
             document.getElementById('qr-color-text').value = color;
@@ -7445,9 +7427,6 @@
             // Clear container innerHTML to remove any leftover elements
             container.innerHTML = '';
             
-            console.log('Container cleared, remaining children:', container.children.length);
-            console.log('Container element before QR generation:', container);
-            
             // Remove all pattern classes
             container.classList.remove('qr-square', 'qr-rounded', 'qr-dots', 'qr-extra-rounded');
             
@@ -7467,7 +7446,6 @@
             if (shape === 'circle') {
                 container.style.borderRadius = '50%';
                 container.style.overflow = 'hidden';
-                console.log('Applied circular shape with border-radius: 50%');
             } else {
                 container.style.overflow = 'visible';
             }
@@ -7480,7 +7458,6 @@
                 // Sync border color text input
                 const borderColor = document.getElementById('qr-border-color').value;
                 document.getElementById('qr-border-color-text').value = borderColor;
-                console.log('Border will be drawn on composite canvas:', { borderEnabled });
             }
             
             // Always use the default dashed border for the container (decorative border is in the image)
@@ -7498,15 +7475,10 @@
                 const borderEnabled = document.getElementById('qr-border-enabled').checked;
                 const borderWidth = borderEnabled ? parseInt(document.getElementById('qr-border-width').value) : 0;
                 
-                console.log('Creating QRCode with settings:', { url, size, color, bgColor, shape, padding: qrPadding });
-                console.log('Container element:', container);
-                
                 // Calculate QR code size: container - border - padding
                 // Border takes borderWidth on each side = borderWidth * 2 total
                 // Padding takes qrPadding on each side = qrPadding * 2 total
                 const qrSize = containerSize - (borderWidth * 2) - (qrPadding * 2);
-                
-                console.log('Container:', containerSize, 'Border:', borderWidth, 'Padding:', qrPadding, 'QR size:', qrSize, 'Shape:', shape);
                 
                 currentQRCode = new QRCode(container, {
                     text: url,
@@ -7516,11 +7488,6 @@
                     colorLight: bgColor,
                     correctLevel: QRCode.CorrectLevel.H
                 });
-                
-                console.log('QRCode object created:', currentQRCode);
-                console.log('Container after QRCode creation:', container);
-                console.log('Container children after QRCode creation:', container.children.length);
-                console.log('Container innerHTML after QRCode creation:', container.innerHTML.substring(0, 200) + '...');
                 
                 // Create composite image with padding for right-click copy functionality
                 // Wait a bit for the canvas to be fully rendered
@@ -7705,8 +7672,6 @@
                         // Store reference to composite canvas for download function
                         container.dataset.compositeCanvas = 'true';
                         container.dataset.originalCanvas = 'true'; // Mark that original canvas exists but is hidden
-                        
-                        console.log('Composite image created with padding for right-click copy');
                     } else {
                         // No padding/border - ensure canvas is visible and no composite images exist
                         canvas.removeAttribute('data-hidden');
