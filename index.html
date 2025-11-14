@@ -4828,7 +4828,7 @@
                 appLayout.style.setProperty('display', 'none', 'important');
             }
             
-            // Failsafe: After 5 seconds, if nothing has shown the login screen, show it
+            // Failsafe: After 12 seconds, if nothing has shown the login screen, show it
             setTimeout(() => {
                 // Don't show login if we already have a user session
                 if (currentUser) {
@@ -4850,7 +4850,7 @@
                         showLogin();
                     }
                 }
-            }, 5000);
+            }, 12000);
             
             // Wait a moment for Supabase to load, then initialize
             setTimeout(() => {
@@ -5006,7 +5006,7 @@
             try {
                 const checkLoginPromise = checkSavedLogin();
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Login check timeout')), 6000)
+                    setTimeout(() => reject(new Error('Login check timeout')), 12000)
                 );
                 
                 const savedLoginResult = await Promise.race([checkLoginPromise, timeoutPromise]);
@@ -5031,7 +5031,7 @@
                 // Add timeout to prevent hanging
                 const sessionPromise = supabaseClient.auth.getSession();
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Session check timeout')), 5000)
+                    setTimeout(() => reject(new Error('Session check timeout')), 10000)
                 );
                 
                 const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
@@ -12235,7 +12235,7 @@
                         
                         const sessionPromise = supabaseClient.auth.getSession();
                         const timeoutPromise = new Promise((_, reject) => 
-                            setTimeout(() => reject(new Error('Session check timeout')), 5000)
+                            setTimeout(() => reject(new Error('Session check timeout')), 10000)
                         );
                         
                         const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
