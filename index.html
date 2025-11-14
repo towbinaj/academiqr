@@ -9338,6 +9338,7 @@
         // Update header logo to use online URL
         async function updateHeaderLogo() {
             // Load logo using Supabase signed URL to bypass ORB restrictions
+            // If this fails, fallback text will remain visible (graceful degradation)
             const loginLogo = document.getElementById('login-logo');
             const sidebarLogo = document.getElementById('sidebar-logo');
             
@@ -9350,12 +9351,7 @@
                     .createSignedUrl('AcademiQR_logo_Dark.png', 3600);
                 
                 if (signedUrlError || !signedUrlData?.signedUrl) {
-                    console.error('Error creating signed URL for logo:', signedUrlError);
-                    // Fallback: try public URL if signed URL fails
-                    if (ASSET_URLS.logoDark) {
-                        if (loginLogo) loginLogo.src = ASSET_URLS.logoDark;
-                        if (sidebarLogo) sidebarLogo.src = ASSET_URLS.logoDark;
-                    }
+                    // Silently fail - fallback text is already visible
                     return;
                 }
                 
@@ -9434,12 +9430,8 @@
                     };
                 }
             } catch (error) {
-                console.error('Error loading logo:', error);
-                // Fallback: try public URL if download fails
-                if (ASSET_URLS.logoDark) {
-                    if (loginLogo) loginLogo.src = ASSET_URLS.logoDark;
-                    if (sidebarLogo) sidebarLogo.src = ASSET_URLS.logoDark;
-                }
+                // Silently fail - fallback text is already visible
+                // Logo loading is optional and failures shouldn't affect UX
             }
         }
         
