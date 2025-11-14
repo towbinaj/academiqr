@@ -12,6 +12,8 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <!-- Preload critical assets for faster LCP -->
+    <link rel="preload" as="image" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png" fetchpriority="high">
     <!-- Font Awesome for social media icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
@@ -3525,8 +3527,8 @@
         <div id="login" class="container hidden">
             <div class="card">
                 <div class="login-logo-container" style="text-align: center; margin-bottom: 20px;">
-                    <img id="login-logo" alt="AcademiQR" style="height: 120px; width: auto; max-height: 120px; margin: 0 auto; display: block;" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    <div id="login-logo-fallback" style="display: block;">
+                    <img id="login-logo" src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png" alt="AcademiQR" fetchpriority="high" style="height: 120px; width: auto; max-height: 120px; margin: 0 auto; display: block;" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <div id="login-logo-fallback" style="display: none;">
                         <h1 style="font-size: 2rem; margin-bottom: 10px; color: #1f2937;">AcademiQR <span style="font-size: 0.6em; color: #6b7280; font-weight: normal;">v0.4.2</span></h1>
                     </div>
                 </div>
@@ -9305,24 +9307,20 @@
         }
         // Update header logo to use online URL
         async function updateHeaderLogo() {
-            // Load the login logo with the same signed URL as sidebar
+            // Login logo is now loaded directly in HTML for better LCP performance
+            // Only update if src is not already set
             const loginLogo = document.getElementById('login-logo');
-            if (loginLogo) {
-                console.log('🔄 Loading login logo with JavaScript...');
-                loginLogo.src = 'https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/sign/assets/AcademiQR_logo_Dark.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wMDIxMjAxMi1mNWMwLTQ1ODMtOGIyZi02ZmE0NGI1NjY1YTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvQWNhZGVtaVFSX2xvZ29fRGFyay5wbmciLCJpYXQiOjE3NjEzNDY2MTEsImV4cCI6MzMyNjU4MTA2MTF9.-NVxTGvLFoPgvuJ_kwQD91Q-Z_6VTIW2eVVKxYxWMwI';
-                console.log('✅ Login logo src set to:', loginLogo.src);
-                
-                loginLogo.onload = function() {
-                    console.log('✅ Login logo loaded successfully');
-                    // Hide the fallback text when logo loads
-                    const fallback = document.getElementById('login-logo-fallback');
-                    if (fallback) {
-                        fallback.style.display = 'none';
-                    }
-                };
-                loginLogo.onerror = function() {
-                    console.error('❌ Login logo failed to load');
-                };
+            if (loginLogo && !loginLogo.src) {
+                // Fallback: set src if not already set (shouldn't happen with HTML src)
+                loginLogo.src = 'https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png';
+            }
+            
+            // Ensure fallback is hidden if logo is loaded
+            if (loginLogo && loginLogo.complete && loginLogo.naturalHeight !== 0) {
+                const fallback = document.getElementById('login-logo-fallback');
+                if (fallback) {
+                    fallback.style.display = 'none';
+                }
             }
             
             // Load the sidebar logo with JavaScript
