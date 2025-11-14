@@ -4831,6 +4831,11 @@
             
             // Failsafe: After 5 seconds, if nothing has shown the login screen, show it
             setTimeout(() => {
+                // Don't show login if we already have a user session
+                if (currentUser) {
+                    return;
+                }
+                
                 const loginElement = document.getElementById('login');
                 const loadingElement = document.getElementById('loading');
                 const dashboardElement = document.getElementById('dashboard');
@@ -5009,6 +5014,11 @@
                 
                 if (savedLoginResult) {
                     console.log('Saved login found');
+                    // Load user data and show dashboard
+                    if (currentUser) {
+                        await loadUserData();
+                        showDashboard();
+                    }
                     return;
                 }
             } catch (error) {
@@ -12240,8 +12250,7 @@
                             if (loginElement) {
                                 loginElement.classList.add('hidden');
                             }
-                            await loadUserData();
-                            showDashboard();
+                            // Return true immediately - main flow will handle loading data
                             return true;
                         } else {
                             console.log('No valid session found, showing login form');
