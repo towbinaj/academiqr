@@ -9339,29 +9339,42 @@
         async function updateHeaderLogo() {
             // Load logo as blob and convert to data URL to bypass ORB/CORS restrictions
             // If this fails, fallback text will remain visible (graceful degradation)
+            console.log('updateHeaderLogo called');
             const loginLogo = document.getElementById('login-logo');
             const sidebarLogo = document.getElementById('sidebar-logo');
             
-            if (!loginLogo && !sidebarLogo) return;
+            if (!loginLogo && !sidebarLogo) {
+                console.log('No logo elements found');
+                return;
+            }
             
             try {
+                console.log('Attempting to download logo from Supabase storage...');
                 // Download image as blob from Supabase storage
                 const { data: blobData, error: downloadError } = await supabaseClient.storage
                     .from('assets')
                     .download('AcademiQR_logo_Dark.png');
                 
                 if (downloadError || !blobData) {
+                    console.log('Logo download failed:', downloadError);
                     // Silently fail - fallback text is already visible
                     return;
                 }
                 
+                console.log('Logo downloaded successfully, converting to data URL...');
+                
                 // Convert blob to base64 data URL to bypass CORS/ORB
                 const reader = new FileReader();
+                reader.onerror = function(error) {
+                    console.log('FileReader error:', error);
+                };
                 reader.onloadend = function() {
                     const dataUrl = reader.result;
+                    console.log('Data URL created, length:', dataUrl ? dataUrl.length : 0);
                     if (dataUrl) {
                         // Set both logos to use the data URL
                         if (loginLogo) {
+                            console.log('Setting login logo src to data URL');
                             loginLogo.src = dataUrl;
                             loginLogo.onload = function() {
                                 this.style.display = 'block';
@@ -9373,6 +9386,7 @@
                         }
                         
                         if (sidebarLogo) {
+                            console.log('Setting sidebar logo src to data URL');
                             sidebarLogo.src = dataUrl;
                             
                             // Set up the onload event to resize after image loads
@@ -9435,6 +9449,7 @@
                 };
                 reader.readAsDataURL(blobData);
             } catch (error) {
+                console.log('Error in updateHeaderLogo:', error);
                 // Silently fail - fallback text is already visible
                 // Logo loading is optional and failures shouldn't affect UX
             }
