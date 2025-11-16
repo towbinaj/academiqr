@@ -9349,9 +9349,10 @@
                 return;
             }
             
-            // Set both logos to use the public URL with crossorigin to help with CORS
+            // Set both logos to use the public URL
+            // Try without crossorigin first - if CORS is not configured, crossorigin can cause issues
             if (loginLogo) {
-                loginLogo.crossOrigin = 'anonymous';
+                // Don't set crossorigin - let the browser handle it naturally
                 loginLogo.src = ASSET_URLS.logoDark;
                 loginLogo.onload = function() {
                     this.style.display = 'block';
@@ -9373,7 +9374,7 @@
             }
             
             if (sidebarLogo) {
-                sidebarLogo.crossOrigin = 'anonymous';
+                // Don't set crossorigin - let the browser handle it naturally
                 sidebarLogo.src = ASSET_URLS.logoDark;
                 
                     // Set up the onload event to resize after image loads
