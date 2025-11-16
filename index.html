@@ -9336,8 +9336,8 @@
             }
         }
         // Update header logo to use online URL
-        async function updateHeaderLogo() {
-            // Use signed URL to bypass ORB/CORS restrictions
+        function updateHeaderLogo() {
+            // Use the public URL directly - it should work if the bucket is public
             const loginLogo = document.getElementById('login-logo');
             const sidebarLogo = document.getElementById('sidebar-logo');
             
@@ -9345,41 +9345,34 @@
                 return;
             }
             
-            try {
-                // Create a signed URL that will work (expires in 1 hour)
-                const { data: signedUrlData, error: signedUrlError } = await supabaseClient.storage
-                    .from('assets')
-                    .createSignedUrl('AcademiQR_logo_Dark.png', 3600);
-                
-                if (signedUrlError || !signedUrlData?.signedUrl) {
-                    console.log('Failed to create signed URL for logo:', signedUrlError);
-                    return;
-                }
-                
-                const logoUrl = signedUrlData.signedUrl;
-                
-                // Set both logos to use the signed URL
-                if (loginLogo) {
-                    loginLogo.src = logoUrl;
-                    loginLogo.onload = function() {
-                        this.style.display = 'block';
-                        const fallback = document.getElementById('login-logo-fallback');
-                        if (fallback) {
-                            fallback.style.display = 'none';
-                        }
-                    };
-                    loginLogo.onerror = function() {
-                        // If image fails to load, keep fallback visible
-                        this.style.display = 'none';
-                        const fallback = document.getElementById('login-logo-fallback');
-                        if (fallback) {
-                            fallback.style.display = 'block';
-                        }
-                    };
-                }
-                
-                if (sidebarLogo) {
-                    sidebarLogo.src = logoUrl;
+            if (!ASSET_URLS.logoDark) {
+                return;
+            }
+            
+            // Set both logos to use the public URL with crossorigin to help with CORS
+            if (loginLogo) {
+                loginLogo.crossOrigin = 'anonymous';
+                loginLogo.src = ASSET_URLS.logoDark;
+                loginLogo.onload = function() {
+                    this.style.display = 'block';
+                    const fallback = document.getElementById('login-logo-fallback');
+                    if (fallback) {
+                        fallback.style.display = 'none';
+                    }
+                };
+                loginLogo.onerror = function() {
+                    // If image fails to load, keep fallback visible
+                    this.style.display = 'none';
+                    const fallback = document.getElementById('login-logo-fallback');
+                    if (fallback) {
+                        fallback.style.display = 'block';
+                    }
+                };
+            }
+            
+            if (sidebarLogo) {
+                sidebarLogo.crossOrigin = 'anonymous';
+                sidebarLogo.src = ASSET_URLS.logoDark;
                 
                     // Set up the onload event to resize after image loads
                     sidebarLogo.onload = function() {
@@ -9446,10 +9439,6 @@
                         }
                     };
                 }
-            } catch (error) {
-                // Silently fail - fallback text is already visible
-                console.log('Error in updateHeaderLogo:', error);
-            }
         }
         
         
