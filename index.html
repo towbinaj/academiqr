@@ -9349,19 +9349,23 @@
             }
             
             try {
-                console.log('Attempting to download logo from Supabase storage...');
-                // Download image as blob from Supabase storage
-                const { data: blobData, error: downloadError } = await supabaseClient.storage
-                    .from('assets')
-                    .download('AcademiQR_logo_Dark.png');
-                
-                if (downloadError || !blobData) {
-                    console.log('Logo download failed:', downloadError);
-                    // Silently fail - fallback text is already visible
+                // Use public URL and fetch as blob, then convert to data URL
+                if (!ASSET_URLS.logoDark) {
+                    console.log('No logo URL available');
                     return;
                 }
                 
-                console.log('Logo downloaded successfully, converting to data URL...');
+                console.log('Fetching logo from public URL:', ASSET_URLS.logoDark);
+                // Fetch the image from the public URL
+                const response = await fetch(ASSET_URLS.logoDark);
+                
+                if (!response.ok) {
+                    console.log('Failed to fetch logo:', response.status, response.statusText);
+                    return;
+                }
+                
+                const blobData = await response.blob();
+                console.log('Logo fetched successfully, converting to data URL...');
                 
                 // Convert blob to base64 data URL to bypass CORS/ORB
                 const reader = new FileReader();
