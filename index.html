@@ -9360,7 +9360,9 @@
                         fallback.style.display = 'none';
                     }
                 };
-                loginLogo.onerror = function() {
+                loginLogo.onerror = function(e) {
+                    console.log('Login logo failed to load. Error:', e);
+                    console.log('Attempted URL:', this.src);
                     // If image fails to load, keep fallback visible
                     this.style.display = 'none';
                     const fallback = document.getElementById('login-logo-fallback');
@@ -9430,7 +9432,9 @@
                     sidebarLogo.removeAttribute('width');
                 };
                 
-                    sidebarLogo.onerror = function() {
+                    sidebarLogo.onerror = function(e) {
+                        console.log('Sidebar logo failed to load. Error:', e);
+                        console.log('Attempted URL:', this.src);
                         // If image fails to load, keep fallback visible
                         this.style.display = 'none';
                         const fallback = document.getElementById('sidebar-logo-fallback');
