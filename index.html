@@ -290,12 +290,17 @@
             border-bottom: 1px solid #e2e8f0;
             width: 100%;
             min-height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .logo-section {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 12px;
+            width: 100%;
         }
 
         .logo-section .logo {
@@ -583,6 +588,7 @@
         .logo-section {
             display: flex;
             align-items: center;
+            justify-content: center;
             min-width: 200px;
             width: 100%;
         }
@@ -9409,6 +9415,9 @@
                         }
                         
                         if (logoSection) {
+                            logoSection.style.setProperty('display', 'flex', 'important');
+                            logoSection.style.setProperty('justify-content', 'center', 'important');
+                            logoSection.style.setProperty('align-items', 'center', 'important');
                             logoSection.style.setProperty('width', '280px', 'important');
                             logoSection.style.setProperty('height', 'auto', 'important');
                             logoSection.style.setProperty('min-width', '280px', 'important');
@@ -9416,6 +9425,9 @@
                         }
                         
                         if (sidebarHeader) {
+                            sidebarHeader.style.setProperty('display', 'flex', 'important');
+                            sidebarHeader.style.setProperty('justify-content', 'center', 'important');
+                            sidebarHeader.style.setProperty('align-items', 'center', 'important');
                             sidebarHeader.style.setProperty('width', '280px', 'important');
                             sidebarHeader.style.setProperty('height', 'auto', 'important');
                             sidebarHeader.style.setProperty('min-width', '280px', 'important');
