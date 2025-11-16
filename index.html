@@ -9336,57 +9336,54 @@
             }
         }
         // Update header logo to use online URL
-        function updateHeaderLogo() {
-            // Simply set the src directly to the public URL - this should work if the bucket is public
-            console.log('updateHeaderLogo called, ASSET_URLS.logoDark:', ASSET_URLS.logoDark);
+        async function updateHeaderLogo() {
+            // Use signed URL to bypass ORB/CORS restrictions
             const loginLogo = document.getElementById('login-logo');
             const sidebarLogo = document.getElementById('sidebar-logo');
             
-            console.log('Logo elements found - loginLogo:', !!loginLogo, 'sidebarLogo:', !!sidebarLogo);
-            
             if (!loginLogo && !sidebarLogo) {
-                console.log('No logo elements found, returning');
                 return;
             }
             
-            if (!ASSET_URLS.logoDark) {
-                console.log('No logo URL available, returning');
-                return;
-            }
-            
-            console.log('Setting logo src to:', ASSET_URLS.logoDark);
-            
-            // Set both logos to use the public URL directly
-            if (loginLogo) {
-                console.log('Setting loginLogo.src to:', ASSET_URLS.logoDark);
-                loginLogo.src = ASSET_URLS.logoDark;
-                loginLogo.onload = function() {
-                    console.log('Login logo loaded successfully');
-                    this.style.display = 'block';
-                    const fallback = document.getElementById('login-logo-fallback');
-                    if (fallback) {
-                        fallback.style.display = 'none';
-                    }
-                };
-                loginLogo.onerror = function() {
-                    console.log('Login logo failed to load');
-                    // If image fails to load, keep fallback visible
-                    this.style.display = 'none';
-                    const fallback = document.getElementById('login-logo-fallback');
-                    if (fallback) {
-                        fallback.style.display = 'block';
-                    }
-                };
-            }
-            
-            if (sidebarLogo) {
-                console.log('Setting sidebarLogo.src to:', ASSET_URLS.logoDark);
-                sidebarLogo.src = ASSET_URLS.logoDark;
+            try {
+                // Create a signed URL that will work (expires in 1 hour)
+                const { data: signedUrlData, error: signedUrlError } = await supabaseClient.storage
+                    .from('assets')
+                    .createSignedUrl('AcademiQR_logo_Dark.png', 3600);
                 
-                // Set up the onload event to resize after image loads
-                sidebarLogo.onload = function() {
-                    console.log('Sidebar logo loaded successfully');
-                    // Show logo and hide fallback
+                if (signedUrlError || !signedUrlData?.signedUrl) {
+                    console.log('Failed to create signed URL for logo:', signedUrlError);
+                    return;
+                }
+                
+                const logoUrl = signedUrlData.signedUrl;
+                
+                // Set both logos to use the signed URL
+                if (loginLogo) {
+                    loginLogo.src = logoUrl;
+                    loginLogo.onload = function() {
+                        this.style.display = 'block';
+                        const fallback = document.getElementById('login-logo-fallback');
+                        if (fallback) {
+                            fallback.style.display = 'none';
+                        }
+                    };
+                    loginLogo.onerror = function() {
+                        // If image fails to load, keep fallback visible
+                        this.style.display = 'none';
+                        const fallback = document.getElementById('login-logo-fallback');
+                        if (fallback) {
+                            fallback.style.display = 'block';
+                        }
+                    };
+                }
+                
+                if (sidebarLogo) {
+                    sidebarLogo.src = logoUrl;
+                
+                    // Set up the onload event to resize after image loads
+                    sidebarLogo.onload = function() {
+                        // Show logo and hide fallback
                     this.style.display = 'block';
                     const fallback = document.getElementById('sidebar-logo-fallback');
                     if (fallback) {
@@ -9440,15 +9437,18 @@
                     sidebarLogo.removeAttribute('width');
                 };
                 
-                sidebarLogo.onerror = function() {
-                    console.log('Sidebar logo failed to load');
-                    // If image fails to load, keep fallback visible
-                    this.style.display = 'none';
-                    const fallback = document.getElementById('sidebar-logo-fallback');
-                    if (fallback) {
-                        fallback.style.display = 'block';
-                    }
-                };
+                    sidebarLogo.onerror = function() {
+                        // If image fails to load, keep fallback visible
+                        this.style.display = 'none';
+                        const fallback = document.getElementById('sidebar-logo-fallback');
+                        if (fallback) {
+                            fallback.style.display = 'block';
+                        }
+                    };
+                }
+            } catch (error) {
+                // Silently fail - fallback text is already visible
+                console.log('Error in updateHeaderLogo:', error);
             }
         }
         
