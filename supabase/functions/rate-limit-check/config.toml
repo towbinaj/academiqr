@@ -1,0 +1,3 @@
+[functions.rate-limit-check]
+verify_jwt = false
+

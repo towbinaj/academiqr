@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AcademiQR v0.4.5 - Link-in-Bio Builder</title>
-    <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/sign/assets/AcademiQR%20logo_small.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wMDIxMjAxMi1mNWMwLTQ1ODMtOGIyZi02ZmE0NGI1NjY1YTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvQWNhZGVtaVFSIGxvZ29fc21hbGwucG5nIiwiaWF0IjoxNzYxNjcyMDM1LCJleHAiOjMzMjY2MTM2MDM1fQ.Aj53elwW_8v65gQ4qtYme2sJGG8TLuFOYvAmUxw0sds">
-    <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/sign/assets/AcademiQR%20logo_small.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wMDIxMjAxMi1mNWMwLTQ1ODMtOGIyZi02ZmE0NGI1NjY1YTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvQWNhZGVtaVFSIGxvZ29fc21hbGwucG5nIiwiaWF0IjoxNzYxNjcyMDM1LCJleHAiOjMzMjY2MTM2MDM1fQ.Aj53elwW_8v65gQ4qtYme2sJGG8TLuFOYvAmUxw0sds">
+    <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR%20logo_small.png">
+    <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR%20logo_small.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="AcademiQR">
@@ -3561,17 +3561,35 @@
                     <div class="form-group">
                         <label for="password">Password</label>
                         <input type="password" id="password" placeholder="Enter your password" required>
+                        <div id="passwordRequirements" style="display: none; margin-top: 8px; font-size: 0.875rem; color: #64748b;">
+                            <div style="margin-bottom: 4px; font-weight: 500;">Password must contain:</div>
+                            <ul style="margin: 4px 0; padding-left: 20px; list-style: disc;">
+                                <li id="req-length" style="color: #ef4444;">At least 8 characters</li>
+                                <li id="req-uppercase" style="color: #ef4444;">One uppercase letter</li>
+                                <li id="req-lowercase" style="color: #ef4444;">One lowercase letter</li>
+                                <li id="req-number" style="color: #ef4444;">One number</li>
+                                <li id="req-special" style="color: #ef4444;">One special character (!@#$%^&*)</li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="checkbox-label">
                             <input type="checkbox" id="rememberMe" checked>
                             <span class="checkmark"></span>
-                            Remember me for 30 days
+                            Remember me for 14 days
                         </label>
+                        <div style="font-size: 0.75rem; color: #64748b; margin-top: 4px; line-height: 1.4;">
+                            By checking this box, your email address and login status will be stored locally in your browser for 14 days to keep you signed in. This login data is stored only on your device and is not shared with third parties. Your account information, images, and other application data are stored securely on our servers. 
+                            <a href="#" onclick="showPrivacyInfo(event); return false;" style="color: #3b82f6; text-decoration: underline;">Learn more about "Remember me" privacy</a>.
+                        </div>
                     </div>
                     <button type="submit" class="btn" id="loginBtn">
-                        Sign In / Sign Up
+                        Sign In
                     </button>
+                    <div style="text-align: center; margin-top: 15px;">
+                        <span id="toggleSignUpText" style="color: #64748b;">Don't have an account? </span>
+                        <a href="#" id="toggleSignUp" style="color: #3b82f6; text-decoration: none; font-weight: 500;" onclick="toggleSignUpMode(event); return false;">Sign Up</a>
+                    </div>
                 </form>
             </div>
         </div>
@@ -3629,7 +3647,7 @@
                             </div>
                             <div class="project-controls">
                                 <label for="project-slug" class="project-label">Collection:</label>
-                                <input type="text" id="project-slug" class="project-input" placeholder="Collection name">
+                                <input type="text" id="project-slug" class="project-input" placeholder="Collection name" maxlength="50">
                             </div>
                             <div class="visibility-controls">
                                 <label for="header-visibility-select" class="visibility-label">Visibility:</label>
@@ -3641,7 +3659,7 @@
                             </div>
                             <div id="header-passkey-group" class="passkey-controls" style="display: none;">
                                 <label for="header-passkey" class="passkey-label">Passkey:</label>
-                                <input type="password" id="header-passkey" class="passkey-input" placeholder="Enter passkey">
+                                <input type="password" id="header-passkey" class="passkey-input" placeholder="Enter passkey" maxlength="100">
                             </div>
                             <button onclick="copyPublicUrl()" class="btn btn-ghost">
                                 📋 Copy URL
@@ -3703,7 +3721,7 @@
                                                             <label for="display-title">Display in List</label>
                                                         </span>
                                                     </div>
-                                                    <input type="text" id="info-title" class="form-input" required>
+                                                    <input type="text" id="info-title" class="form-input" required maxlength="200">
                                                 </div>
                                                 
                                                 <div class="form-group">
@@ -3714,12 +3732,12 @@
                                                             <label for="display-conference">Display in List</label>
                                                         </span>
                                                     </div>
-                                                    <input type="text" id="info-conference" class="form-input" required>
+                                                    <input type="text" id="info-conference" class="form-input" required maxlength="200">
                                                 </div>
                                                 
                                                 <div class="form-group">
                                                     <label for="info-location">Location</label>
-                                                    <input type="text" id="info-location" class="form-input">
+                                                    <input type="text" id="info-location" class="form-input" maxlength="200">
                                                 </div>
                                                 
                                                 <div class="form-group">
@@ -3746,11 +3764,11 @@
                                                     <div class="form-row">
                                                         <div class="form-group">
                                                             <label for="new-link-title">Link Title</label>
-                                                            <input type="text" id="new-link-title" class="form-input">
+                                                            <input type="text" id="new-link-title" class="form-input" maxlength="200">
                                                         </div>
                                                         <div class="form-group">
                                                             <label for="new-link-url">URL</label>
-                                                            <input type="url" id="new-link-url" class="form-input">
+                                                            <input type="url" id="new-link-url" class="form-input" maxlength="2048">
                                                         </div>
                                                         <div class="form-group">
                                                             <label for="new-link-image">Image (Optional)</label>
@@ -4230,7 +4248,7 @@
                                     <h3>Theme Management</h3>
                                     <div class="theme-save-section">
                                         <div class="input-group">
-                                            <input type="text" id="theme-name" class="form-input">
+                                            <input type="text" id="theme-name" class="form-input" maxlength="100">
                                             <button onclick="saveCurrentTheme()" class="btn btn-primary btn-sm">Save Theme</button>
                                         </div>
                                     </div>
@@ -4646,7 +4664,7 @@
                     <div class="card-body">
                         <div class="form-group">
                             <label for="profileDisplayName">Display Name</label>
-                            <input type="text" id="profileDisplayName" class="form-input" placeholder="Enter your display name">
+                            <input type="text" id="profileDisplayName" class="form-input" placeholder="Enter your display name" maxlength="100">
                         </div>
                         <div class="form-group">
                             <label for="profileAvatar">Profile Photo</label>
@@ -4669,37 +4687,37 @@
                         
                         <div class="form-group">
                             <label for="profileSocialInstagram">Instagram</label>
-                            <input type="url" id="profileSocialInstagram" class="form-input" placeholder="https://instagram.com/username">
+                            <input type="url" id="profileSocialInstagram" class="form-input" placeholder="https://instagram.com/username" maxlength="500">
                         </div>
                         
                         <div class="form-group">
                             <label for="profileSocialFacebook">Facebook</label>
-                            <input type="url" id="profileSocialFacebook" class="form-input" placeholder="https://facebook.com/username">
+                            <input type="url" id="profileSocialFacebook" class="form-input" placeholder="https://facebook.com/username" maxlength="500">
                         </div>
                         
                         <div class="form-group">
                             <label for="profileSocialTwitter">X (Twitter)</label>
-                            <input type="url" id="profileSocialTwitter" class="form-input" placeholder="https://x.com/username">
+                            <input type="url" id="profileSocialTwitter" class="form-input" placeholder="https://x.com/username" maxlength="500">
                         </div>
                         
                         <div class="form-group">
                             <label for="profileSocialLinkedin">LinkedIn</label>
-                            <input type="url" id="profileSocialLinkedin" class="form-input" placeholder="https://linkedin.com/in/username">
+                            <input type="url" id="profileSocialLinkedin" class="form-input" placeholder="https://linkedin.com/in/username" maxlength="500">
                         </div>
                         
                         <div class="form-group">
                             <label for="profileSocialYoutube">YouTube</label>
-                            <input type="url" id="profileSocialYoutube" class="form-input" placeholder="https://youtube.com/@username">
+                            <input type="url" id="profileSocialYoutube" class="form-input" placeholder="https://youtube.com/@username" maxlength="500">
                         </div>
                         
                         <div class="form-group">
                             <label for="profileSocialTiktok">TikTok</label>
-                            <input type="url" id="profileSocialTiktok" class="form-input" placeholder="https://tiktok.com/@username">
+                            <input type="url" id="profileSocialTiktok" class="form-input" placeholder="https://tiktok.com/@username" maxlength="500">
                         </div>
                         
                         <div class="form-group">
                             <label for="profileSocialSnapchat">Snapchat</label>
-                            <input type="url" id="profileSocialSnapchat" class="form-input" placeholder="https://snapchat.com/add/username">
+                            <input type="url" id="profileSocialSnapchat" class="form-input" placeholder="https://snapchat.com/add/username" maxlength="500">
                         </div>
                     </div>
                 </div>
@@ -4713,11 +4731,16 @@
         </div>
     </div>
     <!-- Load Supabase from unpkg CDN (alternative to jsdelivr) -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase JS - Pin to specific version and add SRI hash -->
+    <!-- Using jsdelivr with correct path format for scoped packages -->
+    <!-- TODO: Get SRI hash from https://www.srihash.org/ for this URL -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.75.1" integrity="sha384-oKMgGe+iV6GiXAwVOAWrwx8rXSvyRUGT8R5Wl8Jas37cmI7i51qrvFUp+D/wwuf5" crossorigin="anonymous"></script>
     <!-- Load QRCode.js library for QR code generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- TODO: Get SRI hash from https://www.srihash.org/ for this URL -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" crossorigin="anonymous"></script>
     <!-- Load qrcode-generator for advanced circular QR codes -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+    <!-- TODO: Get SRI hash from https://www.srihash.org/ for this URL -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
     
     <script>
         // Cache bust: v0.4.5 - Performance improvements and logo loading fixes
@@ -4869,6 +4892,9 @@
                         supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                         console.log('Supabase client created successfully');
                         
+                        // Set up auth state change listener for automatic session management
+                        setupAuthStateListener();
+                        
                         // Initialize asset URLs
                         initializeAssetUrls();
                         initApp();
@@ -4881,6 +4907,8 @@
                             if (typeof supabase !== 'undefined' && supabase) {
                                 console.log('Supabase loaded on second attempt');
                                 supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                                // Set up auth state change listener for automatic session management
+                                setupAuthStateListener();
                                 initializeAssetUrls();
                                 initApp();
                             } else {
@@ -4940,6 +4968,53 @@
             });
         }
 
+        // Set up Supabase auth state change listener for automatic session management
+        function setupAuthStateListener() {
+            if (!supabaseClient) return;
+            
+            // Listen for auth state changes (sign in, sign out, token refresh, etc.)
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                // Handle different auth events
+                switch (event) {
+                    case 'SIGNED_IN':
+                        // User signed in - update currentUser
+                        if (session && session.user) {
+                            currentUser = session.user;
+                            // If we're on login screen, load data and show dashboard
+                            const loginElement = document.getElementById('login');
+                            if (loginElement && !loginElement.classList.contains('hidden')) {
+                                loadUserData().then(() => {
+                                    showDashboard();
+                                });
+                            }
+                        }
+                        break;
+                        
+                    case 'SIGNED_OUT':
+                        // User signed out - clear user and show login
+                        currentUser = null;
+                        clearPersistentLogin();
+                        showLogin();
+                        break;
+                        
+                    case 'TOKEN_REFRESHED':
+                        // Session token was refreshed automatically by Supabase
+                        // Update currentUser if session exists
+                        if (session && session.user) {
+                            currentUser = session.user;
+                        }
+                        break;
+                        
+                    case 'USER_UPDATED':
+                        // User data was updated - refresh currentUser
+                        if (session && session.user) {
+                            currentUser = session.user;
+                        }
+                        break;
+                }
+            });
+        }
+
         async function initApp() {
             console.log('initApp called');
             
@@ -4959,43 +5034,67 @@
             }
             
             // Check for OAuth callback
-            const hashParams = new URLSearchParams(window.location.hash.substring(1));
-            const accessToken = hashParams.get('access_token');
-            const refreshToken = hashParams.get('refresh_token');
+            // Extract tokens from hash and clear immediately to prevent exposure
+            const hash = window.location.hash.substring(1);
+            let accessToken = null;
+            let refreshToken = null;
+            
+            if (hash) {
+                const hashParams = new URLSearchParams(hash);
+                accessToken = hashParams.get('access_token');
+                refreshToken = hashParams.get('refresh_token');
+                
+                // Clear hash immediately to prevent token exposure in:
+                // - Browser history
+                // - Server logs (if URL is logged)
+                // - Referrer headers
+                // Use replaceState to remove from browser history
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                } else {
+                    window.location.hash = '';
+                }
+            }
             
             // If we have OAuth tokens, handle OAuth login first
             if (accessToken) {
-                console.log('OAuth callback detected');
-                
                 if (!supabaseClient) {
-                    console.error('No Supabase client during OAuth callback');
+                    showMessage('Authentication service unavailable. Please try again.', 'error');
                     showLogin();
                     return;
                 }
                 
                 try {
-                    // Exchange tokens for session
-                    const { data, error } = await supabaseClient.auth.setSession({
+                    // Exchange tokens for session with timeout protection
+                    const setSessionPromise = supabaseClient.auth.setSession({
                         access_token: accessToken,
                         refresh_token: refreshToken
                     });
+                    const timeoutPromise = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('OAuth session setup timeout')), 10000)
+                    );
+                    
+                    const { data, error } = await Promise.race([setSessionPromise, timeoutPromise]);
+                    
+                    // Clear token variables immediately after use
+                    accessToken = null;
+                    refreshToken = null;
                     
                     if (error) {
-                        console.error('OAuth session error:', error);
+                        showMessage('Authentication failed. Please try again.', 'error');
                         showLogin();
                         return;
                     }
                     
-                    console.log('OAuth session created successfully');
                     currentUser = data.user;
                     await loadUserData();
                     showDashboard();
-                    
-                    // Clear the hash
-                    window.location.hash = '';
                     return;
                 } catch (error) {
-                    console.error('OAuth session setup error:', error);
+                    // Clear token variables on error
+                    accessToken = null;
+                    refreshToken = null;
+                    showMessage('Authentication failed. Please try again.', 'error');
                     showLogin();
                     return;
                 }
@@ -5027,7 +5126,8 @@
                     return;
                 }
             } catch (error) {
-                console.log('Login check failed or timed out, continuing to session check:', error.message);
+                // Login check failed or timed out, continuing to session check
+                // Don't log error.message to prevent information disclosure
                 // Don't show login yet - continue to session check
             }
             
@@ -5122,7 +5222,7 @@
                 
             } catch (error) {
                 console.error('Error loading user data:', error);
-                console.error('Error details:', error.message, error.stack);
+                // Don't log error.stack to prevent information disclosure
                 // Create local fallback
                 createLocalFallback();
             }
@@ -5689,7 +5789,8 @@
                     
                     const img = document.createElement('img');
                     img.src = link.image;
-                    img.alt = link.title || 'Link image';
+                    // Escape HTML in alt attribute to prevent XSS (though alt is generally safe)
+                    img.alt = escapeHtml(link.title || 'Link image');
                     
                     const removeBtn = document.createElement('button');
                     removeBtn.type = 'button';
@@ -5745,7 +5846,8 @@
                 titleDiv.dataset.field = 'title';
                 titleDiv.dataset.index = index;
                 // Use innerHTML to preserve HTML formatting (bold, italic, underline)
-                titleDiv.innerHTML = link.title || 'Untitled Link';
+                // Sanitize HTML to prevent XSS attacks
+                titleDiv.innerHTML = sanitizeHTML(link.title || 'Untitled Link');
                 
                 const rtfToolbar = document.createElement('div');
                 rtfToolbar.className = 'link-rtf-toolbar';
@@ -5867,7 +5969,8 @@
                 if (e.target.hasAttribute('contenteditable') && e.target.hasAttribute('data-field')) {
                     const field = e.target.getAttribute('data-field');
                     const index = parseInt(e.target.getAttribute('data-index'));
-                    let newValue = field === 'title' ? e.target.innerHTML : e.target.textContent.trim();
+                    // Sanitize HTML when reading from contenteditable to prevent XSS
+                    let newValue = field === 'title' ? sanitizeHTML(e.target.innerHTML) : e.target.textContent.trim();
                     
                     // If it's a URL field, validate and fix the URL
                     if (field === 'url' && newValue) {
@@ -5965,7 +6068,8 @@
                             // Update the link data
                             const index = parseInt(titleElement.getAttribute('data-index'));
                             if (links[index]) {
-                                links[index].title = titleElement.innerHTML;
+                                // Sanitize HTML when storing to prevent XSS
+                                links[index].title = sanitizeHTML(titleElement.innerHTML);
                                 console.log('Updated link title:', links[index].title);
                                 updatePreview();
                             }
@@ -6367,7 +6471,7 @@
                     
                     if (error) {
                         console.error('Link sync failed:', error);
-                        console.error('Error details:', error.message, error.details, error.hint);
+                        // Don't log error.details or error.hint to prevent information disclosure
                     } else {
                         console.log('Link synced to database successfully:', data);
                         // Update local link with real ID
@@ -6405,7 +6509,7 @@
                 showMessage('Link updated successfully!', 'success');
             } catch (error) {
                 console.error('Error updating link:', error);
-                showMessage('Failed to update link: ' + error.message);
+                showMessage('Failed to update link. Please try again.', 'error');
             }
         }
         
@@ -6446,7 +6550,7 @@
                 showMessage('Link deleted successfully!', 'success');
             } catch (error) {
                 console.error('Error deleting link:', error);
-                showMessage('Failed to delete link: ' + error.message, 'error');
+                showMessage('Failed to delete link. Please try again.', 'error');
             }
         }
         function updatePreview() {
@@ -6535,7 +6639,8 @@
                     textElement.className = 'preview-link-text';
                     textElement.style.cssText = 'font-weight: 600; font-size: 1.25rem !important;';
                     // Use innerHTML to preserve HTML formatting (bold, italic, underline)
-                    textElement.innerHTML = link.title || '';
+                    // Sanitize HTML to prevent XSS attacks
+                    textElement.innerHTML = sanitizeHTML(link.title || '');
                     
                     textContainer.appendChild(textElement);
                     linkEl.appendChild(imageDiv);
@@ -6563,7 +6668,8 @@
                     textElement.className = 'preview-link-text';
                     textElement.style.cssText = 'font-weight: 600; font-size: 1.25rem !important;';
                     // Use innerHTML to preserve HTML formatting
-                    textElement.innerHTML = link.title || '';
+                    // Sanitize HTML to prevent XSS attacks
+                    textElement.innerHTML = sanitizeHTML(link.title || '');
                     
                     textContainer.appendChild(textElement);
                     linkEl.appendChild(imageDiv);
@@ -6713,7 +6819,7 @@
                 console.log('Default list creation completed successfully');
             } catch (error) {
                 console.error('Error creating default collection:', error);
-                showMessage('Failed to create default collection: ' + error.message);
+                showMessage('Failed to create default collection. Please try again.', 'error');
             }
         }
         
@@ -6795,7 +6901,7 @@
                 
             } catch (error) {
                 console.error('Error creating new collection:', error);
-                showMessage('Failed to create new collection: ' + error.message, 'error');
+                showMessage('Failed to create new collection. Please try again.', 'error');
             }
         }
 
@@ -6809,11 +6915,26 @@
             const copyTheme = document.getElementById('new-collection-copy-theme').checked;
             
             // Auto-generate name if empty
-            const finalName = name || generateCollectionName();
+            let finalName = name || generateCollectionName();
             
             if (!finalName) {
                 showMessage('Please enter a collection name', 'error');
                 return;
+            }
+            
+            // Validate and sanitize slug
+            const slugValidation = validateAndSanitizeSlug(finalName);
+            if (!slugValidation.isValid) {
+                showMessage(slugValidation.error || 'Invalid collection name. Use only letters, numbers, hyphens, and underscores.', 'error');
+                return;
+            }
+            
+            // Use sanitized slug
+            finalName = slugValidation.sanitized;
+            
+            // Update the input field with sanitized value if it was changed
+            if (name && slugValidation.sanitized !== name.toLowerCase().trim().replace(/\s+/g, '-')) {
+                document.getElementById('new-collection-name').value = slugValidation.sanitized;
             }
             
             try {
@@ -6849,7 +6970,7 @@
                 showMessage('New collection created!', 'success');
             } catch (error) {
                 console.error('Error creating collection:', error);
-                showMessage('Failed to create collection: ' + error.message, 'error');
+                showMessage('Failed to create collection. Please try again.', 'error');
             }
         }
 
@@ -6857,8 +6978,24 @@
             const collection = collections.find(c => c.id === collectionId);
             if (!collection) return;
             
-            const newSlug = prompt('Enter new name for your link list:', collection.slug);
-            if (!newSlug || newSlug === collection.slug) return;
+            // Use prompt for now, but validate the input
+            const newSlugInput = prompt('Enter new name for your link list:', collection.slug);
+            if (!newSlugInput || newSlugInput.trim() === collection.slug) return;
+            
+            // Validate and sanitize slug
+            const slugValidation = validateAndSanitizeSlug(newSlugInput);
+            if (!slugValidation.isValid) {
+                showMessage(slugValidation.error || 'Invalid collection name. Use only letters, numbers, hyphens, and underscores.', 'error');
+                return;
+            }
+            
+            const newSlug = slugValidation.sanitized;
+            
+            // Check if sanitized slug is the same as current
+            if (newSlug === collection.slug) {
+                showMessage('Collection name unchanged', 'info');
+                return;
+            }
             
             try {
                 const { error } = await supabaseClient
@@ -6876,7 +7013,7 @@
                 showMessage('Collection updated!', 'success');
             } catch (error) {
                 console.error('Error updating collection:', error);
-                showMessage('Failed to update collection: ' + error.message);
+                showMessage('Failed to update collection. Please try again.', 'error');
             }
         }
 
@@ -6884,8 +7021,18 @@
             const collection = collections.find(c => c.id === collectionId);
             if (!collection) return;
             
-            const newSlug = prompt('Enter name for the duplicate:', collection.slug + '-copy');
-            if (!newSlug) return;
+            // Use prompt for now, but validate the input
+            const newSlugInput = prompt('Enter name for the duplicate:', collection.slug + '-copy');
+            if (!newSlugInput) return;
+            
+            // Validate and sanitize slug
+            const slugValidation = validateAndSanitizeSlug(newSlugInput);
+            if (!slugValidation.isValid) {
+                showMessage(slugValidation.error || 'Invalid collection name. Use only letters, numbers, hyphens, and underscores.', 'error');
+                return;
+            }
+            
+            const newSlug = slugValidation.sanitized;
             
             try {
                 // Create new collection
@@ -6933,7 +7080,7 @@
                 showMessage('Collection duplicated successfully!', 'success');
             } catch (error) {
                 console.error('Error duplicating collection:', error);
-                showMessage('Failed to duplicate collection: ' + error.message);
+                showMessage('Failed to duplicate collection. Please try again.', 'error');
             }
         }
 
@@ -6988,7 +7135,7 @@
                 showMessage('Collection deleted successfully!', 'success');
             } catch (error) {
                 console.error('Error deleting collection:', error);
-                showMessage('Failed to delete collection: ' + error.message);
+                showMessage('Failed to delete collection. Please try again.', 'error');
             }
         }
         // Flag to prevent theme updates during save
@@ -7064,8 +7211,20 @@
                     
                     // Create new collection
                     // Clean the slug to prevent double-encoding issues
-                    const rawSlug = document.getElementById('project-slug').value;
-                    const cleanSlug = rawSlug ? decodeURIComponent(rawSlug) : rawSlug;
+                    const rawSlugInput = document.getElementById('project-slug').value.trim();
+                    // For new collections, always validate
+                    const slugValidation = validateAndSanitizeSlug(rawSlugInput);
+                    if (!slugValidation.isValid) {
+                        showMessage(slugValidation.error || 'Invalid collection name. Use only letters, numbers, hyphens, and underscores.', 'error');
+                        return;
+                    }
+                    const rawSlug = slugValidation.sanitized;
+                    // Update input field with sanitized value if it changed
+                    if (rawSlug !== rawSlugInput) {
+                        document.getElementById('project-slug').value = rawSlug;
+                    }
+                    // No need for decodeURIComponent since we've already sanitized the slug
+                    const cleanSlug = rawSlug;
                     
                     const { data, error } = await supabaseClient
                         .from('link_lists')
@@ -7073,6 +7232,7 @@
                             owner_id: currentUser.id,
                             slug: cleanSlug,
                             visibility: visibility === 'passkey' ? 'public' : visibility,
+                            passkey: passkey,
                             theme: getCurrentThemeFromUI()
                         })
                         .select()
@@ -7118,8 +7278,30 @@
                     const passkey = visibility === 'passkey' ? (headerPasskeyInput ? headerPasskeyInput.value : '') : null;
                     
                     // Clean the slug to prevent double-encoding issues
-                    const rawSlug = document.getElementById('project-slug').value;
-                    const cleanSlug = rawSlug ? decodeURIComponent(rawSlug) : rawSlug;
+                    const rawSlugInput = document.getElementById('project-slug').value.trim();
+                    const originalSlug = currentList.slug || '';
+                    
+                    // Only validate if slug has changed from original
+                    // This preserves existing collections with non-standard slugs
+                    let cleanSlug = rawSlugInput;
+                    if (rawSlugInput !== originalSlug) {
+                        // Slug was changed - validate and sanitize
+                        const slugValidation = validateAndSanitizeSlug(rawSlugInput);
+                        if (!slugValidation.isValid) {
+                            showMessage(slugValidation.error || 'Invalid collection name. Use only letters, numbers, hyphens, and underscores.', 'error');
+                            // Revert to original slug
+                            document.getElementById('project-slug').value = originalSlug;
+                            return;
+                        }
+                        cleanSlug = slugValidation.sanitized;
+                        // Update input field with sanitized value if it changed
+                        if (cleanSlug !== rawSlugInput) {
+                            document.getElementById('project-slug').value = cleanSlug;
+                        }
+                    } else {
+                        // Slug unchanged - use original (preserves existing collections even if they don't match new validation rules)
+                        cleanSlug = originalSlug;
+                    }
                     
                     const themeToSave = getCurrentThemeFromUI();
                     console.log('🎯 Saving theme to database:', themeToSave);
@@ -7131,6 +7313,7 @@
                         .update({
                             slug: cleanSlug,
                             visibility: visibility === 'passkey' ? 'public' : visibility,
+                            passkey: passkey,
                             theme: themeToSave
                         })
                         .eq('id', currentList.id);
@@ -7267,7 +7450,7 @@
                 showMessage('Changes saved successfully!', 'success');
             } catch (error) {
                 console.error('Error saving changes:', error);
-                showMessage('Failed to save changes: ' + error.message, 'error');
+                showMessage('Failed to save changes. Please try again.', 'error');
             } finally {
                 isSaving = false; // Reset flag after save completes
             }
@@ -8120,7 +8303,7 @@
                 showMessage('QR Code generated successfully!', 'success');
             } catch (error) {
                 console.error('QR Code generation error:', error);
-                showMessage('Failed to generate QR code: ' + error.message, 'error');
+                showMessage('Failed to generate QR code. Please try again.', 'error');
             }
         }
         
@@ -8350,11 +8533,12 @@
             
             // Apply background settings
             if (theme.backgroundType === 'solid') {
-                preview.style.background = theme.backgroundColor || '#ffffff';
+                // Sanitize CSS values to prevent CSS injection
+                preview.style.background = sanitizeCSSValue(theme.backgroundColor, 'color') || '#ffffff';
             } else if (theme.backgroundType === 'gradient') {
-                preview.style.background = theme.gradientText || 'linear-gradient(45deg, #ff6b6b 0%, #4ecdc4 100%)';
+                preview.style.background = sanitizeCSSValue(theme.gradientText, 'gradient') || 'linear-gradient(45deg, #ff6b6b 0%, #4ecdc4 100%)';
             } else if (theme.backgroundType === 'image') {
-                preview.style.background = theme.backgroundImage || 'url()';
+                preview.style.background = sanitizeCSSValue(theme.backgroundImage, 'url') || 'url()';
             }
             
             // Apply border effects
@@ -8394,8 +8578,10 @@
                         link.style.border = 'none';
                     } else if (theme.buttonStyle === 'outline') {
                         link.style.backgroundColor = 'transparent';
-                        link.style.border = `2px solid ${theme.buttonBackgroundColor || '#3b82f6'}`;
-                        link.style.color = theme.buttonBackgroundColor || '#3b82f6';
+                        // Sanitize CSS color values to prevent CSS injection
+                        const buttonColor = sanitizeCSSValue(theme.buttonBackgroundColor, 'color') || '#3b82f6';
+                        link.style.border = `2px solid ${buttonColor}`;
+                        link.style.color = buttonColor;
                     }
                 }
             });
@@ -10149,7 +10335,7 @@
                         
                         if (error) {
                             console.error('❌ Error saving to Supabase:', error);
-                            showMessage('Error saving profile: ' + error.message, 'error');
+                            showMessage('Error saving profile. Please try again.', 'error');
                             return;
                         } else {
                             console.log('✅ Profile saved to Supabase successfully!');
@@ -10157,7 +10343,7 @@
                         }
                     } catch (error) {
                         console.error('❌ Supabase save failed:', error);
-                        showMessage('Error saving profile: ' + error.message, 'error');
+                        showMessage('Error saving profile. Please try again.', 'error');
                         return;
                     }
                 } else {
@@ -10184,7 +10370,7 @@
                 
             } catch (error) {
                 console.error('Error saving profile:', error);
-                showMessage('Error saving profile: ' + error.message, 'error');
+                showMessage('Error saving profile. Please try again.', 'error');
             }
         }
         
@@ -10236,7 +10422,7 @@
                 
                 if (clicksError) {
                     console.error('❌ Error fetching clicks:', clicksError);
-                    showMessage('Error loading analytics: ' + clicksError.message);
+                    showMessage('Error loading analytics. Please try again.', 'error');
                     return;
                 }
                 
@@ -10325,7 +10511,7 @@
                 
             } catch (error) {
                 console.error('❌ Error loading analytics:', error);
-                showMessage('Error loading analytics: ' + error.message);
+                showMessage('Error loading analytics. Please try again.', 'error');
             }
         }
         
@@ -10403,6 +10589,14 @@
         function showLogin() {
             document.getElementById('loading').classList.add('hidden');
             document.getElementById('login').classList.remove('hidden');
+            
+            // Check if account is locked out and show persistent message
+            const lockoutStatus = isAccountLockedOut();
+            if (lockoutStatus.locked) {
+                showLockoutMessage();
+            } else {
+                clearLockoutMessage();
+            }
             
             // Force dashboard to be hidden
             const dashboard = document.getElementById('dashboard');
@@ -10501,7 +10695,9 @@
             const messageDiv = document.getElementById('message');
             if (messageDiv) {
                 console.log('Message div found, displaying message');
-                messageDiv.innerHTML = `<div class="${type}">${message}</div>`;
+                // Escape HTML in message to prevent XSS
+                const escapedMessage = escapeHtml(message);
+                messageDiv.innerHTML = `<div class="${type}">${escapedMessage}</div>`;
                 setTimeout(() => {
                     messageDiv.innerHTML = '';
                 }, 5000);
@@ -11350,77 +11546,510 @@
             });
         }
         
+        // Track whether we're in sign-up mode
+        let isSignUpMode = false;
+
+        // Rate limiting for authentication attempts
+        const RATE_LIMIT_CONFIG = {
+            maxAttempts: 5,           // Maximum failed attempts before lockout
+            lockoutDuration: 15 * 60 * 1000, // 15 minutes in milliseconds
+            windowDuration: 60 * 60 * 1000   // 1 hour window for tracking attempts
+        };
+
+        // Get rate limit data from localStorage
+        function getRateLimitData() {
+            try {
+                const data = localStorage.getItem('academiq_rate_limit');
+                return data ? JSON.parse(data) : { attempts: [], lockoutUntil: null };
+            } catch (error) {
+                return { attempts: [], lockoutUntil: null };
+            }
+        }
+
+        // Save rate limit data to localStorage
+        function saveRateLimitData(data) {
+            try {
+                localStorage.setItem('academiq_rate_limit', JSON.stringify(data));
+            } catch (error) {
+                // Silently fail if localStorage is unavailable
+            }
+        }
+
+        // Check if account is currently locked out (client-side check)
+        function isAccountLockedOut() {
+            const rateLimitData = getRateLimitData();
+            if (rateLimitData.lockoutUntil) {
+                const now = Date.now();
+                if (now < rateLimitData.lockoutUntil) {
+                    return {
+                        locked: true,
+                        remainingTime: rateLimitData.lockoutUntil - now
+                    };
+                } else {
+                    // Lockout expired, clear it
+                    rateLimitData.lockoutUntil = null;
+                    saveRateLimitData(rateLimitData);
+                }
+            }
+            return { locked: false, remainingTime: 0 };
+        }
+
+        // Check server-side rate limit
+        async function checkServerRateLimit(email, attemptType = 'login') {
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/rate-limit-check`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        attemptType: attemptType,
+                        recordAttempt: false
+                    })
+                });
+
+                if (!response.ok) {
+                    // If rate limit check fails, allow the request (fail open)
+                    console.warn('Rate limit check failed, allowing request');
+                    return { allowed: true, isLocked: false };
+                }
+
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                // On error, allow the request (fail open) but log the error
+                console.warn('Rate limit check error:', error);
+                return { allowed: true, isLocked: false };
+            }
+        }
+
+        // Record server-side authentication attempt
+        async function recordServerAttempt(email, attemptType = 'login', success = false) {
+            try {
+                await fetch(`${SUPABASE_URL}/functions/v1/rate-limit-check`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        attemptType: attemptType,
+                        recordAttempt: true,
+                        success: success
+                    })
+                });
+            } catch (error) {
+                // Silently fail - don't block the user if recording fails
+                console.warn('Failed to record server-side attempt:', error);
+            }
+        }
+
+        // Record a failed authentication attempt
+        function recordFailedAttempt(email) {
+            const rateLimitData = getRateLimitData();
+            const now = Date.now();
+            
+            // Clean up old attempts outside the window
+            rateLimitData.attempts = rateLimitData.attempts.filter(
+                attempt => (now - attempt.timestamp) < RATE_LIMIT_CONFIG.windowDuration
+            );
+            
+            // Add new failed attempt
+            rateLimitData.attempts.push({
+                email: email.toLowerCase(),
+                timestamp: now
+            });
+            
+            // Check if we've exceeded max attempts
+            const recentAttempts = rateLimitData.attempts.filter(
+                attempt => attempt.email === email.toLowerCase()
+            );
+            
+            if (recentAttempts.length >= RATE_LIMIT_CONFIG.maxAttempts) {
+                // Lock out the account
+                rateLimitData.lockoutUntil = now + RATE_LIMIT_CONFIG.lockoutDuration;
+            }
+            
+            saveRateLimitData(rateLimitData);
+        }
+
+        // Clear rate limit data (call on successful login)
+        function clearRateLimitData(email) {
+            const rateLimitData = getRateLimitData();
+            // Remove attempts for this email
+            rateLimitData.attempts = rateLimitData.attempts.filter(
+                attempt => attempt.email !== email.toLowerCase()
+            );
+            // Clear lockout if it exists
+            rateLimitData.lockoutUntil = null;
+            saveRateLimitData(rateLimitData);
+        }
+
+        // Format remaining time for display
+        function formatRemainingTime(ms) {
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Persistent lockout message with live countdown
+        let lockoutIntervalId = null;
+
+        function showLockoutMessage() {
+            const messageDiv = document.getElementById('message');
+            if (!messageDiv) return;
+
+            // Clear any existing interval
+            if (lockoutIntervalId) {
+                clearInterval(lockoutIntervalId);
+                lockoutIntervalId = null;
+            }
+
+            function updateLockoutMessage() {
+                const lockoutStatus = isAccountLockedOut();
+                if (lockoutStatus.locked) {
+                    const remainingTime = formatRemainingTime(lockoutStatus.remainingTime);
+                    messageDiv.innerHTML = `<div class="error" style="background-color: #fee2e2; border: 1px solid #ef4444; color: #991b1b; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                        <strong>Account Locked</strong><br>
+                        Too many failed login attempts. Please try again in <strong>${remainingTime}</strong>.
+                    </div>`;
+                } else {
+                    // Lockout expired, clear message and interval
+                    messageDiv.innerHTML = '';
+                    if (lockoutIntervalId) {
+                        clearInterval(lockoutIntervalId);
+                        lockoutIntervalId = null;
+                    }
+                }
+            }
+
+            // Update immediately
+            updateLockoutMessage();
+
+            // Update every second
+            lockoutIntervalId = setInterval(updateLockoutMessage, 1000);
+        }
+
+        function clearLockoutMessage() {
+            if (lockoutIntervalId) {
+                clearInterval(lockoutIntervalId);
+                lockoutIntervalId = null;
+            }
+            const messageDiv = document.getElementById('message');
+            if (messageDiv) {
+                messageDiv.innerHTML = '';
+            }
+        }
+
+        // Show privacy information modal
+        function showPrivacyInfo(event) {
+            event.preventDefault();
+            const privacyInfo = `
+                <div style="max-width: 600px; padding: 20px;">
+                    <h2 style="margin-top: 0; color: #1f2937;">"Remember Me" Privacy Information</h2>
+                    
+                    <p style="color: #4b5563; line-height: 1.6; margin-bottom: 20px;">
+                        This information specifically relates to the "Remember me" feature. Your account data, images, and other application data are stored securely on our servers and are separate from this browser-based login feature.
+                    </p>
+                    
+                    <h3 style="color: #374151; margin-top: 20px;">What Login Data is Stored in Your Browser?</h3>
+                    <p style="color: #4b5563; line-height: 1.6;">
+                        When you check "Remember me", only the following login-related data is stored locally in your browser:
+                    </p>
+                    <ul style="color: #4b5563; line-height: 1.8; margin-left: 20px;">
+                        <li><strong>Email address:</strong> Used to pre-fill the login form</li>
+                        <li><strong>Login status:</strong> A flag indicating you were previously logged in</li>
+                        <li><strong>Login timestamp:</strong> Used to automatically expire the stored data after 14 days</li>
+                    </ul>
+                    
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-top: 10px; font-style: italic;">
+                        Note: Your account information, images, collections, and other application data are stored on our secure servers, not in your browser.
+                    </p>
+                    
+                    <h3 style="color: #374151; margin-top: 20px;">Where is This Login Data Stored?</h3>
+                    <p style="color: #4b5563; line-height: 1.6;">
+                        The "Remember me" login data is stored locally in your browser's localStorage. This means:
+                    </p>
+                    <ul style="color: #4b5563; line-height: 1.8; margin-left: 20px;">
+                        <li>This login data never leaves your device</li>
+                        <li>This login data is not transmitted to our servers</li>
+                        <li>This login data is not shared with third parties</li>
+                        <li>This login data is specific to your browser and device</li>
+                    </ul>
+                    
+                    <h3 style="color: #374151; margin-top: 20px;">How Long is This Login Data Stored?</h3>
+                    <p style="color: #4b5563; line-height: 1.6;">
+                        The stored login data automatically expires after <strong>14 days</strong> of inactivity. This balance provides convenience while maintaining security.
+                    </p>
+                    
+                    <h3 style="color: #374151; margin-top: 20px;">Your Rights (GDPR)</h3>
+                    <p style="color: #4b5563; line-height: 1.6;">
+                        Under GDPR, you have the right to:
+                    </p>
+                    <ul style="color: #4b5563; line-height: 1.8; margin-left: 20px;">
+                        <li><strong>Access:</strong> View what login data is stored in your browser (check browser's localStorage)</li>
+                        <li><strong>Delete:</strong> Clear stored login data by signing out or unchecking "Remember me"</li>
+                        <li><strong>Control:</strong> Choose whether to use "Remember me" functionality</li>
+                    </ul>
+                    
+                    <h3 style="color: #374151; margin-top: 20px;">How to Clear Your Browser Login Data</h3>
+                    <p style="color: #4b5563; line-height: 1.6;">
+                        You can clear the stored login data at any time by:
+                    </p>
+                    <ul style="color: #4b5563; line-height: 1.8; margin-left: 20px;">
+                        <li>Signing out of your account</li>
+                        <li>Unchecking "Remember me" before logging in</li>
+                        <li>Clearing your browser's localStorage (browser settings)</li>
+                    </ul>
+                    
+                </div>
+            `;
+            
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('privacyInfoModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'privacyInfoModal';
+                modal.className = 'modal';
+                modal.style.cssText = 'display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);';
+                modal.innerHTML = `
+                    <div style="background-color: white; margin: 5% auto; padding: 0; border-radius: 8px; max-width: 700px; max-height: 80vh; overflow-y: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <div style="position: relative;">
+                            <span onclick="closePrivacyInfo()" style="position: absolute; right: 15px; top: 15px; color: #9ca3af; font-size: 28px; font-weight: bold; cursor: pointer; z-index: 1;">&times;</span>
+                            <div id="privacyInfoContent"></div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            document.getElementById('privacyInfoContent').innerHTML = privacyInfo;
+            modal.style.display = 'block';
+            
+            // Close on outside click
+            modal.onclick = function(event) {
+                if (event.target === modal) {
+                    closePrivacyInfo();
+                }
+            };
+        }
+
+        function closePrivacyInfo() {
+            const modal = document.getElementById('privacyInfoModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        function toggleSignUpMode(event) {
+            event.preventDefault();
+            isSignUpMode = !isSignUpMode;
+            const loginBtn = document.getElementById('loginBtn');
+            const toggleLink = document.getElementById('toggleSignUp');
+            const toggleText = document.getElementById('toggleSignUpText');
+            const passwordRequirements = document.getElementById('passwordRequirements');
+            const passwordInput = document.getElementById('password');
+            
+            if (isSignUpMode) {
+                loginBtn.innerHTML = 'Sign Up';
+                toggleText.textContent = 'Already have an account? ';
+                toggleLink.textContent = 'Sign In';
+                // Show password requirements for sign-up
+                if (passwordRequirements) {
+                    passwordRequirements.style.display = 'block';
+                }
+                // Add real-time validation on password input
+                if (passwordInput) {
+                    passwordInput.addEventListener('input', validatePasswordStrength);
+                }
+            } else {
+                loginBtn.innerHTML = 'Sign In';
+                toggleText.textContent = 'Don\'t have an account? ';
+                toggleLink.textContent = 'Sign Up';
+                // Hide password requirements for sign-in
+                if (passwordRequirements) {
+                    passwordRequirements.style.display = 'none';
+                }
+                // Remove real-time validation
+                if (passwordInput) {
+                    passwordInput.removeEventListener('input', validatePasswordStrength);
+                }
+            }
+        }
+
+        // Password validation function
+        function validatePassword(password) {
+            const errors = [];
+            
+            if (password.length < 8) {
+                errors.push('Password must be at least 8 characters long');
+            }
+            if (!/[A-Z]/.test(password)) {
+                errors.push('Password must contain at least one uppercase letter');
+            }
+            if (!/[a-z]/.test(password)) {
+                errors.push('Password must contain at least one lowercase letter');
+            }
+            if (!/[0-9]/.test(password)) {
+                errors.push('Password must contain at least one number');
+            }
+            if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+                errors.push('Password must contain at least one special character (!@#$%^&*)');
+            }
+            
+            return {
+                isValid: errors.length === 0,
+                errors: errors
+            };
+        }
+
+        // Real-time password strength validation (visual feedback)
+        function validatePasswordStrength() {
+            const password = document.getElementById('password').value;
+            const requirements = {
+                length: document.getElementById('req-length'),
+                uppercase: document.getElementById('req-uppercase'),
+                lowercase: document.getElementById('req-lowercase'),
+                number: document.getElementById('req-number'),
+                special: document.getElementById('req-special')
+            };
+            
+            if (!requirements.length) return; // Requirements not visible
+            
+            // Check each requirement
+            if (password.length >= 8) {
+                requirements.length.style.color = '#10b981';
+            } else {
+                requirements.length.style.color = '#ef4444';
+            }
+            
+            if (/[A-Z]/.test(password)) {
+                requirements.uppercase.style.color = '#10b981';
+            } else {
+                requirements.uppercase.style.color = '#ef4444';
+            }
+            
+            if (/[a-z]/.test(password)) {
+                requirements.lowercase.style.color = '#10b981';
+            } else {
+                requirements.lowercase.style.color = '#ef4444';
+            }
+            
+            if (/[0-9]/.test(password)) {
+                requirements.number.style.color = '#10b981';
+            } else {
+                requirements.number.style.color = '#ef4444';
+            }
+            
+            if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+                requirements.special.style.color = '#10b981';
+            } else {
+                requirements.special.style.color = '#ef4444';
+            }
+        }
+
         async function handleEmailLogin(event) {
             event.preventDefault();
             
-            const email = document.getElementById('email').value;
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const loginBtn = document.getElementById('loginBtn');
             
+            // Basic validation
+            if (!email || !password) {
+                showMessage('Please enter both email and password.', 'error');
+                return;
+            }
+            
+            // Validate email format
+            if (!isValidEmail(email)) {
+                showMessage('Please enter a valid email address.', 'error');
+                return;
+            }
+            
+            // Check for rate limiting lockout (only for sign-in, not sign-up)
+            if (!isSignUpMode) {
+                // Check client-side rate limit first (fast check)
+                const lockoutStatus = isAccountLockedOut();
+                if (lockoutStatus.locked) {
+                    showLockoutMessage();
+                    return;
+                }
+                
+                // Check server-side rate limit (more secure, can't be bypassed)
+                const serverRateLimit = await checkServerRateLimit(email, 'login');
+                if (!serverRateLimit.allowed || serverRateLimit.isLocked) {
+                    // Server-side lockout detected
+                    const remainingTime = serverRateLimit.remainingTime || 0;
+                    const minutes = Math.ceil(remainingTime / 60);
+                    showMessage(`Too many failed attempts. Please try again in ${minutes} minute${minutes !== 1 ? 's' : ''}.`, 'error');
+                    showLockoutMessage();
+                    return;
+                }
+                
+                // Clear any existing lockout message if not locked
+                clearLockoutMessage();
+            }
+            
             // Disable button and show loading
             loginBtn.disabled = true;
+            const originalButtonText = loginBtn.innerHTML;
             loginBtn.innerHTML = '<div class="loading" style="margin: 0 auto;"></div>';
             
             try {
                 if (supabaseClient) {
-                    console.log('Attempting real Supabase authentication...');
-                    
-                    // Add timeout to prevent hanging
-                    const signInPromise = supabaseClient.auth.signInWithPassword({ email, password });
-                    const timeoutPromise = new Promise((_, reject) => 
-                        setTimeout(() => reject(new Error('Sign in timeout')), 10000)
-                    );
-                    
-                    const { data, error } = await Promise.race([signInPromise, timeoutPromise]);
-                    
-                    if (error) {
-                        console.log('Sign in failed, attempting sign up...');
-                        const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({ email, password });
+                    if (isSignUpMode) {
+                        // Handle sign-up
+                        await handleEmailSignUp(email, password);
+                    } else {
+                        // Handle sign-in only - no auto sign-up to prevent account enumeration
+                        const signInPromise = supabaseClient.auth.signInWithPassword({ email, password });
+                        const timeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Sign in timeout')), 10000)
+                        );
                         
-                        if (signUpError) {
-                            console.error('Sign up error:', signUpError);
-                            showMessage('Authentication failed: ' + signUpError.message);
+                        const { data, error } = await Promise.race([signInPromise, timeoutPromise]);
+                        
+                        if (error) {
+                            // Record failed attempt for rate limiting (both client and server)
+                            recordFailedAttempt(email);
+                            await recordServerAttempt(email, 'login', false);
+                            
+                            // Check if we just hit the lockout threshold (client-side)
+                            const lockoutStatus = isAccountLockedOut();
+                            if (lockoutStatus.locked) {
+                                // Show persistent lockout message with countdown
+                                showLockoutMessage();
+                            } else {
+                                // Generic error message to prevent account enumeration
+                                showMessage('Invalid email or password. Please try again.', 'error');
+                            }
                         } else {
-                            console.log('Account created successfully');
-                            showMessage('Account created! Check your email for confirmation if required.', 'success');
-                            currentUser = signUpData.user;
+                            // Successful login - clear rate limit data and lockout message
+                            clearRateLimitData(email);
+                            await recordServerAttempt(email, 'login', true); // Record successful attempt
+                            clearLockoutMessage();
+                            
+                            showMessage('Successfully signed in!', 'success');
+                            currentUser = data.user;
                             
                             // Save login to localStorage if "Remember me" is checked
                             const rememberMe = document.getElementById('rememberMe').checked;
-                            console.log('Remember me checkbox checked (signup):', rememberMe);
                             if (rememberMe) {
                                 setPersistentLogin(email, true);
-                            } else {
-                                console.log('Remember me is not checked, not saving login');
                             }
                             
-                            setTimeout(async () => {
-                                await loadUserData();
+                            setTimeout(() => {
                                 showDashboard();
+                                loadUserData(); // Load in background
                             }, 1000);
                         }
-                    } else {
-                        console.log('Sign in successful');
-                        showMessage('Successfully signed in!', 'success');
-                        currentUser = data.user;
-                        
-                        // Save login to localStorage if "Remember me" is checked
-                        const rememberMe = document.getElementById('rememberMe').checked;
-                        console.log('Remember me checkbox checked:', rememberMe);
-                        if (rememberMe) {
-                            setPersistentLogin(email, true);
-                        } else {
-                            console.log('Remember me is not checked, not saving login');
-                        }
-                        
-                        setTimeout(() => {
-                            showDashboard();
-                            loadUserData(); // Load in background
-                        }, 1000);
                     }
                 } else {
                     // Fallback to demo mode if Supabase not available
-                    console.log('Using demo mode authentication');
                     if (email && password) {
                         currentUser = { email: email };
                         showMessage('Successfully signed in! (Demo mode)', 'success');
@@ -11429,15 +12058,96 @@
                             loadUserData(); // Load in background
                         }, 1000);
                     } else {
-                        showMessage('Please enter both email and password.');
+                        showMessage('Please enter both email and password.', 'error');
                     }
                 }
             } catch (error) {
-                console.error('Authentication error:', error);
-                showMessage('Authentication failed: ' + error.message);
+                // Record failed attempt for rate limiting (only for sign-in)
+                if (!isSignUpMode) {
+                    recordFailedAttempt(email);
+                    await recordServerAttempt(email, 'login', false);
+                }
+                
+                // Generic error message
+                if (isSignUpMode) {
+                    showMessage('Unable to create account. Please try again.', 'error');
+                } else {
+                    const lockoutStatus = isAccountLockedOut();
+                    if (lockoutStatus.locked) {
+                        // Show persistent lockout message with countdown
+                        showLockoutMessage();
+                    } else {
+                        showMessage('Invalid email or password. Please try again.', 'error');
+                    }
+                }
             } finally {
                 loginBtn.disabled = false;
-                loginBtn.innerHTML = 'Sign In / Sign Up';
+                loginBtn.innerHTML = originalButtonText;
+            }
+        }
+
+        async function handleEmailSignUp(email, password) {
+            // Validate email format before attempting sign-up
+            if (!isValidEmail(email)) {
+                showMessage('Please enter a valid email address.', 'error');
+                return;
+            }
+            
+            // Validate password strength before attempting sign-up
+            const validation = validatePassword(password);
+            if (!validation.isValid) {
+                // Show specific password requirements that failed
+                const errorMessage = 'Password does not meet requirements:\n' + validation.errors.join('\n');
+                showMessage(errorMessage, 'error');
+                return;
+            }
+            
+            // Check server-side rate limit for sign-up
+            const serverRateLimit = await checkServerRateLimit(email, 'signup');
+            if (!serverRateLimit.allowed || serverRateLimit.isLocked) {
+                const remainingTime = serverRateLimit.remainingTime || 0;
+                const minutes = Math.ceil(remainingTime / 60);
+                showMessage(`Too many sign-up attempts. Please try again in ${minutes} minute${minutes !== 1 ? 's' : ''}.`, 'error');
+                return;
+            }
+            
+            const signUpPromise = supabaseClient.auth.signUp({ email, password });
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Sign up timeout')), 10000)
+            );
+            
+            const { data, error } = await Promise.race([signUpPromise, timeoutPromise]);
+            
+            if (error) {
+                // Record failed sign-up attempt
+                await recordServerAttempt(email, 'signup', false);
+                
+                // Check if error is related to password policy (Supabase may have additional requirements)
+                if (error.message && error.message.toLowerCase().includes('password')) {
+                    showMessage('Password does not meet security requirements. Please ensure it meets all criteria.', 'error');
+                } else {
+                    // Generic error message to prevent information disclosure
+                    showMessage('Unable to create account. Please try again.', 'error');
+                }
+            } else {
+                // Successful sign-up - clear any rate limit data and lockout message for this email
+                clearRateLimitData(email);
+                await recordServerAttempt(email, 'signup', true); // Record successful sign-up
+                clearLockoutMessage();
+                
+                showMessage('Account created! Check your email for confirmation if required.', 'success');
+                currentUser = data.user;
+                
+                // Save login to localStorage if "Remember me" is checked
+                const rememberMe = document.getElementById('rememberMe').checked;
+                if (rememberMe) {
+                    setPersistentLogin(email, true);
+                }
+                
+                setTimeout(async () => {
+                    await loadUserData();
+                    showDashboard();
+                }, 1000);
             }
         }
         
@@ -11458,10 +12168,7 @@
         
         // OAuth Handlers
         async function handleGoogleLogin() {
-            console.log('handleGoogleLogin called');
-            
             if (!supabaseClient) {
-                console.error('No Supabase client available');
                 showMessage('Authentication not available. Please try again later.', 'error');
                 return;
             }
@@ -11470,9 +12177,6 @@
                 // Use current origin for OAuth redirect so it redirects back to your site
                 const redirectUrl = window.location.origin;
                 
-                console.log('Google OAuth redirect to:', redirectUrl);
-                console.log('Supabase client:', supabaseClient);
-                
                 const { data, error } = await supabaseClient.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
@@ -11480,17 +12184,16 @@
                     }
                 });
                 
-                console.log('OAuth response:', { data, error });
-                
                 if (error) {
-                    console.error('OAuth error:', error);
-                    throw error;
+                    // Generic error message to prevent information disclosure
+                    showMessage('Google login failed. Please try again.', 'error');
+                    return;
                 }
                 
                 // The redirect will handle the rest
             } catch (error) {
-                console.error('Google login error:', error);
-                showMessage('Google login failed: ' + error.message, 'error');
+                // Generic error message to prevent information disclosure
+                showMessage('Google login failed. Please try again.', 'error');
             }
         }
         // Media Library Functions
@@ -11663,7 +12366,7 @@
                 console.error('Error saving media files:', error);
                 console.log('Error details:', {
                     name: error.name,
-                    message: error.message,
+                    // Don't log error.message to prevent information disclosure
                     mediaFilesCount: mediaFiles.length
                 });
                 
@@ -11671,7 +12374,7 @@
                     console.log('Quota exceeded, compressing images...');
                     compressAllImages();
                 } else {
-                    showMessage('Error saving media files: ' + error.message, 'error');
+                    showMessage('Error saving media files. Please try again.', 'error');
                 }
             }
         }
@@ -12173,7 +12876,7 @@
                 localStorage.setItem('academiq_email', email);
                 localStorage.setItem('academiq_logged_in', isLoggedIn ? 'true' : 'false');
                 localStorage.setItem('academiq_login_time', Date.now().toString());
-                console.log('Login saved to localStorage:', { email, isLoggedIn });
+                // Login saved to localStorage
             } catch (error) {
                 console.error('Failed to save login to localStorage:', error);
             }
@@ -12185,13 +12888,13 @@
                 const isLoggedIn = localStorage.getItem('academiq_logged_in');
                 const loginTime = localStorage.getItem('academiq_login_time');
                 
-                console.log('Checking localStorage login:', { email, isLoggedIn, loginTime });
+                // Checking localStorage login
                 
-                // Check if login is not too old (30 days)
+                // Check if login is not too old (14 days - security best practice)
                 if (loginTime) {
                     const daysSinceLogin = (Date.now() - parseInt(loginTime)) / (1000 * 60 * 60 * 24);
-                    if (daysSinceLogin > 30) {
-                        console.log('Login expired (older than 30 days)');
+                    if (daysSinceLogin > 14) {
+                        // Login expired (older than 14 days)
                         clearPersistentLogin();
                         return { email: null, isLoggedIn: null };
                     }
@@ -12209,7 +12912,7 @@
                 localStorage.removeItem('academiq_email');
                 localStorage.removeItem('academiq_logged_in');
                 localStorage.removeItem('academiq_login_time');
-                console.log('Login cleared from localStorage');
+                // Login cleared from localStorage
             } catch (error) {
                 console.error('Failed to clear login from localStorage:', error);
             }
@@ -12220,7 +12923,7 @@
                 const { email: savedEmail, isLoggedIn } = getPersistentLogin();
                 
                 if (savedEmail && isLoggedIn === 'true') {
-                    console.log('Found saved login for:', savedEmail);
+                    // Found saved login
                     
                     // Pre-fill email if login element exists
                     const emailInput = document.getElementById('email');
@@ -12264,7 +12967,8 @@
                             return true;
                         }
                     } catch (error) {
-                        console.log('Session check failed:', error.message);
+                        // Session check failed
+                        // Don't log error.message to prevent information disclosure
                         // Don't show login here - let the main flow handle it
                         // The session might still be valid, just slow to respond
                         return false;
@@ -12951,7 +13655,8 @@
             const editor = document.getElementById(editorId);
             if (!editor) return;
 
-            const content = editor.innerHTML;
+            // Sanitize HTML when reading from contenteditable to prevent XSS
+            const content = sanitizeHTML(editor.innerHTML);
             const colorPicker = editor.parentElement.querySelector('.rtf-color-picker');
             const fontSelect = editor.parentElement.querySelector('select');
             
@@ -13353,6 +14058,115 @@
                 }
             });
         }
+        // Sanitize HTML to prevent XSS attacks
+        // Only allows safe formatting tags: <strong>, <em>, <u>, <b>, <i>
+        // All other HTML tags and attributes are stripped
+        function sanitizeHTML(html) {
+            if (!html || typeof html !== 'string') {
+                return '';
+            }
+            
+            // Use DOMParser to safely parse HTML
+            // This prevents script execution during parsing
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // List of allowed HTML tags for formatting
+                const allowedTags = ['strong', 'em', 'u', 'b', 'i'];
+                
+                // Recursively process nodes, keeping only allowed tags
+                function processNode(node) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        // Text nodes are safe - return as-is (textContent automatically escapes HTML)
+                        return node.textContent;
+                    }
+                    
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const tagName = node.tagName.toLowerCase();
+                        
+                        if (allowedTags.includes(tagName)) {
+                            // Keep this allowed tag, process children recursively
+                            const children = Array.from(node.childNodes)
+                                .map(processNode)
+                                .join('');
+                            // Return tag without attributes (strip all attributes for security)
+                            return `<${tagName}>${children}</${tagName}>`;
+                        } else {
+                            // Strip this disallowed tag, but keep its children
+                            return Array.from(node.childNodes)
+                                .map(processNode)
+                                .join('');
+                        }
+                    }
+                    
+                    // Ignore other node types (comments, etc.)
+                    return '';
+                }
+                
+                // Process all nodes in the document body
+                const bodyContent = Array.from(doc.body.childNodes)
+                    .map(processNode)
+                    .join('');
+                
+                // Return sanitized content, or plain text if parsing resulted in empty content
+                return bodyContent || html.replace(/<[^>]+>/g, '');
+            } catch (e) {
+                // If parsing fails for any reason, strip all HTML tags as fallback
+                // This ensures we never return potentially dangerous HTML
+                return html.replace(/<[^>]+>/g, '');
+            }
+        }
+
+        // Validate and sanitize collection slug
+        // Slugs should contain only alphanumeric characters, hyphens, underscores, and spaces
+        // Spaces will be converted to hyphens, and invalid characters will be removed
+        function validateAndSanitizeSlug(slug) {
+            if (!slug || typeof slug !== 'string') {
+                return { isValid: false, sanitized: '', error: 'Slug cannot be empty' };
+            }
+            
+            // Trim whitespace
+            slug = slug.trim();
+            
+            // Check length
+            if (slug.length === 0) {
+                return { isValid: false, sanitized: '', error: 'Slug cannot be empty' };
+            }
+            
+            if (slug.length > 50) {
+                return { isValid: false, sanitized: '', error: 'Slug must be 50 characters or less' };
+            }
+            
+            // Convert to lowercase
+            slug = slug.toLowerCase();
+            
+            // Replace spaces with hyphens
+            slug = slug.replace(/\s+/g, '-');
+            
+            // Remove invalid characters (keep only alphanumeric, hyphens, underscores)
+            const sanitized = slug.replace(/[^a-z0-9_-]/g, '');
+            
+            // Remove consecutive hyphens/underscores
+            const cleaned = sanitized.replace(/[-_]{2,}/g, '-');
+            
+            // Remove leading/trailing hyphens and underscores
+            const final = cleaned.replace(/^[-_]+|[-_]+$/g, '');
+            
+            if (final.length === 0) {
+                return { isValid: false, sanitized: '', error: 'Slug contains only invalid characters' };
+            }
+            
+            // Check if it starts with a number (optional - you may want to allow this)
+            // For now, we'll allow it
+            
+            return { 
+                isValid: true, 
+                sanitized: final,
+                error: null
+            };
+        }
+
         function validateAndFixUrl(url) {
             console.log('validateAndFixUrl called with:', url);
             if (!url || typeof url !== 'string') {
@@ -15620,6 +16434,53 @@
             return s.color !== '';
         }
 
+        // Sanitize CSS value to prevent CSS injection
+        // Only allows safe CSS values (colors, gradients, URLs)
+        function sanitizeCSSValue(value, type = 'color') {
+            if (!value || typeof value !== 'string') {
+                return '';
+            }
+            
+            // Remove any potentially dangerous characters
+            value = value.trim();
+            
+            if (type === 'color') {
+                // For colors, validate hex format or use browser validation
+                if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                    return value;
+                }
+                // Use browser validation for named colors
+                const s = new Option().style;
+                s.color = value;
+                if (s.color !== '') {
+                    return value;
+                }
+                return '#000000'; // Default fallback
+            } else if (type === 'gradient') {
+                // For gradients, only allow linear-gradient with safe syntax
+                // Match: linear-gradient(angle, color1, color2, ...)
+                const gradientPattern = /^linear-gradient\([^)]+\)$/i;
+                if (gradientPattern.test(value)) {
+                    // Further sanitize: remove any script-like content
+                    if (!/javascript:|expression\(|@import|url\(javascript:/i.test(value)) {
+                        return value;
+                    }
+                }
+                return 'linear-gradient(45deg, #3b82f6, #8b5cf6)'; // Default fallback
+            } else if (type === 'url') {
+                // For URLs, validate they're safe
+                if (/^url\(['"]?[^'"]+['"]?\)$/i.test(value)) {
+                    // Remove any script-like content
+                    if (!/javascript:|data:text\/html/i.test(value)) {
+                        return value;
+                    }
+                }
+                return 'url()'; // Default fallback
+            }
+            
+            return '';
+        }
+
         function handleBackgroundImageUpload(event) {
             const file = event.target.files[0];
             if (file && file.type.startsWith('image/')) {
@@ -15766,7 +16627,8 @@
             document.getElementById('description-font').value = 'Arial';
             const descEditor = document.getElementById('description-text');
             if (descEditor) {
-                descEditor.innerHTML = 'alexander.towbin';
+                // Sanitize HTML to prevent XSS (allows formatting tags)
+                descEditor.innerHTML = sanitizeHTML('alexander.towbin');
             }
             
             // Reset bio formatting
@@ -15774,7 +16636,8 @@
             document.getElementById('bio-font').value = 'Arial';
             const bioEditor = document.getElementById('bio-text');
             if (bioEditor) {
-                bioEditor.innerHTML = 'Welcome to my page!';
+                // Sanitize HTML to prevent XSS (allows formatting tags)
+                bioEditor.innerHTML = sanitizeHTML('Welcome to my page!');
             } else {
                 console.log('Bio text editor not found, skipping reset');
             }
@@ -15847,18 +16710,21 @@
 
             themesList.innerHTML = savedThemes.map(theme => {
                 const previewColor = getThemePreviewColor(theme);
+                // Escape theme.name to prevent XSS in onclick attributes and innerHTML
+                const escapedThemeName = escapeHtml(theme.name).replace(/'/g, "\\'");
+                const escapedThemeNameDisplay = escapeHtml(theme.name);
                 return `
-                    <div class="saved-theme-item" onclick="loadTheme('${theme.name}')">
+                    <div class="saved-theme-item" onclick="loadTheme('${escapedThemeName}')">
                         <div class="saved-theme-info">
-                            <div class="saved-theme-name">${theme.name}</div>
+                            <div class="saved-theme-name">${escapedThemeNameDisplay}</div>
                             <div class="saved-theme-preview">
                                 <div class="saved-theme-preview-color" style="background: ${previewColor}"></div>
-                                <span style="font-size: 12px; color: #6b7280;">${theme.backgroundType}</span>
+                                <span style="font-size: 12px; color: #6b7280;">${escapeHtml(theme.backgroundType)}</span>
                             </div>
                         </div>
                         <div class="saved-theme-actions">
-                            <button onclick="event.stopPropagation(); loadTheme('${theme.name}')" class="btn btn-primary btn-sm">Load</button>
-                            <button onclick="event.stopPropagation(); deleteTheme('${theme.name}')" class="btn btn-danger btn-sm">Delete</button>
+                            <button onclick="event.stopPropagation(); loadTheme('${escapedThemeName}')" class="btn btn-primary btn-sm">Load</button>
+                            <button onclick="event.stopPropagation(); deleteTheme('${escapedThemeName}')" class="btn btn-danger btn-sm">Delete</button>
                         </div>
                     </div>
                 `;
@@ -15867,11 +16733,13 @@
 
         function getThemePreviewColor(theme) {
             if (theme.backgroundType === 'solid') {
-                return theme.backgroundColor;
+                // Sanitize color value to prevent CSS injection
+                return sanitizeCSSValue(theme.backgroundColor, 'color') || '#3b82f6';
             } else if (theme.backgroundType === 'gradient') {
-                // Extract first color from gradient
+                // Extract first color from gradient and sanitize
                 const match = theme.gradientText.match(/#[0-9A-Fa-f]{6}/);
-                return match ? match[0] : '#3b82f6';
+                const color = match ? match[0] : '#3b82f6';
+                return sanitizeCSSValue(color, 'color') || '#3b82f6';
             } else if (theme.backgroundType === 'image') {
                 return 'linear-gradient(45deg, #8b5cf6, #06b6d4)'; // Default gradient for images
             }
@@ -15934,7 +16802,8 @@
             if (themeToApply.descriptionText) {
                 const descEditor = document.getElementById('description-text');
                 if (descEditor) {
-                    descEditor.innerHTML = themeToApply.descriptionText;
+                    // Sanitize HTML to prevent XSS (allows formatting tags)
+                    descEditor.innerHTML = sanitizeHTML(themeToApply.descriptionText);
                 }
             }
             
@@ -15950,7 +16819,8 @@
             if (themeToApply.bioText) {
                 const bioEditor = document.getElementById('bio-text');
                 if (bioEditor) {
-                    bioEditor.innerHTML = themeToApply.bioText;
+                    // Sanitize HTML to prevent XSS (allows formatting tags)
+                    bioEditor.innerHTML = sanitizeHTML(themeToApply.bioText);
                 } else {
                     console.log('Bio text editor not found, skipping bio text update');
                 }

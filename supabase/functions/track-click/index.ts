@@ -54,6 +54,29 @@ serve(async (req) => {
     const startTime = Date.now();
     const url = new URL(req.url);
     
+    // CSRF Protection: Validate request origin/referer
+    const origin = req.headers.get('origin');
+    const referer = req.headers.get('referer');
+    const allowedDomains = [
+      'https://academiqr.com',
+      'https://www.academiqr.com',
+      // Allow direct links (no origin/referer) - these are legitimate user clicks
+    ];
+    
+    // Check if request comes from allowed domain
+    const isValidOrigin = origin && allowedDomains.some(domain => origin.startsWith(domain));
+    const isValidReferer = referer && allowedDomains.some(domain => referer.startsWith(domain));
+    
+    // Block if origin/referer present but invalid (potential CSRF attack)
+    // Allow requests with no origin/referer (direct link clicks from email, etc.)
+    if ((origin && !isValidOrigin) || (referer && !isValidReferer)) {
+      console.warn('CSRF attempt blocked:', { origin, referer, url: req.url });
+      return new Response(
+        JSON.stringify({ error: 'Invalid request origin' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     // Extract link ID from path: /track-click/link-id-here
     const pathParts = url.pathname.split('/').filter(p => p);
     const linkId = pathParts[pathParts.length - 1];
@@ -153,41 +176,61 @@ serve(async (req) => {
     // Calculate response time
     const responseTime = Date.now() - startTime;
 
-    // Track the click (fire and forget - don't wait for it)
-    const clickData = {
-      link_id: linkId,
-      list_id: listId,
-      owner_id: ownerId,
-      ip_address: ipAddress,
-      user_agent: userAgent,
-      device_type: deviceType,
-      browser: browser,
-      os: os,
-      referrer: referrer,
-      utm_source: utmParams.utm_source,
-      utm_medium: utmParams.utm_medium,
-      utm_campaign: utmParams.utm_campaign,
-      response_time: responseTime,
-    };
-    
-    console.log('Inserting click data:', clickData);
-    
-    supabase
+    // Check for recent duplicate click (same link, same IP, within 5 seconds)
+    // This prevents accidental double-clicks and reduces database load
+    const fiveSecondsAgo = new Date(Date.now() - 5000).toISOString();
+    const { data: recentClick } = await supabase
       .from('link_clicks')
-      .insert(clickData)
-      .then(({ data, error }) => {
-        if (error) {
-          console.error('Error tracking click:', error);
-          console.error('Error details:', JSON.stringify(error, null, 2));
-        } else {
-          console.log('Click tracked successfully:', {
-            linkId,
-            ownerId,
-            listId,
-            insertedId: data
-          });
-        }
+      .select('id')
+      .eq('link_id', linkId)
+      .eq('ip_address', ipAddress)
+      .gte('created_at', fiveSecondsAgo)
+      .limit(1)
+      .single();
+
+    // Track the click (fire and forget - don't wait for it)
+    // Skip if duplicate detected within 5 seconds
+    if (!recentClick) {
+      const clickData = {
+        link_id: linkId,
+        list_id: listId,
+        owner_id: ownerId,
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        device_type: deviceType,
+        browser: browser,
+        os: os,
+        referrer: referrer,
+        utm_source: utmParams.utm_source,
+        utm_medium: utmParams.utm_medium,
+        utm_campaign: utmParams.utm_campaign,
+        response_time: responseTime,
+      };
+      
+      console.log('Inserting click data:', clickData);
+      
+      supabase
+        .from('link_clicks')
+        .insert(clickData)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error('Error tracking click:', error);
+            console.error('Error details:', JSON.stringify(error, null, 2));
+          } else {
+            console.log('Click tracked successfully:', {
+              linkId,
+              ownerId,
+              listId,
+              insertedId: data
+            });
+          }
+        });
+    } else {
+      console.log('Duplicate click detected (within 5 seconds), skipping tracking:', {
+        linkId,
+        ipAddress
       });
+    }
 
     // Redirect to destination URL immediately (don't wait for tracking)
     return new Response(null, {

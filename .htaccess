@@ -9,3 +9,31 @@ RewriteRule ^api/track/(.*)$ https://natzpfyxpuycsuuzbqrd.supabase.co/functions/
 
 # Optional: If you have other routing needs, add them below
 
+# ============================================
+# Security Headers
+# ============================================
+# Note: Requires mod_headers to be enabled in Apache
+# Enable with: sudo a2enmod headers
+
+# Clickjacking Protection
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "DENY"
+    
+    # Content Security Policy
+    # Note: Using 'unsafe-inline' for now to ensure site functionality
+    # The hashes may not match exactly due to whitespace/formatting differences
+    # TODO: Refactor inline event handlers to use addEventListener for better security
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: https://*.supabase.co https://natzpfyxpuycsuuzbqrd.supabase.co; connect-src 'self' https://*.supabase.co https://academiqr.com; font-src 'self' https://cdnjs.cloudflare.com; frame-ancestors 'none';"
+    
+    # HTTPS Enforcement (HSTS)
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    
+    # Prevent MIME type sniffing
+    Header always set X-Content-Type-Options "nosniff"
+    
+    # Referrer Policy
+    Header always set Referrer-Policy "no-referrer"
+    
+    # Permissions Policy
+    Header always set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
+</IfModule>

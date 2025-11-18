@@ -1,0 +1,44 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: https://*.supabase.co https://natzpfyxpuycsuuzbqrd.supabase.co; connect-src 'self' https://*.supabase.co https://academiqr.com; font-src 'self' https://cdnjs.cloudflare.com; frame-ancestors 'none';"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/track/:path*",
+      "destination": "https://natzpfyxpuycsuuzbqrd.supabase.co/functions/v1/track-click/:path*"
+    },
+    {
+      "source": "/:username/:slug",
+      "destination": "/index.html"
+    }
+  ]
+}
+

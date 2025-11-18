@@ -1,0 +1,50 @@
+# Netlify Configuration
+# This file configures Netlify deployment settings and security headers
+
+[build]
+  publish = "."
+  command = "echo 'No build step required'"
+
+[[headers]]
+  # Apply security headers to all routes
+  for = "/*"
+  [headers.values]
+    # Clickjacking Protection
+    X-Frame-Options = "DENY"
+    
+    # Content Security Policy
+    Content-Security-Policy = """
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+      style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;
+      img-src 'self' data: https://*.supabase.co https://natzpfyxpuycsuuzbqrd.supabase.co;
+      connect-src 'self' https://*.supabase.co https://academiqr.com;
+      font-src 'self' https://cdnjs.cloudflare.com;
+      frame-ancestors 'none';
+    """
+    
+    # HTTPS Enforcement
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    
+    # Prevent MIME type sniffing
+    X-Content-Type-Options = "nosniff"
+    
+    # Referrer Policy
+    Referrer-Policy = "no-referrer"
+    
+    # Permissions Policy
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
+
+# Redirect rules for API tracking endpoint
+[[redirects]]
+  from = "/api/track/*"
+  to = "https://natzpfyxpuycsuuzbqrd.supabase.co/functions/v1/track-click/:splat"
+  status = 200
+  force = true
+
+# SPA fallback
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
