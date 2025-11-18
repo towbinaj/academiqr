@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Public Profile</title>
-    <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/sign/assets/AcademiQR%20logo_small.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wMDIxMjAxMi1mNWMwLTQ1ODMtOGIyZi02ZmE0NGI1NjY1YTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvQWNhZGVtaVFSIGxvZ29fc21hbGwucG5nIiwiaWF0IjoxNzYxNjcyMDM1LCJleHAiOjMzMjY2MTM2MDM1fQ.Aj53elwW_8v65gQ4qtYme2sJGG8TLuFOYvAmUxw0sds">
-    <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/sign/assets/AcademiQR%20logo_small.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8wMDIxMjAxMi1mNWMwLTQ1ODMtOGIyZi02ZmE0NGI1NjY1YTEiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhc3NldHMvQWNhZGVtaVFSIGxvZ29fc21hbGwucG5nIiwiaWF0IjoxNzYxNjcyMDM1LCJleHAiOjMzMjY2MTM2MDM1fQ.Aj53elwW_8v65gQ4qtYme2sJGG8TLuFOYvAmUxw0sds">
+    <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR%20logo_small.png">
+    <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR%20logo_small.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="AcademiQR">
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Supabase JS - Pin to specific version and add SRI hash -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.75.1" integrity="sha384-oKMgGe+iV6GiXAwVOAWrwx8rXSvyRUGT8R5Wl8Jas37cmI7i51qrvFUp+D/wwuf5" crossorigin="anonymous"></script>
+    <!-- Load QRCode.js library for QR code generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha384-3zSEDfvllQohrq0PHL1fOXJuC/jSOO34H46t6UQfobFOmxE5BpjjaIJY5F2/bMnU" crossorigin="anonymous"></script>
+    <!-- Font Awesome - Pin to specific version and add SRI hash -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <style>
         * {
             margin: 0;
@@ -329,26 +332,429 @@
         </div>
     </div>
 
+    <!-- Passkey Authentication Modal -->
+    <div id="passkey-modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(4px);">
+        <div style="position: relative; background-color: white; margin: 15% auto; padding: 30px; border-radius: 12px; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            <h2 style="margin-top: 0; margin-bottom: 20px; color: #1f2937; font-size: 1.5rem;">🔑 Passkey Required</h2>
+            <p style="color: #4b5563; margin-bottom: 20px; line-height: 1.6;">This collection is protected. Please enter the passkey to view it.</p>
+            <div id="passkey-error" style="display: none; background-color: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 12px; border-radius: 6px; margin-bottom: 20px; font-size: 0.875rem;">
+                Incorrect passkey. Please try again.
+            </div>
+            <input 
+                type="password" 
+                id="passkey-input" 
+                placeholder="Enter passkey" 
+                style="width: 100%; padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; margin-bottom: 20px; box-sizing: border-box;"
+                maxlength="100"
+                autocomplete="off"
+            >
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button 
+                    id="passkey-submit" 
+                    style="background-color: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 1rem; font-weight: 500; cursor: pointer; transition: background-color 0.2s;"
+                    onmouseover="this.style.backgroundColor='#2563eb'"
+                    onmouseout="this.style.backgroundColor='#3b82f6'"
+                >
+                    Submit
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Security utility functions
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Validate and sanitize image URL to prevent XSS
+        function sanitizeImageUrl(url) {
+            if (!url || typeof url !== 'string') {
+                return null;
+            }
+            
+            // Trim whitespace
+            url = url.trim();
+            
+            // Only allow http://, https://, or data:image/ URLs
+            // Block javascript:, vbscript:, and other dangerous protocols
+            const allowedProtocols = /^(https?:\/\/|data:image\/)/i;
+            if (!allowedProtocols.test(url)) {
+                console.warn('Invalid image URL protocol:', url);
+                return null;
+            }
+            
+            // Additional validation: ensure URL doesn't contain script injection attempts
+            // Check for common XSS patterns in URLs
+            const dangerousPatterns = [
+                /javascript:/i,
+                /vbscript:/i,
+                /onerror=/i,
+                /onload=/i,
+                /onclick=/i,
+                /<script/i,
+                /&#/i, // HTML entities that could be used for XSS
+            ];
+            
+            for (const pattern of dangerousPatterns) {
+                if (pattern.test(url)) {
+                    console.warn('Potentially dangerous image URL detected:', url);
+                    return null;
+                }
+            }
+            
+            return url;
+        }
+
+        // Sanitize CSS transform values to prevent CSS injection
+        function sanitizeTransformValue(value, min, max, defaultValue) {
+            if (typeof value !== 'number') {
+                value = parseFloat(value);
+            }
+            
+            if (isNaN(value)) {
+                return defaultValue;
+            }
+            
+            // Clamp value between min and max
+            value = Math.max(min, Math.min(max, value));
+            
+            return value;
+        }
+
+        // Validate and sanitize URL for social media links
+        // Only allows http:// and https:// protocols
+        function sanitizeUrl(url) {
+            if (!url || typeof url !== 'string') {
+                return null;
+            }
+            
+            // Trim whitespace
+            url = url.trim();
+            
+            // Only allow http:// or https:// URLs
+            // Block javascript:, vbscript:, data:, and other dangerous protocols
+            const allowedProtocols = /^https?:\/\//i;
+            if (!allowedProtocols.test(url)) {
+                console.warn('Invalid URL protocol:', url);
+                return null;
+            }
+            
+            // Additional validation: ensure URL doesn't contain script injection attempts
+            const dangerousPatterns = [
+                /javascript:/i,
+                /vbscript:/i,
+                /data:/i,
+                /onerror=/i,
+                /onload=/i,
+                /onclick=/i,
+                /<script/i,
+            ];
+            
+            for (const pattern of dangerousPatterns) {
+                if (pattern.test(url)) {
+                    console.warn('Potentially dangerous URL detected:', url);
+                    return null;
+                }
+            }
+            
+            return url;
+        }
+
+        // Validate email address format
+        function isValidEmail(email) {
+            if (!email || typeof email !== 'string') {
+                return false;
+            }
+            
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email.trim());
+        }
+
+        // Sanitize HTML to prevent XSS attacks
+        // Only allows safe formatting tags: <strong>, <em>, <u>, <b>, <i>
+        // All other HTML tags and attributes are stripped
+        function sanitizeHTML(html) {
+            if (!html || typeof html !== 'string') {
+                return '';
+            }
+            
+            // Use DOMParser to safely parse HTML
+            // This prevents script execution during parsing
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // List of allowed HTML tags for formatting
+                const allowedTags = ['strong', 'em', 'u', 'b', 'i'];
+                
+                // Recursively process nodes, keeping only allowed tags
+                function processNode(node) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        // Text nodes are safe - return as-is (textContent automatically escapes HTML)
+                        return node.textContent;
+                    }
+                    
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        const tagName = node.tagName.toLowerCase();
+                        
+                        if (allowedTags.includes(tagName)) {
+                            // Keep this allowed tag, process children recursively
+                            const children = Array.from(node.childNodes)
+                                .map(processNode)
+                                .join('');
+                            // Return tag without attributes (strip all attributes for security)
+                            return `<${tagName}>${children}</${tagName}>`;
+                        } else {
+                            // Strip this disallowed tag, but keep its children
+                            return Array.from(node.childNodes)
+                                .map(processNode)
+                                .join('');
+                        }
+                    }
+                    
+                    // Ignore other node types (comments, etc.)
+                    return '';
+                }
+                
+                // Process all nodes in the document body
+                const bodyContent = Array.from(doc.body.childNodes)
+                    .map(processNode)
+                    .join('');
+                
+                // Return sanitized content, or plain text if parsing resulted in empty content
+                return bodyContent || html.replace(/<[^>]+>/g, '');
+            } catch (e) {
+                // If parsing fails for any reason, strip all HTML tags as fallback
+                // This ensures we never return potentially dangerous HTML
+                return html.replace(/<[^>]+>/g, '');
+            }
+        }
+
         // Supabase configuration
         const supabaseUrl = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
         const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // Get URL parameters
+        // Validate UUID format (for collectionId)
+        function isValidUUID(uuid) {
+            if (!uuid || typeof uuid !== 'string') {
+                return false;
+            }
+            // UUID v4 format: 8-4-4-4-12 hexadecimal characters
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            return uuidRegex.test(uuid.trim());
+        }
+
+        // Validate user ID format (12 alphanumeric characters - first 12 chars of UUID)
+        // Also handles legacy formats that may include hyphens or be shorter
+        function isValidUserId(userId) {
+            if (!userId || typeof userId !== 'string') {
+                return false;
+            }
+            
+            const trimmed = userId.trim();
+            
+            // Remove hyphens (handle legacy formats)
+            const withoutHyphens = trimmed.replace(/-/g, '');
+            
+            // Should be at least 8 hexadecimal characters (minimum for a valid prefix)
+            // Allow up to 14 chars to handle legacy formats gracefully
+            // This handles cases where user IDs might be incomplete or in different formats
+            const userIdRegex = /^[0-9a-f]{8,14}$/i;
+            
+            if (!userIdRegex.test(withoutHyphens)) {
+                return false;
+            }
+            
+            // Extract first 12 characters if available, otherwise use what we have
+            // Don't pad - use the actual user ID as-is for comparison
+            return withoutHyphens.substring(0, 12);
+        }
+
+        // Get URL parameters (needed for validation and error logging)
         const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('user'); // Shortened user ID (first 12 chars of UUID)
-        const collectionId = urlParams.get('collection'); // Collection ID (UUID)
+
+        // Validate and sanitize URL parameters
+        function validateUrlParameters() {
+            const rawUserId = urlParams.get('user');
+            const rawCollectionId = urlParams.get('collection');
+            
+            // Validate and normalize userId
+            if (!rawUserId) {
+                return {
+                    valid: false,
+                    error: 'Missing user ID parameter.',
+                    userId: null,
+                    collectionId: null
+                };
+            }
+            
+            const normalizedUserId = isValidUserId(rawUserId);
+            if (!normalizedUserId) {
+                return {
+                    valid: false,
+                    error: 'Invalid user ID format. User ID must contain at least 12 hexadecimal characters.',
+                    userId: null,
+                    collectionId: null
+                };
+            }
+            
+            // Validate collectionId
+            if (!rawCollectionId || !isValidUUID(rawCollectionId)) {
+                return {
+                    valid: false,
+                    error: 'Invalid collection ID format. Collection ID must be a valid UUID.',
+                    userId: null,
+                    collectionId: null
+                };
+            }
+            
+            // Return validated and sanitized parameters
+            // Note: We normalize to lowercase for consistency, but keep original for database queries
+            // UUIDs in database may be in different cases, so we'll do case-insensitive comparisons
+            return {
+                valid: true,
+                error: null,
+                userId: normalizedUserId.toLowerCase(), // Normalized to first 12 hex chars, lowercase
+                collectionId: rawCollectionId.trim() // Keep original case for UUID (database handles case-insensitive)
+            };
+        }
+
+        // Get and validate URL parameters
+        const urlValidation = validateUrlParameters();
+        const userId = urlValidation.userId;
+        const collectionId = urlValidation.collectionId;
+
+        // Check if passkey is valid for this collection
+        function getStoredPasskey(collectionId) {
+            try {
+                const stored = sessionStorage.getItem(`passkey_${collectionId}`);
+                return stored || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Store passkey in sessionStorage
+        function storePasskey(collectionId, passkey) {
+            try {
+                sessionStorage.setItem(`passkey_${collectionId}`, passkey);
+            } catch (e) {
+                console.warn('Failed to store passkey:', e);
+            }
+        }
+
+        // Show passkey modal
+        function showPasskeyModal(collectionId, correctPasskey, onSuccess) {
+            const modal = document.getElementById('passkey-modal');
+            const input = document.getElementById('passkey-input');
+            const error = document.getElementById('passkey-error');
+            const submitBtn = document.getElementById('passkey-submit');
+            const phoneScreen = document.querySelector('.phone-screen');
+            
+            if (!modal || !input || !error || !submitBtn) {
+                console.error('Passkey modal elements not found');
+                return;
+            }
+            
+            // Hide content while passkey modal is shown (security: prevent content preview)
+            if (phoneScreen) {
+                phoneScreen.style.display = 'none';
+            }
+            
+            // Reset modal state
+            input.value = '';
+            error.style.display = 'none';
+            modal.style.display = 'block';
+            input.focus();
+            
+            // Handle submit
+            const handleSubmit = () => {
+                const enteredPasskey = input.value.trim();
+                
+                if (!enteredPasskey) {
+                    error.textContent = 'Please enter a passkey.';
+                    error.style.display = 'block';
+                    return;
+                }
+                
+                // Validate passkey (case-sensitive comparison)
+                if (enteredPasskey === correctPasskey) {
+                    // Store passkey for this session
+                    storePasskey(collectionId, enteredPasskey);
+                    
+                    // Hide modal
+                    modal.style.display = 'none';
+                    
+                    // Show content after passkey is validated
+                    const phoneScreenElement = document.querySelector('.phone-screen');
+                    if (phoneScreenElement) {
+                        phoneScreenElement.style.display = '';
+                    }
+                    
+                    // Call success callback
+                    if (onSuccess) {
+                        onSuccess();
+                    }
+                } else {
+                    // Incorrect passkey
+                    error.textContent = 'Incorrect passkey. Please try again.';
+                    error.style.display = 'block';
+                    input.value = '';
+                    input.focus();
+                }
+            };
+            
+            // Submit on button click
+            submitBtn.onclick = handleSubmit;
+            
+            // Submit on Enter key
+            input.onkeypress = (e) => {
+                if (e.key === 'Enter') {
+                    handleSubmit();
+                }
+            };
+        }
+
+        // Show error message to user
+        function showError(message) {
+            const phoneScreen = document.querySelector('.phone-screen');
+            if (phoneScreen) {
+                phoneScreen.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 20px;">⚠️</div>
+                        <h2 style="color: #1f2937; margin-bottom: 12px; font-size: 1.5rem;">Invalid Request</h2>
+                        <p style="color: #6b7280; margin-bottom: 24px; line-height: 1.6; max-width: 400px;">${escapeHtml(message)}</p>
+                        <p style="color: #9ca3af; font-size: 0.875rem;">Please check the URL and try again.</p>
+                    </div>
+                `;
+            }
+        }
 
         // Load profile and collection data
         async function loadProfile() {
             try {
+                // Check if URL parameters are valid
+                if (!urlValidation.valid) {
+                    showError(urlValidation.error || 'Invalid URL parameters');
+                    console.error('URL parameter validation failed:', urlValidation.error);
+                    console.error('Raw userId:', urlParams.get('user'), 'Raw collectionId:', urlParams.get('collection'));
+                    return;
+                }
+                
                 if (!userId || !collectionId) {
+                    showError('Missing required URL parameters');
                     console.error('Missing user ID or collection ID parameter');
                     return;
                 }
                 
-                // Load collection by ID
+                // Load collection by ID (Supabase handles UUID case-insensitively)
                 const { data: collection, error: collectionError } = await supabase
                         .from('link_lists')
                     .select('*')
@@ -367,11 +773,57 @@
 
                 // Verify that the collection owner matches the provided user ID
                 // This adds a security check to ensure users can only access their own collections
-                if (!collection.owner_id || collection.owner_id.substring(0, 12) !== userId) {
+                // Compare case-insensitively since UUIDs can be in different cases
+                // Normalize both sides by removing hyphens for consistent comparison
+                if (!collection.owner_id) {
+                    console.error('Collection has no owner ID');
+                    return;
+                }
+                
+                // Normalize owner ID the same way we normalize user ID (remove hyphens, take first 12 chars)
+                const ownerIdWithoutHyphens = collection.owner_id.replace(/-/g, '');
+                const ownerIdPrefix = ownerIdWithoutHyphens.substring(0, 12).toLowerCase();
+                const normalizedUserId = userId.toLowerCase();
+                
+                // Check if owner ID prefix matches user ID (both are normalized the same way)
+                // Use prefix matching to handle user IDs that might be shorter than 12 characters
+                const ownerStartsWithUser = ownerIdPrefix.startsWith(normalizedUserId);
+                const userStartsWithOwner = normalizedUserId.startsWith(ownerIdPrefix);
+                
+                if (!ownerStartsWithUser && !userStartsWithOwner) {
                     console.error('Collection owner does not match user ID');
+                    console.error('Owner ID prefix (normalized):', ownerIdPrefix, 'User ID (normalized):', normalizedUserId);
                     return;
                 }
 
+                // Check if collection requires passkey authentication
+                if (collection.passkey && collection.passkey.trim() !== '') {
+                    // Collection is passkey-protected
+                    const storedPasskey = getStoredPasskey(collectionId);
+                    
+                    if (storedPasskey === collection.passkey) {
+                        // Passkey already validated in this session, proceed to load content
+                        await loadCollectionContent(collection);
+                    } else {
+                        // Show passkey prompt
+                        showPasskeyModal(collectionId, collection.passkey, async () => {
+                            // Passkey validated, now load content
+                            await loadCollectionContent(collection);
+                        });
+                        return; // Don't load content until passkey is validated
+                    }
+                } else {
+                    // No passkey required, load content normally
+                    await loadCollectionContent(collection);
+                }
+            } catch (error) {
+                console.error('Error in loadProfile:', error);
+            }
+        }
+
+        // Load collection content (separated for passkey flow)
+        async function loadCollectionContent(collection) {
+            try {
                 // Track page view
                 trackPageView(collection.id, collection.owner_id);
 
@@ -559,34 +1011,58 @@
             // Profile photo
             const profilePhoto = document.getElementById('preview-avatar');
             if (profile.profile_photo) {
-                // Apply photo positioning if available
-                let photoStyle = 'width: 100% !important; height: 100% !important; border-radius: 50% !important; object-fit: cover !important; display: block !important;';
+                // Sanitize and validate image URL to prevent XSS
+                const sanitizedUrl = sanitizeImageUrl(profile.profile_photo);
                 
+                if (!sanitizedUrl) {
+                    // Invalid URL - show default avatar
+                    profilePhoto.textContent = '👤';
+                    return;
+                }
+                
+                // Create img element using DOM methods (safer than innerHTML)
+                const img = document.createElement('img');
+                img.src = sanitizedUrl; // Safe: URL has been validated
+                img.alt = 'Profile'; // Static, safe value
+                
+                // Apply base photo styles
+                img.style.setProperty('width', '100%', 'important');
+                img.style.setProperty('height', '100%', 'important');
+                img.style.setProperty('border-radius', '50%', 'important');
+                img.style.setProperty('object-fit', 'cover', 'important');
+                img.style.setProperty('display', 'block', 'important');
+                
+                // Apply photo positioning if available (with sanitization)
                 if (profile.profile_photo_position) {
                     try {
                         const position = JSON.parse(profile.profile_photo_position);
-                        const scale = position.scale || 100;
-                        const x = position.x || 50;
-                        const y = position.y || 50;
                         
-                        // Convert scale percentage to decimal
-                        const scaleValue = scale / 100;
+                        // Sanitize scale (0.1 to 5.0, default 1.0)
+                        const scale = sanitizeTransformValue(position.scale, 10, 500, 100) / 100;
+                        
+                        // Sanitize x and y (0 to 100, default 50)
+                        const x = sanitizeTransformValue(position.x, 0, 100, 50);
+                        const y = sanitizeTransformValue(position.y, 0, 100, 50);
                         
                         // Calculate pan values using the same formula as the main editor
                         const panX = (x - 50) * -1;
                         const panY = (y - 50) * -1;
                         
-                        // Apply transform for positioning and scaling
-                        photoStyle += ` transform: translate(${panX}%, ${panY}%) scale(${scaleValue}) !important; transform-origin: center center !important;`;
+                        // Apply transform for positioning and scaling (values are sanitized)
+                        img.style.setProperty('transform', `translate(${panX}%, ${panY}%) scale(${scale})`, 'important');
+                        img.style.setProperty('transform-origin', 'center center', 'important');
                         
                     } catch (e) {
-('Could not parse profile photo position:', e);
+                        // If parsing fails, just use default positioning (no transform)
+                        console.warn('Could not parse profile photo position:', e);
                     }
                 }
                 
-                profilePhoto.innerHTML = `<img src="${profile.profile_photo}" alt="Profile" style="${photoStyle}">`;
+                // Clear existing content and append the safe img element
+                profilePhoto.textContent = '';
+                profilePhoto.appendChild(img);
             } else {
-                profilePhoto.innerHTML = '👤';
+                profilePhoto.textContent = '👤';
             }
 
             // Display name
@@ -630,27 +1106,47 @@
             socialPlatforms.forEach(platform => {
                 if (profile[platform.key]) {
                     const link = document.createElement('a');
+                    let validUrl = null;
                     
-                    // Special handling for email - use mailto:
+                    // Special handling for email - validate email format and use mailto:
                     if (platform.key === 'social_email') {
-                        link.href = `mailto:${profile[platform.key]}`;
-                        link.target = '_self';
+                        const email = profile[platform.key].trim();
+                        if (isValidEmail(email)) {
+                            // Escape email to prevent XSS in mailto: URL
+                            const escapedEmail = encodeURIComponent(email);
+                            validUrl = `mailto:${escapedEmail}`;
+                            link.target = '_self';
+                        } else {
+                            // Invalid email - skip this link
+                            console.warn('Invalid email address:', email);
+                            return;
+                        }
                     } else {
-                        link.href = profile[platform.key];
-                    link.target = '_blank';
-                    link.rel = 'noopener noreferrer';
+                        // Validate and sanitize URL for other social platforms
+                        validUrl = sanitizeUrl(profile[platform.key]);
+                        if (!validUrl) {
+                            // Invalid URL - skip this link
+                            console.warn('Invalid social media URL:', profile[platform.key]);
+                            return;
+                        }
+                        link.target = '_blank';
+                        link.rel = 'noopener noreferrer';
                     }
                     
-                    link.className = `social-icon ${platform.class}`;
-                    
-                    // Special handling for X/Twitter icon
-                    let iconHtml = `<i class="${platform.icon}"></i>`;
-                    if (platform.key === 'social_twitter') {
-                        iconHtml = `<span style="font-weight: bold; font-size: 16px;">𝕏</span>`;
+                    // Only set href if URL is valid
+                    if (validUrl) {
+                        link.href = validUrl;
+                        link.className = `social-icon ${platform.class}`;
+                        
+                        // Special handling for X/Twitter icon
+                        let iconHtml = `<i class="${platform.icon}"></i>`;
+                        if (platform.key === 'social_twitter') {
+                            iconHtml = `<span style="font-weight: bold; font-size: 16px;">𝕏</span>`;
+                        }
+                        
+                        link.innerHTML = iconHtml;
+                        socialLinksContainer.appendChild(link);
                     }
-                    
-                    link.innerHTML = iconHtml;
-                    socialLinksContainer.appendChild(link);
                 }
             });
         }
@@ -684,11 +1180,21 @@
                 imageDiv.style.cssText = 'width: 48px; height: 48px; border-radius: 8px; margin-right: 12px; overflow: hidden; background: #e5e7eb; display: flex; align-items: center; justify-content: center;';
                 
                 if (link.image) {
-                    const img = document.createElement('img');
-                    img.src = link.image;
-                    img.alt = 'Link Icon';
-                    img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-                    imageDiv.appendChild(img);
+                    // Sanitize and validate image URL to prevent XSS
+                    const sanitizedImageUrl = sanitizeImageUrl(link.image);
+                    if (sanitizedImageUrl) {
+                        const img = document.createElement('img');
+                        img.src = sanitizedImageUrl; // Safe: URL has been validated
+                        img.alt = escapeHtml(link.title || 'Link Icon'); // Escape alt text to prevent XSS
+                        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                        imageDiv.appendChild(img);
+                    } else {
+                        // Invalid URL - show default icon
+                        const icon = document.createElement('i');
+                        icon.className = 'fas fa-link';
+                        icon.style.color = '#6b7280';
+                        imageDiv.appendChild(icon);
+                    }
                 } else {
                     const icon = document.createElement('i');
                     icon.className = 'fas fa-link';
@@ -702,8 +1208,8 @@
                 const textElement = document.createElement('div');
                 textElement.className = 'preview-link-text';
                 textElement.style.cssText = 'font-weight: 600; font-size: inherit !important;';
-                // Use innerHTML to preserve HTML formatting (bold, italic, underline)
-                textElement.innerHTML = link.title || '';
+                // Use sanitizeHTML to preserve safe HTML formatting (bold, italic, underline) while preventing XSS
+                textElement.innerHTML = sanitizeHTML(link.title || '');
                 
                 textContainer.appendChild(textElement);
                 linkElement.appendChild(imageDiv);
@@ -1288,9 +1794,17 @@
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            // Validate URL parameters first
+            if (!urlValidation.valid) {
+                showError(urlValidation.error || 'Invalid URL parameters');
+                console.error('URL parameter validation failed:', urlValidation.error);
+                return;
+            }
+            
             if (userId && collectionId) {
                 loadProfile();
             } else {
+                showError('Missing required URL parameters');
                 console.error('Missing user ID or collection ID parameter');
             }
         });

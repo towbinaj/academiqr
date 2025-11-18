@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AcademiQR v0.4.5 - Link-in-Bio Builder</title>
+    <title>AcademiQR v0.5.0 - Link-in-Bio Builder</title>
     <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR%20logo_small.png">
     <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR%20logo_small.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -3534,7 +3534,7 @@
                 <div class="login-logo-container" style="text-align: center; margin-bottom: 20px;">
                     <img id="login-logo" alt="AcademiQR" fetchpriority="high" style="height: 120px; width: auto; max-height: 120px; margin: 0 auto; display: none;" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <div id="login-logo-fallback" style="display: block;">
-                        <h1 style="font-size: 2rem; margin-bottom: 10px; color: #1f2937;">AcademiQR <span style="font-size: 0.6em; color: #6b7280; font-weight: normal;">v0.4.5</span></h1>
+                        <h1 style="font-size: 2rem; margin-bottom: 10px; color: #1f2937;">AcademiQR <span style="font-size: 0.6em; color: #6b7280; font-weight: normal;">v0.5.0</span></h1>
                     </div>
                 </div>
                 <p class="subtitle">Amplify your impact</p>
@@ -3605,7 +3605,7 @@
                                 <img id="sidebar-logo" alt="AcademiQR" fetchpriority="high" style="height: 100px !important; width: auto !important; max-height: 100px !important; min-height: 100px !important; margin: 0 auto 4px auto !important; display: none !important; flex-shrink: 0 !important; flex-grow: 0 !important; object-fit: contain !important;" onload="this.style.display='block'; this.style.margin='0 auto 4px auto'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                                 <div id="sidebar-logo-fallback" style="display: block; text-align: center;">
                                     <div style="font-size: 0.2rem; margin-bottom: 8px;">🎓</div>
-                                    <h1 style="font-size: 1.2rem; margin: 0; color: #1f2937;">AcademiQR <span style="font-size: 0.6em; color: #6b7280;">v0.4.5</span></h1>
+                                    <h1 style="font-size: 1.2rem; margin: 0; color: #1f2937;">AcademiQR <span style="font-size: 0.6em; color: #6b7280;">v0.5.0</span></h1>
                                 </div>
                             </div>
                         </div>
@@ -4743,7 +4743,7 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
     
     <script>
-        // Cache bust: v0.4.5 - Performance improvements and logo loading fixes
+        // Cache bust: v0.5.0 - Security review: headers, rate limiting, SRI hashes, passkey fix
         // Supabase configuration
         const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
@@ -7456,6 +7456,14 @@
             }
         }
         
+        // Generate normalized user ID (first 12 hex characters, no hyphens)
+        function getNormalizedUserId(userId) {
+            if (!userId) return '';
+            // Remove hyphens and take first 12 hexadecimal characters
+            const withoutHyphens = userId.replace(/-/g, '');
+            return withoutHyphens.substring(0, 12).toLowerCase();
+        }
+
         function copyPublicUrl() {
             if (!currentList || !currentList.id) {
                 showMessage('No collection selected', 'error');
@@ -7464,8 +7472,8 @@
             
             // Use collection ID (UUID) instead of slug for guaranteed uniqueness
             const collectionId = currentList.id;
-            // Use shortened user ID (first 12 chars of UUID) instead of email-based handle to avoid duplicates
-            const userId = currentUser.id.substring(0, 12);
+            // Use normalized user ID (first 12 hex chars, no hyphens) for consistent URL format
+            const userId = getNormalizedUserId(currentUser.id);
             // Public page URL - displays the link list using public.html with query parameters
             const url = `https://academiqr.com/public.html?user=${userId}&collection=${collectionId}`;
             navigator.clipboard.writeText(url);
@@ -7508,8 +7516,8 @@
             }
             
             const collectionId = currentList.id;
-            // Use shortened user ID (first 12 chars of UUID) instead of email-based handle to avoid duplicates
-            const userId = currentUser.id.substring(0, 12);
+            // Use normalized user ID (first 12 hex chars, no hyphens) for consistent URL format
+            const userId = getNormalizedUserId(currentUser.id);
             const url = `https://academiqr.com/public.html?user=${userId}&collection=${collectionId}`;
             document.getElementById('qr-url').value = url;
             
@@ -7612,8 +7620,8 @@
             }
             
             const collectionId = currentList.id;
-            // Use shortened user ID (first 12 chars of UUID) instead of email-based handle to avoid duplicates
-            const userId = currentUser.id.substring(0, 12);
+            // Use normalized user ID (first 12 hex chars, no hyphens) for consistent URL format
+            const userId = getNormalizedUserId(currentUser.id);
             const url = `https://academiqr.com/public.html?user=${userId}&collection=${collectionId}`;
             const size = parseInt(document.getElementById('qr-size').value);
             const color = document.getElementById('qr-color').value;
