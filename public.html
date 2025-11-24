@@ -9,6 +9,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="AcademiQR">
+    <!-- Preload critical resources for faster initial load -->
+    <link rel="preconnect" href="https://natzpfyxpuycsuuzbqrd.supabase.co" crossorigin>
+    <link rel="dns-prefetch" href="https://natzpfyxpuycsuuzbqrd.supabase.co">
     <!-- Supabase JS - Pin to specific version and add SRI hash -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.75.1" integrity="sha384-oKMgGe+iV6GiXAwVOAWrwx8rXSvyRUGT8R5Wl8Jas37cmI7i51qrvFUp+D/wwuf5" crossorigin="anonymous"></script>
     <!-- Load QRCode.js library for QR code generation -->
@@ -233,6 +236,7 @@
         .preview-links {
             flex: 1;
             padding: 16px;
+            padding-bottom: 8px; /* Reduce bottom padding to account for footer */
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -240,6 +244,35 @@
             overflow-y: auto; /* Enable vertical scrolling */
             overflow-x: hidden; /* Hide horizontal scrollbar */
             -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        }
+
+        .preview-footer {
+            padding: 8px 16px;
+            text-align: center;
+            border: none; /* No border - seamless gradient */
+            background: transparent; /* Fully transparent - let gradient show through */
+            flex-shrink: 0; /* Prevent footer from shrinking */
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+        }
+
+        .preview-footer-text {
+            font-size: 0.625rem; /* 10px - very small font */
+            /* Color will be set by JavaScript from theme - matches profile text color */
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .preview-footer-text a {
+            /* Color will be set by JavaScript from theme - matches profile text color */
+            text-decoration: none;
+            opacity: 0.8; /* Slightly transparent for link */
+        }
+
+        .preview-footer-text a:hover {
+            opacity: 1; /* Full opacity on hover */
+            text-decoration: underline;
         }
 
         .preview-link {
@@ -327,6 +360,13 @@
 
             <div class="preview-links" id="preview-links">
                 <!-- Links will be populated here -->
+            </div>
+
+            <!-- Footer -->
+            <div class="preview-footer">
+                <p class="preview-footer-text">
+                    Powered by <a href="https://academiqr.com" target="_blank" rel="noopener noreferrer">AcademiQR.com</a>
+                </p>
             </div>
 
         </div>
@@ -755,9 +795,10 @@
                 }
                 
                 // Load collection by ID (Supabase handles UUID case-insensitively)
+                // Only select needed fields to reduce payload size
                 const { data: collection, error: collectionError } = await supabase
                         .from('link_lists')
-                    .select('*')
+                    .select('id, owner_id, slug, visibility, passkey, theme')
                     .eq('id', collectionId)
                     .single();
 
@@ -824,58 +865,68 @@
         // Load collection content (separated for passkey flow)
         async function loadCollectionContent(collection) {
             try {
-                // Track page view
-                trackPageView(collection.id, collection.owner_id);
+                // Track page view (fire and forget - don't block rendering)
+                trackPageView(collection.id, collection.owner_id).catch(err => {
+                    // Silently fail - analytics shouldn't block page load
+                    console.warn('Page view tracking failed:', err);
+                });
 
-                // Load links
-                const { data: links, error: linksError } = await supabase
-                    .from('link_items')
-                    .select('*')
-                    .eq('list_id', collection.id);
+                // Load links and profile in parallel for faster loading
+                // Only select needed fields to reduce payload size
+                const [linksResult, profileResult] = await Promise.all([
+                    supabase
+                        .from('link_items')
+                        .select('id, title, url, image, order_index')
+                        .eq('list_id', collection.id)
+                        .order('order_index', { ascending: true }),
+                    supabase
+                        .from('profiles')
+                        .select('id, display_name, handle, profile_photo, profile_photo_position, social_email, social_instagram, social_facebook, social_twitter, social_linkedin, social_youtube, social_tiktok, social_snapchat')
+                        .eq('id', collection.owner_id)
+                        .single()
+                ]);
 
-                if (linksError) {
+                // Process links
+                if (linksResult.error) {
                     collection.links = [];
                 } else {
-                    collection.links = links || [];
+                    collection.links = linksResult.data || [];
                 }
 
-
-                // Load profile
-                const { data: profileData, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', collection.owner_id)
-                    .single();
-
-                if (profileError) {
+                // Process profile - render immediately if available
+                if (profileResult.error || !profileResult.data) {
+                    // If profile fails, still try to render links
+                    if (collection.links.length > 0) {
+                        renderLinks(collection.links);
+                    }
                     return;
                 }
 
+                const profileData = profileResult.data;
 
-                // Render everything
+                // Render profile immediately (shows name right away)
                 renderProfile(profileData);
-                renderLinks(collection.links);
                 loadPresentationInfo(collection, profileData);
+
+                // Render links (already loaded in parallel)
+                renderLinks(collection.links);
                 
-                // Apply theme
+                // Apply theme (defer to next tick to allow rendering to complete first)
                 if (collection.theme) {
-                    console.log('Raw collection theme:', collection.theme);
-                    console.log('Theme type:', typeof collection.theme);
-                    
                     // Check if theme is a JSON string that needs parsing
                     let themeToApply = collection.theme;
                     if (typeof collection.theme === 'string') {
                         try {
                             themeToApply = JSON.parse(collection.theme);
-                            console.log('Parsed theme from JSON:', themeToApply);
                         } catch (e) {
-                            console.log('Failed to parse theme JSON:', e);
+                            // Silently fail - will use default theme
                         }
                     }
                     
-                    console.log('Final theme to apply:', themeToApply);
-                    console.log('Theme keys:', Object.keys(themeToApply));
-                    applyTheme(themeToApply);
+                    // Apply theme asynchronously to not block rendering
+                    setTimeout(() => {
+                        applyTheme(themeToApply);
+                    }, 0);
                     
                     // Re-apply font size and color after theme to ensure they're not overridden
                     // This ensures the font size and color are correct even if theme has issues
@@ -968,6 +1019,18 @@
                         // Force a reflow
                         void displayName.offsetHeight;
                         
+                        // Apply footer text color to match profile text color
+                        const footerText = document.querySelector('.preview-footer-text');
+                        const footerLink = document.querySelector('.preview-footer-text a');
+                        if (footerText) {
+                            footerText.style.setProperty('color', profileColor, 'important');
+                            footerText.style.color = profileColor;
+                            if (footerLink) {
+                                footerLink.style.setProperty('color', profileColor, 'important');
+                                footerLink.style.color = profileColor;
+                            }
+                        }
+                        
                         // Also re-apply presentation colors
                         // Prioritize presentationColor if it exists, as it's the main color setting
                         const presentationColor = themeToApply.presentationColor || themeToApply.presentationTextColor || themeToApply.textColor || '#4b5563';
@@ -1000,6 +1063,18 @@
                     }
                 } else {
                     console.log('No theme found in collection');
+                    // Apply default footer color when no theme
+                    const footerText = document.querySelector('.preview-footer-text');
+                    const footerLink = document.querySelector('.preview-footer-text a');
+                    const defaultColor = '#1f2937'; // Default dark gray
+                    if (footerText) {
+                        footerText.style.setProperty('color', defaultColor, 'important');
+                        footerText.style.color = defaultColor;
+                        if (footerLink) {
+                            footerLink.style.setProperty('color', defaultColor, 'important');
+                            footerLink.style.color = defaultColor;
+                        }
+                    }
                 }
                 
 
@@ -1008,7 +1083,26 @@
         }
 
         function renderProfile(profile) {
-            // Profile photo
+            // Display name FIRST (most important - show immediately)
+            const displayName = document.getElementById('preview-name');
+            if (displayName) {
+                let name = 'User';
+                if (profile && profile.display_name && profile.display_name.trim() !== '') {
+                    name = profile.display_name;
+                } else if (profile && profile.handle && profile.handle.trim() !== '') {
+                    name = profile.handle;
+                }
+                displayName.textContent = name;
+                // Apply dynamic font size based on text length
+                if (typeof applyDynamicDisplayNameSize === 'function') {
+                    applyDynamicDisplayNameSize(displayName);
+                }
+            }
+
+            // Social links (render early for better perceived performance)
+            renderSocialLinks(profile);
+
+            // Profile photo (load asynchronously - doesn't block name display)
             const profilePhoto = document.getElementById('preview-avatar');
             if (profile.profile_photo) {
                 // Sanitize and validate image URL to prevent XSS
@@ -1064,25 +1158,6 @@
             } else {
                 profilePhoto.textContent = '👤';
             }
-
-            // Display name
-            const displayName = document.getElementById('preview-name');
-            if (displayName) {
-                let name = 'User';
-                if (profile && profile.display_name && profile.display_name.trim() !== '') {
-                    name = profile.display_name;
-                } else if (profile && profile.handle && profile.handle.trim() !== '') {
-                    name = profile.handle;
-                }
-                displayName.textContent = name;
-                // Apply dynamic font size based on text length
-                if (typeof applyDynamicDisplayNameSize === 'function') {
-                    applyDynamicDisplayNameSize(displayName);
-                }
-            }
-
-            // Social links
-            renderSocialLinks(profile);
         }
 
         function renderSocialLinks(profile) {
@@ -1161,8 +1236,6 @@
             }
 
             links.forEach(link => {
-                console.log('Rendering link:', link.id, 'Title:', link.title, 'Title type:', typeof link.title);
-                
                 const linkElement = document.createElement('a');
                 // Use tracking URL for analytics
                 const baseUrl = window.location.origin;
@@ -1483,6 +1556,18 @@
                 void displayName.offsetHeight;
                 console.log('Applied profile text color:', profileColor, '(from presentationColor:', theme.presentationColor, 'or profileTextColor:', theme.profileTextColor, ')');
             }
+            
+            // Apply footer text color to match profile text color
+            const footerText = document.querySelector('.preview-footer-text');
+            const footerLink = document.querySelector('.preview-footer-text a');
+            if (footerText) {
+                footerText.style.setProperty('color', profileColor, 'important');
+                footerText.style.color = profileColor;
+                if (footerLink) {
+                    footerLink.style.setProperty('color', profileColor, 'important');
+                    footerLink.style.color = profileColor;
+                }
+            }
             // Apply dynamic font size based on text length
             if (displayName && typeof applyDynamicDisplayNameSize === 'function') {
                 try {
@@ -1792,22 +1877,37 @@
             }
         }
 
-        // Initialize when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Validate URL parameters first
-            if (!urlValidation.valid) {
+        // Initialize immediately (don't wait for DOMContentLoaded for faster startup)
+        // Validate URL parameters first
+        if (!urlValidation.valid) {
+            // Wait for DOM to be ready before showing error
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    showError(urlValidation.error || 'Invalid URL parameters');
+                });
+            } else {
                 showError(urlValidation.error || 'Invalid URL parameters');
-                console.error('URL parameter validation failed:', urlValidation.error);
-                return;
             }
-            
-            if (userId && collectionId) {
+            console.error('URL parameter validation failed:', urlValidation.error);
+        } else if (userId && collectionId) {
+            // Start loading immediately if DOM is ready, otherwise wait
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', loadProfile);
+            } else {
+                // DOM already ready, load immediately
                 loadProfile();
+            }
+        } else {
+            // Wait for DOM to be ready before showing error
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function() {
+                    showError('Missing required URL parameters');
+                });
             } else {
                 showError('Missing required URL parameters');
-                console.error('Missing user ID or collection ID parameter');
             }
-        });
+            console.error('Missing user ID or collection ID parameter');
+        }
     </script>
 </body>
 </html>
