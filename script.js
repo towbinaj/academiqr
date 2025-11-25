@@ -11288,8 +11288,6 @@
                 preview.style.setProperty('background', themeToApply.backgroundColor, 'important');
                 preview.style.setProperty('background-image', 'none', 'important');
                 preview.style.setProperty('background-color', themeToApply.backgroundColor, 'important');
-                console.log('Preview background after setting:', preview.style.background);
-                console.log('Preview computed background:', window.getComputedStyle(preview).background);
                 
                 // Handle border for solid backgrounds
                 const phoneMockup = preview.parentElement;
@@ -11321,8 +11319,18 @@
                                 phoneMockup.style.setProperty('box-shadow', `inset 0 0 0 8px ${borderColor}, 0 20px 40px rgba(0, 0, 0, 0.3)`, 'important');
                             }
                         } else {
-                            phoneMockup.style.setProperty('background', 'transparent', 'important');
-                            phoneMockup.style.setProperty('box-shadow', 'inset 0 0 0 8px #1f2937, 0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
+                            // No border when disabled - remove all border styling
+                            phoneMockup.style.setProperty('padding', '0', 'important');
+                            // Match phone-mockup background to preview background exactly
+                            const previewBg = preview.style.background || themeToApply.backgroundColor || '#ffffff';
+                            phoneMockup.style.setProperty('background', previewBg, 'important');
+                            preview.style.setProperty('border-radius', '24px', 'important'); // Match phone-mockup border-radius
+                            // Ensure preview fills entire phone-mockup with no gap
+                            preview.style.setProperty('width', '100%', 'important');
+                            preview.style.setProperty('height', '100%', 'important');
+                            preview.style.setProperty('min-height', '600px', 'important'); // Match phone-mockup height
+                            // Remove any box-shadow that might create a border effect
+                            phoneMockup.style.setProperty('box-shadow', '0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
                         }
                     } else {
                         // Frame fill style: border fills the phone mockup background
@@ -11334,19 +11342,53 @@
                         preview.style.setProperty('border', 'none', 'important');
                         preview.style.setProperty('border-image', 'none', 'important');
                         
-                        if (themeToApply.gradientBorderEnabled) {
+                        // Check gradientBorderEnabled from theme or checkbox as fallback
+                        const gradientBorderEnabledFrame = themeToApply.gradientBorderEnabled !== undefined 
+                            ? themeToApply.gradientBorderEnabled 
+                            : (document.getElementById('gradient-border-toggle')?.checked || false);
+                        
+                        if (gradientBorderEnabledFrame) {
+                            // Restore padding and border-radius when border is enabled
+                            phoneMockup.style.setProperty('padding', '8px', 'important');
+                            preview.style.setProperty('border-radius', '16px', 'important'); // Restore phone-screen border-radius
+                            preview.style.setProperty('min-height', '584px', 'important'); // Restore original min-height
                             if (themeToApply.borderType === 'gradient') {
                                 phoneMockup.style.setProperty('background', themeToApply.borderGradientText, 'important');
-                            } else {
-                                phoneMockup.style.setProperty('background', themeToApply.borderColor, 'important');
+                            } else if (themeToApply.borderType === 'solid') {
+                                // Solid color border for frame fill style - always use border color
+                                // Always read directly from color picker to ensure we get the current value
+                                const borderColorPicker = document.getElementById('border-color-picker');
+                                let borderColor = '#1f2937'; // Default
+                                
+                                if (borderColorPicker && borderColorPicker.value) {
+                                    borderColor = borderColorPicker.value;
+                                } else if (themeToApply.borderColor) {
+                                    borderColor = themeToApply.borderColor;
+                                }
+                                
+                                console.log('Applying frame fill solid border color:', borderColor);
+                                console.log('Border type from theme:', themeToApply.borderType);
+                                console.log('Border style from theme:', themeToApply.borderStyle);
+                                console.log('Border color from picker:', borderColorPicker?.value);
+                                console.log('Border color from theme:', themeToApply.borderColor);
+                                phoneMockup.style.setProperty('background', borderColor, 'important');
                             }
                         } else {
-                            phoneMockup.style.setProperty('background', '#1f2937', 'important'); // Default dark border
+                            // No border when disabled - remove all border styling
+                            phoneMockup.style.setProperty('padding', '0', 'important');
+                            // Match phone-mockup background to preview background exactly
+                            const previewBg = preview.style.background || themeToApply.backgroundColor || '#ffffff';
+                            phoneMockup.style.setProperty('background', previewBg, 'important');
+                            preview.style.setProperty('border-radius', '24px', 'important'); // Match phone-mockup border-radius
+                            // Ensure preview fills entire phone-mockup with no gap
+                            preview.style.setProperty('width', '100%', 'important');
+                            preview.style.setProperty('height', '100%', 'important');
+                            preview.style.setProperty('min-height', '600px', 'important'); // Match phone-mockup height
+                            // Remove any box-shadow that might create a border effect
+                            phoneMockup.style.setProperty('box-shadow', '0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
                         }
                     }
                 }
-                
-                console.log('Applied solid background:', themeToApply.backgroundColor);
             } else if (themeToApply.backgroundType === 'gradient') {
                 // Apply gradient to the phone screen content area
                 // Use setProperty with !important to ensure it takes precedence
@@ -11368,21 +11410,36 @@
                         preview.style.setProperty('border', 'none', 'important');
                         preview.style.setProperty('border-image', 'none', 'important');
                         
-                        if (themeToApply.gradientBorderEnabled) {
+                        // Check gradientBorderEnabled from theme or checkbox as fallback
+                        const gradientBorderEnabledGradient = themeToApply.gradientBorderEnabled !== undefined 
+                            ? themeToApply.gradientBorderEnabled 
+                            : (document.getElementById('gradient-border-toggle')?.checked || false);
+                        
+                        if (gradientBorderEnabledGradient) {
                             if (themeToApply.borderType === 'gradient') {
                                 // Gradient borders: use padding + gradient background on mockup
                                 phoneMockup.style.setProperty('background', themeToApply.borderGradientText, 'important');
                                 phoneMockup.style.setProperty('padding', '8px', 'important');
                                 phoneMockup.style.setProperty('box-shadow', '0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
-                            } else {
+                            } else if (themeToApply.borderType === 'solid') {
                                 // Solid color border
                                 phoneMockup.style.setProperty('background', 'transparent', 'important');
-                                const borderColor = themeToApply.borderColor;
+                                const borderColor = themeToApply.borderColor || '#1f2937';
                                 phoneMockup.style.setProperty('box-shadow', `inset 0 0 0 8px ${borderColor}, 0 20px 40px rgba(0, 0, 0, 0.3)`, 'important');
                             }
                         } else {
-                            phoneMockup.style.setProperty('background', 'transparent', 'important');
-                            phoneMockup.style.setProperty('box-shadow', 'inset 0 0 0 8px #1f2937, 0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
+                            // No border when disabled - remove all border styling
+                            phoneMockup.style.setProperty('padding', '0', 'important');
+                            // Match phone-mockup background to preview background exactly
+                            const previewBg = preview.style.background || themeToApply.backgroundColor || '#ffffff';
+                            phoneMockup.style.setProperty('background', previewBg, 'important');
+                            preview.style.setProperty('border-radius', '24px', 'important'); // Match phone-mockup border-radius
+                            // Ensure preview fills entire phone-mockup with no gap
+                            preview.style.setProperty('width', '100%', 'important');
+                            preview.style.setProperty('height', '100%', 'important');
+                            preview.style.setProperty('min-height', '600px', 'important'); // Match phone-mockup height
+                            // Remove any box-shadow that might create a border effect
+                            phoneMockup.style.setProperty('box-shadow', '0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
                         }
                     } else {
                         // Frame fill style
@@ -11394,50 +11451,64 @@
                         preview.style.setProperty('border', 'none', 'important');
                         preview.style.setProperty('border-image', 'none', 'important');
                         
-                        // For frame fill style, apply border based on border type
-                        if (themeToApply.borderType === 'gradient') {
-                            // Check gradientBorderEnabled from theme or checkbox as fallback
-                            const gradientBorderEnabledFrame = themeToApply.gradientBorderEnabled !== undefined 
-                                ? themeToApply.gradientBorderEnabled 
-                                : (document.getElementById('gradient-border-toggle')?.checked || false);
-                            
-                            if (gradientBorderEnabledFrame && themeToApply.borderGradientText) {
-                                phoneMockup.style.setProperty('background', themeToApply.borderGradientText, 'important');
+                        // Check gradientBorderEnabled from theme or checkbox as fallback
+                        const gradientBorderEnabledFrameGradient = themeToApply.gradientBorderEnabled !== undefined 
+                            ? themeToApply.gradientBorderEnabled 
+                            : (document.getElementById('gradient-border-toggle')?.checked || false);
+                        
+                        // For frame fill style, apply border based on border type only if enabled
+                        if (gradientBorderEnabledFrameGradient) {
+                            // Restore padding and border-radius when border is enabled
+                            phoneMockup.style.setProperty('padding', '8px', 'important');
+                            preview.style.setProperty('border-radius', '16px', 'important'); // Restore phone-screen border-radius
+                            if (themeToApply.borderType === 'gradient') {
+                                if (themeToApply.borderGradientText) {
+                                    phoneMockup.style.setProperty('background', themeToApply.borderGradientText, 'important');
+                                } else {
+                                    phoneMockup.style.setProperty('background', '#1f2937', 'important'); // Default
+                                }
+                            } else if (themeToApply.borderType === 'solid') {
+                                // Solid color border for frame fill style - always use border color
+                                // Always read directly from color picker to ensure we get the current value
+                                const borderColorPicker = document.getElementById('border-color-picker');
+                                let borderColor = '#1f2937'; // Default
+                                
+                                if (borderColorPicker && borderColorPicker.value) {
+                                    borderColor = borderColorPicker.value;
+                                } else if (themeToApply.borderColor) {
+                                    borderColor = themeToApply.borderColor;
+                                }
+                                
+                                console.log('Applying frame fill solid border color:', borderColor);
+                                console.log('Border type from theme:', themeToApply.borderType);
+                                console.log('Border style from theme:', themeToApply.borderStyle);
+                                console.log('Border color from picker:', borderColorPicker?.value);
+                                console.log('Border color from theme:', themeToApply.borderColor);
+                                phoneMockup.style.setProperty('background', borderColor, 'important');
                             } else {
-                                phoneMockup.style.setProperty('background', '#1f2937', 'important'); // Default
+                                phoneMockup.style.setProperty('background', '#1f2937', 'important'); // Default dark border
                             }
-                        } else if (themeToApply.borderType === 'solid') {
-                            // Solid color border for frame fill style - always use border color
-                            // Always read directly from color picker to ensure we get the current value
-                            const borderColorPicker = document.getElementById('border-color-picker');
-                            let borderColor = '#1f2937'; // Default
-                            
-                            if (borderColorPicker && borderColorPicker.value) {
-                                borderColor = borderColorPicker.value;
-                            } else if (themeToApply.borderColor) {
-                                borderColor = themeToApply.borderColor;
-                            }
-                            
-                            console.log('Applying frame fill solid border color:', borderColor);
-                            console.log('Border type from theme:', themeToApply.borderType);
-                            console.log('Border style from theme:', themeToApply.borderStyle);
-                            console.log('Border color from picker:', borderColorPicker?.value);
-                            console.log('Border color from theme:', themeToApply.borderColor);
-                            phoneMockup.style.setProperty('background', borderColor, 'important');
                         } else {
-                            phoneMockup.style.setProperty('background', '#1f2937', 'important'); // Default dark border
+                            // No border when disabled - remove all border styling
+                            console.log('Border disabled - removing all border styling');
+                            phoneMockup.style.setProperty('padding', '0', 'important');
+                            // Match phone-mockup background to preview background exactly
+                            const previewBg = preview.style.background || themeToApply.backgroundColor || '#ffffff';
+                            phoneMockup.style.setProperty('background', previewBg, 'important');
+                            preview.style.setProperty('border-radius', '24px', 'important'); // Match phone-mockup border-radius
+                            // Ensure preview fills entire phone-mockup with no gap
+                            preview.style.setProperty('width', '100%', 'important');
+                            preview.style.setProperty('height', '100%', 'important');
+                            preview.style.setProperty('min-height', '600px', 'important'); // Match phone-mockup height
+                            // Remove any box-shadow that might create a border effect
+                            phoneMockup.style.setProperty('box-shadow', '0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
                         }
                     }
                 }
                 
-                console.log('Applied gradient background:', themeToApply.gradientText);
-                console.log('Gradient border enabled:', themeToApply.gradientBorderEnabled);
-                
                 // Force re-apply after a small delay to ensure it takes effect
                 setTimeout(() => {
                     preview.style.setProperty('background', themeToApply.gradientText, 'important');
-                    console.log('Re-applied gradient background after delay');
-                    console.log('Element computed background after delay:', window.getComputedStyle(preview).background);
                 }, 10);
                 
                 console.log('Element computed background:', window.getComputedStyle(preview).background);
@@ -11500,7 +11571,18 @@
                             }
                             phoneMockup.style.setProperty('box-shadow', `inset 0 0 0 8px ${borderColor}, 0 20px 40px rgba(0, 0, 0, 0.3)`, 'important');
                         } else {
-                            phoneMockup.style.setProperty('box-shadow', 'inset 0 0 0 8px #1f2937, 0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
+                            // No border when disabled - remove all border styling
+                            phoneMockup.style.setProperty('padding', '0', 'important');
+                            // Match phone-mockup background to preview background exactly
+                            const previewBg = preview.style.background || themeToApply.backgroundColor || '#ffffff';
+                            phoneMockup.style.setProperty('background', previewBg, 'important');
+                            preview.style.setProperty('border-radius', '24px', 'important'); // Match phone-mockup border-radius
+                            // Ensure preview fills entire phone-mockup with no gap
+                            preview.style.setProperty('width', '100%', 'important');
+                            preview.style.setProperty('height', '100%', 'important');
+                            preview.style.setProperty('min-height', '600px', 'important'); // Match phone-mockup height
+                            // Remove any box-shadow that might create a border effect
+                            phoneMockup.style.setProperty('box-shadow', '0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
                         }
                     } else {
                         // Frame fill style
@@ -11539,8 +11621,6 @@
                         }
                     }
                 }
-                
-                console.log('Applied image background');
             }
 
             // Apply text color and formatting to specific text elements
