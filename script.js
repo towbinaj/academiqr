@@ -183,15 +183,37 @@
         
         // Toggle section collapse/expand
         function toggleSection(sectionId) {
-            const content = document.getElementById(sectionId);
-            const chevron = content.previousElementSibling.querySelector('.section-chevron');
+            // Try pattern 1: Appearance tab sections (direct id match)
+            let content = document.getElementById(sectionId);
+            let chevron = null;
             
-            if (content.classList.contains('collapsed')) {
-                content.classList.remove('collapsed');
-                chevron.classList.remove('collapsed');
+            if (content) {
+                // Appearance tab pattern: chevron is in previous sibling
+                chevron = content.previousElementSibling?.querySelector('.section-chevron');
             } else {
-                content.classList.add('collapsed');
-                chevron.classList.add('collapsed');
+                // Try pattern 2: Links tab sections (with -content suffix)
+                content = document.getElementById(sectionId + '-content');
+                chevron = document.getElementById(sectionId + '-chevron');
+            }
+            
+            if (content && chevron) {
+                const isCollapsed = content.classList.contains('collapsed');
+                
+                if (isCollapsed) {
+                    // Expand
+                    content.classList.remove('collapsed');
+                    chevron.classList.remove('collapsed');
+                    if (chevron.style) {
+                        chevron.style.transform = 'rotate(0deg)';
+                    }
+                } else {
+                    // Collapse
+                    content.classList.add('collapsed');
+                    chevron.classList.add('collapsed');
+                    if (chevron.style) {
+                        chevron.style.transform = 'rotate(-90deg)';
+                    }
+                }
             }
         }
 
@@ -6781,27 +6803,6 @@
         }
 
 
-        function toggleSection(sectionId) {
-            const content = document.getElementById(sectionId + '-content');
-            const chevron = document.getElementById(sectionId + '-chevron');
-            
-            if (content && chevron) {
-                const isCollapsed = content.classList.contains('collapsed');
-                
-                if (isCollapsed) {
-                    // Expand
-                    content.classList.remove('collapsed');
-                    chevron.classList.remove('collapsed');
-                    chevron.style.transform = 'rotate(0deg)';
-                } else {
-                    // Collapse
-                    content.classList.add('collapsed');
-                    chevron.classList.add('collapsed');
-                    chevron.style.transform = 'rotate(-90deg)';
-                }
-            }
-        }
-
         function initializeCollapsibleSections() {
             // All sections start expanded by default
             const sections = ['presentation-info', 'collection'];
@@ -9740,7 +9741,20 @@
             
             updateThemeProperty('borderColor', colorPicker.value);
             colorText.value = colorPicker.value;
-            console.log('Border color updated:', themeToApply.borderColor);
+            
+            // Also update border type and style from UI to ensure they're current
+            const borderTypeRadio = document.querySelector('input[name="border-type"]:checked');
+            const borderStyleRadio = document.querySelector('input[name="border-style"]:checked');
+            if (borderTypeRadio) {
+                updateThemeProperty('borderType', borderTypeRadio.value);
+            }
+            if (borderStyleRadio) {
+                updateThemeProperty('borderStyle', borderStyleRadio.value);
+            }
+            
+            console.log('Border color updated:', currentTheme.borderColor);
+            console.log('Border type:', currentTheme.borderType);
+            console.log('Border style:', currentTheme.borderStyle);
             applyTheme();
         }
 
@@ -9752,7 +9766,20 @@
             if (color.match(/^#[0-9A-Fa-f]{6}$/)) {
                 updateThemeProperty('borderColor', color);
                 colorPicker.value = color;
+                
+                // Also update border type and style from UI to ensure they're current
+                const borderTypeRadio = document.querySelector('input[name="border-type"]:checked');
+                const borderStyleRadio = document.querySelector('input[name="border-style"]:checked');
+                if (borderTypeRadio) {
+                    updateThemeProperty('borderType', borderTypeRadio.value);
+                }
+                if (borderStyleRadio) {
+                    updateThemeProperty('borderStyle', borderStyleRadio.value);
+                }
+                
                 console.log('Border color updated from text:', color);
+                console.log('Border type:', currentTheme.borderType);
+                console.log('Border style:', currentTheme.borderStyle);
                 applyTheme();
             }
         }
@@ -10982,9 +11009,9 @@
                     
                     // Update the theme
                     updateThemeProperty('borderColor', color);
-                    console.log('Updated borderColor to:', themeToApply.borderColor);
-                    console.log('Background type:', themeToApply.backgroundType);
-                    console.log('Gradient border enabled:', themeToApply.gradientBorderEnabled);
+                    console.log('Updated borderColor to:', currentTheme.borderColor);
+                    console.log('Background type:', currentTheme.backgroundType);
+                    console.log('Gradient border enabled:', currentTheme.gradientBorderEnabled);
                     applyTheme();
                     
                     // Update active state
@@ -11172,8 +11199,9 @@
                 return;
             }
 
-            // Use provided theme or current collection's theme, fallback to global currentTheme
-            const themeToApply = theme || (currentList && currentList.theme) || currentTheme;
+            // Use provided theme or get fresh theme from UI to ensure all values are current
+            // This is especially important for border type and style which come from radio buttons
+            const themeToApply = theme || getCurrentThemeFromUI() || (currentList && currentList.theme) || currentTheme;
             
             console.log('Applying theme:', themeToApply);
             console.log('Preview element found:', preview);
@@ -11292,28 +11320,36 @@
                         preview.style.setProperty('border', 'none', 'important');
                         preview.style.setProperty('border-image', 'none', 'important');
                         
-                        // Check gradientBorderEnabled from theme or checkbox as fallback
-                        const gradientBorderEnabledFrame = themeToApply.gradientBorderEnabled !== undefined 
-                            ? themeToApply.gradientBorderEnabled 
-                            : (document.getElementById('gradient-border-toggle')?.checked || false);
-                        
-                        if (gradientBorderEnabledFrame) {
-                            if (themeToApply.borderType === 'gradient') {
+                        // For frame fill style, apply border based on border type
+                        if (themeToApply.borderType === 'gradient') {
+                            // Check gradientBorderEnabled from theme or checkbox as fallback
+                            const gradientBorderEnabledFrame = themeToApply.gradientBorderEnabled !== undefined 
+                                ? themeToApply.gradientBorderEnabled 
+                                : (document.getElementById('gradient-border-toggle')?.checked || false);
+                            
+                            if (gradientBorderEnabledFrame && themeToApply.borderGradientText) {
                                 phoneMockup.style.setProperty('background', themeToApply.borderGradientText, 'important');
-                            } else if (themeToApply.borderType === 'solid') {
-                                // Solid color border for frame fill style
-                                let borderColor = themeToApply.borderColor;
-                                // Fallback to color picker if not set in theme
-                                if (!borderColor || borderColor === '#1f2937') {
-                                    const borderColorPicker = document.getElementById('border-color-picker');
-                                    if (borderColorPicker && borderColorPicker.value) {
-                                        borderColor = borderColorPicker.value;
-                                    } else {
-                                        borderColor = '#1f2937'; // Default
-                                    }
-                                }
-                                phoneMockup.style.setProperty('background', borderColor, 'important');
+                            } else {
+                                phoneMockup.style.setProperty('background', '#1f2937', 'important'); // Default
                             }
+                        } else if (themeToApply.borderType === 'solid') {
+                            // Solid color border for frame fill style - always use border color
+                            // Always read directly from color picker to ensure we get the current value
+                            const borderColorPicker = document.getElementById('border-color-picker');
+                            let borderColor = '#1f2937'; // Default
+                            
+                            if (borderColorPicker && borderColorPicker.value) {
+                                borderColor = borderColorPicker.value;
+                            } else if (themeToApply.borderColor) {
+                                borderColor = themeToApply.borderColor;
+                            }
+                            
+                            console.log('Applying frame fill solid border color:', borderColor);
+                            console.log('Border type from theme:', themeToApply.borderType);
+                            console.log('Border style from theme:', themeToApply.borderStyle);
+                            console.log('Border color from picker:', borderColorPicker?.value);
+                            console.log('Border color from theme:', themeToApply.borderColor);
+                            phoneMockup.style.setProperty('background', borderColor, 'important');
                         } else {
                             phoneMockup.style.setProperty('background', '#1f2937', 'important'); // Default dark border
                         }
