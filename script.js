@@ -3842,8 +3842,11 @@
             if (theme.borderColor) preview.style.borderColor = theme.borderColor;
             
             // Apply profile and presentation text colors
+            // Exclude .info-value elements as they have their own font size (18px)
             const textElements = preview.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, div, [class*="text"], [class*="name"], [class*="title"]');
             textElements.forEach(element => {
+                // Skip .info-value elements - they have their own font size setting
+                if (element.classList.contains('info-value')) return;
                 if (theme.profileTextColor) element.style.color = theme.profileTextColor;
                 if (theme.presentationTextColor) element.style.color = theme.presentationTextColor;
                 if (theme.textFontSize) element.style.fontSize = theme.textFontSize;
@@ -11635,20 +11638,20 @@
                 previewName.style.setProperty('font-family', nameFont, 'important');
                 
                 // Apply dynamic font size based on text length
-                // Use 1.5rem as default for preview (smaller than public.html's 1.75rem), don't use textFontSize from theme
+                // Use 1.75rem as default to match public.html, don't use textFontSize from theme
                 if (typeof applyDynamicDisplayNameSize === 'function') {
                     applyDynamicDisplayNameSize(previewName, themeToApply);
                 } else {
                     // Fallback to direct calculation if function not available
                     const nameText = previewName.textContent || '';
-                    const maxFontSize = '1.5rem'; // Use 1.5rem default for preview (smaller than public.html)
-                    const minFontSize = '1.125rem'; // Smaller minimum for preview
+                    const maxFontSize = '1.75rem'; // Match public.html
+                    const minFontSize = '1.25rem'; // Minimum for readability
                     const dynamicFontSize = calculateDisplayNameFontSize(nameText, maxFontSize, minFontSize);
                     previewName.style.setProperty('font-size', dynamicFontSize, 'important');
                 }
                 const nameText = previewName.textContent || '';
                 const computedNameSize = window.getComputedStyle(previewName).fontSize;
-                console.log('Applied dynamic font size to display name for text length:', nameText.length, 'max size: 1.5rem', 'computed:', computedNameSize);
+                console.log('Applied dynamic font size to display name for text length:', nameText.length, 'max size: 1.75rem', 'computed:', computedNameSize);
                 
                 previewName.style.setProperty('font-weight', themeToApply.descriptionBold ? 'bold' : 'normal', 'important');
                 previewName.style.setProperty('font-style', themeToApply.descriptionItalic ? 'italic' : 'normal', 'important');
@@ -11664,14 +11667,11 @@
             presentationFields.forEach(field => {
                 field.style.setProperty('color', themeToApply.presentationColor || '#000000', 'important');
                 field.style.setProperty('font-family', themeToApply.presentationFont || 'Arial', 'important');
-                // Use 1.25rem for presentation info in preview (smaller than public.html's 1.375rem) - ignore any theme font size
-                field.style.setProperty('font-size', '1.25rem', 'important');
+                // Use 18px for presentation info in preview - ignore any theme font size
+                field.style.setProperty('font-size', '18px', 'important');
                 field.style.setProperty('font-weight', '600', 'important'); // Bold presentation information
                 field.style.setProperty('font-style', themeToApply.presentationItalic ? 'italic' : 'normal', 'important');
                 field.style.setProperty('text-decoration', themeToApply.presentationUnderline ? 'underline' : 'none', 'important');
-                // Verify the font size was applied
-                const computedSize = window.getComputedStyle(field).fontSize;
-                console.log('Presentation field font size:', computedSize, 'expected: 20px (1.25rem)');
             });
             console.log('Applied presentation formatting to', presentationFields.length, 'fields');
 
@@ -11810,7 +11810,7 @@
                 // Re-apply presentation info font sizes
                 const presentationFields = preview.querySelectorAll('.info-value');
                 presentationFields.forEach(field => {
-                    field.style.setProperty('font-size', '1.25rem', 'important');
+                    field.style.setProperty('font-size', '18px', 'important');
                     field.style.setProperty('font-weight', '600', 'important');
                 });
                 
@@ -11915,28 +11915,28 @@
             
             try {
                 const nameText = nameElement.textContent || '';
-                // Use 1.5rem as default max size for display name in preview (smaller than public.html's 1.75rem)
+                // Use 1.75rem as default max size to match public.html
                 // Don't use textFontSize from theme as it's meant for other text elements
-                let maxSize = '1.5rem';
+                let maxSize = '1.75rem';
                 
                 // Ensure max size is at least 1.25rem for readability
                 const maxSizeValue = parseFloat(maxSize);
                 const maxSizeUnit = maxSize.replace(/[0-9.]/g, '') || 'rem';
-                const minMaxSize = 1.25; // Minimum max size for readability in preview
+                const minMaxSize = 1.25; // Minimum max size for readability
                 
                 // If somehow maxSize is smaller than 1.25rem, use 1.25rem instead
                 if (maxSizeValue < minMaxSize) {
                     maxSize = minMaxSize + maxSizeUnit;
                 }
                 
-                // Minimum size is 1.125rem for preview (smaller than public.html)
-                const minSize = '1.125rem';
+                // Minimum size is 1.25rem to match public.html
+                const minSize = '1.25rem';
                 const dynamicSize = calculateDisplayNameFontSize(nameText, maxSize, minSize);
                 nameElement.style.setProperty('font-size', dynamicSize, 'important');
             } catch (error) {
                 console.error('Error applying dynamic display name size:', error);
                 // Fallback to default size if there's an error
-                nameElement.style.setProperty('font-size', '1.5rem', 'important');
+                nameElement.style.setProperty('font-size', '1.75rem', 'important');
             }
         }
 

@@ -1779,7 +1779,7 @@
         }
 
         .preview-name-section h4 {
-            font-size: 1.5rem; /* Default max size, will be adjusted dynamically by JavaScript (smaller for preview) */
+            font-size: 1.75rem !important; /* Match public.html */
             font-weight: 600;
             color: #1A2F5B;
             margin: 0 0 12px 0;
@@ -1886,7 +1886,7 @@
         .info-value {
             /* Color will be set by JavaScript from theme - no default to avoid conflicts */
             font-weight: 600; /* Bold presentation information */
-            font-size: 1.25rem !important; /* Same as link descriptions for preview (smaller than public.html) */
+            font-size: 18px !important; /* Same as public.html */
         }
 
         .profile-info-section {
