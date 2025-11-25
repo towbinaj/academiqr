@@ -11285,6 +11285,26 @@
             console.log('Preview element classes:', preview.className);
             console.log('Current background type:', themeToApply.backgroundType);
 
+            // Reset all border-related styles before applying new theme
+            // This ensures clean state when switching between collections with/without borders
+            const phoneMockup = preview.parentElement;
+            if (phoneMockup) {
+                // Reset phoneMockup border styles to defaults
+                phoneMockup.style.setProperty('padding', '0', 'important');
+                phoneMockup.style.setProperty('background', 'transparent', 'important');
+                phoneMockup.style.setProperty('box-shadow', '0 20px 40px rgba(0, 0, 0, 0.3)', 'important');
+                phoneMockup.style.setProperty('border', 'none', 'important');
+                phoneMockup.style.setProperty('border-image', 'none', 'important');
+                phoneMockup.style.setProperty('outline', 'none', 'important');
+                // Reset preview border styles to defaults
+                preview.style.setProperty('border', 'none', 'important');
+                preview.style.setProperty('border-image', 'none', 'important');
+                preview.style.setProperty('border-radius', '16px', 'important');
+                preview.style.removeProperty('width');
+                preview.style.removeProperty('height');
+                preview.style.setProperty('min-height', '584px', 'important');
+            }
+
             // Apply background
             if (themeToApply.backgroundType === 'solid') {
                 console.log('Applying solid background:', themeToApply.backgroundColor);
