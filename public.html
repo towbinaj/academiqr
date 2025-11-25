@@ -217,10 +217,11 @@
         }
 
         .info-field {
-            margin: 0 0 4px 0;
+            margin: 0 0 8px 0;
             font-size: 0.9rem;
-            line-height: 1.3;
+            line-height: 1.4;
             color: #374151;
+            display: block;
         }
 
         .info-label {
@@ -231,6 +232,11 @@
             /* Color will be set by JavaScript from theme - no default to avoid conflicts */
             font-weight: 600; /* Bold presentation information */
             font-size: 1.375rem !important; /* Same size as link descriptions */
+            display: block;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+            hyphens: auto;
         }
 
         .preview-links {
@@ -798,7 +804,7 @@
                 // Only select needed fields to reduce payload size
                 const { data: collection, error: collectionError } = await supabase
                         .from('link_lists')
-                    .select('id, owner_id, slug, visibility, passkey, theme')
+                    .select('id, owner_id, slug, visibility, passkey, theme, presentation_data')
                     .eq('id', collectionId)
                     .single();
 
@@ -820,12 +826,12 @@
                     console.error('Collection has no owner ID');
                     return;
                 }
-                
+
                 // Normalize owner ID the same way we normalize user ID (remove hyphens, take first 12 chars)
                 const ownerIdWithoutHyphens = collection.owner_id.replace(/-/g, '');
                 const ownerIdPrefix = ownerIdWithoutHyphens.substring(0, 12).toLowerCase();
                 const normalizedUserId = userId.toLowerCase();
-                
+
                 // Check if owner ID prefix matches user ID (both are normalized the same way)
                 // Use prefix matching to handle user IDs that might be shorter than 12 characters
                 const ownerStartsWithUser = ownerIdPrefix.startsWith(normalizedUserId);
@@ -841,11 +847,11 @@
                 if (collection.passkey && collection.passkey.trim() !== '') {
                     // Collection is passkey-protected
                     const storedPasskey = getStoredPasskey(collectionId);
-                    
+
                     if (storedPasskey === collection.passkey) {
                         // Passkey already validated in this session, proceed to load content
                         await loadCollectionContent(collection);
-                    } else {
+                } else {
                         // Show passkey prompt
                         showPasskeyModal(collectionId, collection.passkey, async () => {
                             // Passkey validated, now load content
@@ -880,9 +886,9 @@
                         .eq('list_id', collection.id)
                         .order('order_index', { ascending: true }),
                     supabase
-                        .from('profiles')
+                    .from('profiles')
                         .select('id, display_name, handle, profile_photo, profile_photo_position, social_email, social_instagram, social_facebook, social_twitter, social_linkedin, social_youtube, social_tiktok, social_snapchat')
-                        .eq('id', collection.owner_id)
+                    .eq('id', collection.owner_id)
                         .single()
                 ]);
 
@@ -907,7 +913,7 @@
                 // Render profile immediately (shows name right away)
                 renderProfile(profileData);
                 loadPresentationInfo(collection, profileData);
-
+                
                 // Render links (already loaded in parallel)
                 renderLinks(collection.links);
                 
@@ -925,7 +931,7 @@
                     
                     // Apply theme asynchronously to not block rendering
                     setTimeout(() => {
-                        applyTheme(themeToApply);
+                    applyTheme(themeToApply);
                     }, 0);
                     
                     // Re-apply font size and color after theme to ensure they're not overridden
@@ -1157,7 +1163,7 @@
                 profilePhoto.appendChild(img);
             } else {
                 profilePhoto.textContent = '👤';
-            }
+                }
         }
 
         function renderSocialLinks(profile) {
@@ -1190,8 +1196,8 @@
                             // Escape email to prevent XSS in mailto: URL
                             const escapedEmail = encodeURIComponent(email);
                             validUrl = `mailto:${escapedEmail}`;
-                            link.target = '_self';
-                        } else {
+                        link.target = '_self';
+                    } else {
                             // Invalid email - skip this link
                             console.warn('Invalid email address:', email);
                             return;
@@ -1204,23 +1210,23 @@
                             console.warn('Invalid social media URL:', profile[platform.key]);
                             return;
                         }
-                        link.target = '_blank';
-                        link.rel = 'noopener noreferrer';
+                    link.target = '_blank';
+                    link.rel = 'noopener noreferrer';
                     }
                     
                     // Only set href if URL is valid
                     if (validUrl) {
                         link.href = validUrl;
-                        link.className = `social-icon ${platform.class}`;
-                        
-                        // Special handling for X/Twitter icon
-                        let iconHtml = `<i class="${platform.icon}"></i>`;
-                        if (platform.key === 'social_twitter') {
-                            iconHtml = `<span style="font-weight: bold; font-size: 16px;">𝕏</span>`;
-                        }
-                        
-                        link.innerHTML = iconHtml;
-                        socialLinksContainer.appendChild(link);
+                    link.className = `social-icon ${platform.class}`;
+                    
+                    // Special handling for X/Twitter icon
+                    let iconHtml = `<i class="${platform.icon}"></i>`;
+                    if (platform.key === 'social_twitter') {
+                        iconHtml = `<span style="font-weight: bold; font-size: 16px;">𝕏</span>`;
+                    }
+                    
+                    link.innerHTML = iconHtml;
+                    socialLinksContainer.appendChild(link);
                     }
                 }
             });
@@ -1256,11 +1262,11 @@
                     // Sanitize and validate image URL to prevent XSS
                     const sanitizedImageUrl = sanitizeImageUrl(link.image);
                     if (sanitizedImageUrl) {
-                        const img = document.createElement('img');
+                    const img = document.createElement('img');
                         img.src = sanitizedImageUrl; // Safe: URL has been validated
                         img.alt = escapeHtml(link.title || 'Link Icon'); // Escape alt text to prevent XSS
-                        img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-                        imageDiv.appendChild(img);
+                    img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                    imageDiv.appendChild(img);
                     } else {
                         // Invalid URL - show default icon
                         const icon = document.createElement('i');
@@ -1882,7 +1888,7 @@
         if (!urlValidation.valid) {
             // Wait for DOM to be ready before showing error
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
                     showError(urlValidation.error || 'Invalid URL parameters');
                 });
             } else {
@@ -1897,7 +1903,7 @@
                 // DOM already ready, load immediately
                 loadProfile();
             }
-        } else {
+            } else {
             // Wait for DOM to be ready before showing error
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', function() {
@@ -1906,8 +1912,8 @@
             } else {
                 showError('Missing required URL parameters');
             }
-            console.error('Missing user ID or collection ID parameter');
-        }
+                console.error('Missing user ID or collection ID parameter');
+            }
     </script>
 </body>
 </html>
