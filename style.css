@@ -3017,14 +3017,14 @@
             cursor: grabbing;
         }
 
-        .gradient-stop-color {
-            width: 40px;
-            height: 40px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            cursor: pointer;
-        }
 
+        .gradient-stop-position-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #1A2F5B;
+            white-space: nowrap;
+        }
+        
         .gradient-stop-position {
             width: 80px;
             flex: 0 1 80px;
@@ -3046,6 +3046,7 @@
             align-items: center;
             justify-content: center;
             font-size: 16px;
+            margin-left: auto;
         }
 
         .gradient-stop-remove:hover {

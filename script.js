@@ -9950,15 +9950,54 @@
                 dragHandle.style.cssText = 'cursor: grab; padding: 8px; color: #666; font-size: 14px; min-width: 32px; min-height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px;';
                 dragHandle.textContent = '⋮⋮';
                 
-                // Create color picker
-                const colorDiv = document.createElement('div');
-                colorDiv.className = 'gradient-stop-color';
-                colorDiv.style.backgroundColor = stop.color;
-                colorDiv.onclick = function() { openColorPicker(containerId, index); };
+                // Create color picker group (matching standard color pickers)
+                const colorGroup = document.createElement('div');
+                colorGroup.className = 'color-options';
+                
+                // Create color picker input
+                const colorInput = document.createElement('input');
+                colorInput.type = 'color';
+                colorInput.className = 'color-picker';
+                colorInput.value = stop.color;
+                colorInput.addEventListener('input', (e) => {
+                    const value = e.target.value;
+                    colorTextInput.value = value;
+                    updateStopColor(containerId, index, value);
+                });
+                
+                // Create color text input
+                const colorTextInput = document.createElement('input');
+                colorTextInput.type = 'text';
+                colorTextInput.className = 'color-input';
+                colorTextInput.value = stop.color;
+                colorTextInput.maxLength = 7;
+                colorTextInput.placeholder = '#000000';
+                colorTextInput.addEventListener('change', () => {
+                    const normalized = normalizeHexColor(colorTextInput.value);
+                    if (normalized) {
+                        colorTextInput.value = normalized;
+                        colorInput.value = normalized;
+                        updateStopColor(containerId, index, normalized);
+                    } else {
+                        // Fallback to current saved color if input is invalid
+                        const fallbackColor = (containerId === 'gradient-stops' ? gradientStops[index].color : borderGradientStops[index].color) || '#000000';
+                        colorTextInput.value = fallbackColor;
+                    }
+                });
+                
+                colorGroup.appendChild(colorInput);
+                colorGroup.appendChild(colorTextInput);
+                
+                // Create position label
+                const positionLabel = document.createElement('label');
+                positionLabel.textContent = 'Stop Position';
+                positionLabel.className = 'gradient-stop-position-label';
+                positionLabel.setAttribute('for', `stop-position-${containerId}-${index}`);
                 
                 // Create position input
                 const positionInput = document.createElement('input');
                 positionInput.type = 'number';
+                positionInput.id = `stop-position-${containerId}-${index}`;
                 positionInput.className = 'gradient-stop-position';
                 positionInput.value = stop.position || 0;
                 positionInput.min = '0';
@@ -9970,7 +10009,8 @@
                 percentSpan.textContent = '%';
                 
                 stopElement.appendChild(dragHandle);
-                stopElement.appendChild(colorDiv);
+                stopElement.appendChild(colorGroup);
+                stopElement.appendChild(positionLabel);
                 stopElement.appendChild(positionInput);
                 stopElement.appendChild(percentSpan);
                 
@@ -10086,14 +10126,48 @@
             setTimeout(() => document.addEventListener('click', handleClickOutside), 100);
         }
 
+        function normalizeHexColor(color) {
+            if (!color) return null;
+            // Remove any whitespace
+            color = color.trim();
+            // Add # if missing
+            if (!color.startsWith('#')) {
+                color = '#' + color;
+            }
+            // Convert to uppercase
+            color = color.toUpperCase();
+            // Validate hex format (3 or 6 hex digits after #)
+            if (/^#[0-9A-F]{3}$/.test(color)) {
+                // Expand shorthand (e.g., #FFF -> #FFFFFF)
+                return '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+            } else if (/^#[0-9A-F]{6}$/.test(color)) {
+                return color;
+            }
+            return null;
+        }
+
         function updateStopColor(containerId, index, color) {
             if (containerId === 'gradient-stops') {
                 gradientStops[index].color = color;
-                renderGradientStops('gradient-stops', gradientStops);
+                // Update the color picker and text input without re-rendering
+                const stopElement = document.querySelector(`#gradient-stops .gradient-stop[data-index="${index}"]`);
+                if (stopElement) {
+                    const colorPicker = stopElement.querySelector('.color-picker');
+                    const colorInput = stopElement.querySelector('.color-input');
+                    if (colorPicker) colorPicker.value = color;
+                    if (colorInput) colorInput.value = color;
+                }
                 updateGradientFromStops();
             } else {
                 borderGradientStops[index].color = color;
-                renderGradientStops('border-gradient-stops', borderGradientStops);
+                // Update the color picker and text input without re-rendering
+                const stopElement = document.querySelector(`#border-gradient-stops .gradient-stop[data-index="${index}"]`);
+                if (stopElement) {
+                    const colorPicker = stopElement.querySelector('.color-picker');
+                    const colorInput = stopElement.querySelector('.color-input');
+                    if (colorPicker) colorPicker.value = color;
+                    if (colorInput) colorInput.value = color;
+                }
                 updateBorderGradientFromStops();
             }
         }
