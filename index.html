@@ -577,9 +577,6 @@
                                             
                                             <div class="favorites-section">
                                                 <h4>Custom Gradients</h4>
-                                                <div class="favorites-controls">
-                                                    <button type="button" id="save-border-gradient-btn" class="btn btn-primary btn-save-compact">Save Custom Gradient</button>
-                                                </div>
                                                 <div id="saved-border-gradients" class="saved-gradients">
                                                     <!-- Saved border gradients will be loaded here -->
                                                 </div>
@@ -601,7 +598,10 @@
                                                         <div id="border-gradient-stops" class="gradient-stops-container">
                                                             <!-- Color stops will be dynamically generated -->
                                                         </div>
-                                                        <button type="button" id="border-add-stop" class="btn btn-primary btn-save-compact">+ Add Color Stop</button>
+                                                        <div class="gradient-stop-actions">
+                                                            <button type="button" id="border-add-stop" class="btn btn-primary btn-save-compact">+ Add Color Stop</button>
+                                                            <button type="button" id="save-border-gradient-btn" class="btn btn-primary btn-save-compact">Save Custom Gradient</button>
+                                                        </div>
                                                     </div>
                                                     
                                                     <div class="gradient-preview">
