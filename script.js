@@ -11,7 +11,7 @@
         let collections = [];
         let links = [];
         let theme = {
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #1A2F5B 0%, #3B5B8F 100%)',
             textColor: '#ffffff',
             buttonStyle: 'soft'
         };
@@ -2216,7 +2216,7 @@
             try {
                 console.log('Creating new collection:', finalName);
                 const collectionTheme = copyTheme ? theme : {
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: 'linear-gradient(135deg, #1A2F5B 0%, #3B5B8F 100%)',
                     textColor: '#ffffff',
                     buttonStyle: 'soft'
                 };
@@ -5826,7 +5826,7 @@
                             </div>
                         </div>
                         <div style="width: 100%; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;">
-                            <div style="height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); width: ${percentage}%; transition: width 0.3s ease;"></div>
+                            <div style="height: 100%; background: linear-gradient(90deg, #1A2F5B 0%, #3B5B8F 100%); width: ${percentage}%; transition: width 0.3s ease;"></div>
                         </div>
                     </div>
                 `;
