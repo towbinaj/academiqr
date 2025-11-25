@@ -2543,6 +2543,68 @@
             border-bottom: 1px solid #e5e7eb;
         }
         
+        .option-group > label {
+            margin: 0;
+            padding: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1A2F5B;
+        }
+        
+        .option-group.radio-group {
+            flex-direction: row;
+            gap: 16px;
+        }
+        
+        .option-group.radio-group .option {
+            margin-bottom: 0;
+            font-size: 1rem;
+            font-weight: 400;
+            color: inherit;
+        }
+        
+        .radio-group {
+            display: flex;
+            flex-direction: row;
+            gap: 16px;
+        }
+        
+        .radio-group .radio-label,
+        .radio-group .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 400;
+            color: inherit;
+        }
+        
+        .radio-group .radio-label:hover,
+        .radio-group .radio-option:hover {
+            background: #f3f4f6;
+        }
+        
+        .radio-group .radio-label input[type="radio"],
+        .radio-group .radio-option input[type="radio"] {
+            margin: 0;
+            flex-shrink: 0;
+        }
+        
+        .radio-group .radio-label .radio-custom {
+            display: none;
+        }
+        
+        .radio-group .radio-option .radio-label {
+            margin: 0;
+            padding: 0;
+            font-weight: inherit;
+        }
+        
         .option-group:last-child {
             border-bottom: none;
             margin-bottom: 0;
