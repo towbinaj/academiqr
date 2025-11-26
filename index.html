@@ -1025,13 +1025,8 @@
     <!-- Profile Modal -->
     <div id="profileModal" class="modal hidden">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>Profile Settings</h3>
-                <div class="modal-actions">
-                    <button onclick="closeProfile()" class="btn btn-ghost btn-sm">✕ Close</button>
-                </div>
-            </div>
             <div class="modal-body">
+                <button onclick="closeProfile()" class="profile-modal-close" aria-label="Close">×</button>
                 <!-- Profile Information Section -->
                 <div class="card" style="margin-bottom: 20px;">
                     <div class="card-body">
@@ -1096,13 +1091,12 @@
                             <label for="profileSocialSnapchat">Snapchat</label>
                             <input type="url" id="profileSocialSnapchat" class="form-input" placeholder="https://snapchat.com/add/username" maxlength="500">
                         </div>
+                        
+                        <!-- Save Button -->
+                        <div class="form-group" style="margin-top: 20px; text-align: center;">
+                            <button onclick="saveProfile()" class="btn btn-primary btn-lg">Save Profile</button>
+                        </div>
                     </div>
-                </div>
-                
-                
-                <!-- Save Button -->
-                <div class="form-group" style="margin-top: 20px; text-align: center;">
-                    <button onclick="saveProfile()" class="btn btn-primary btn-lg">Save Profile</button>
                 </div>
             </div>
         </div>

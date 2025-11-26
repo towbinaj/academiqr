@@ -658,15 +658,37 @@
             }
         }
         
-        #profileModal .modal-header {
-            border-radius: 12px 12px 0 0;
-            flex-shrink: 0;
-        }
-        
         #profileModal .modal-body {
             overflow-y: auto;
             flex: 1;
-            border-radius: 0 0 12px 12px;
+            border-radius: 12px;
+            position: relative;
+        }
+        
+        #profileModal .profile-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: transparent;
+            border: none;
+            font-size: 28px;
+            color: #64748b;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+            z-index: 10;
+            padding: 0;
+            line-height: 1;
+        }
+        
+        #profileModal .profile-modal-close:hover {
+            background: #f1f5f9;
+            color: #1e293b;
         }
 
         #profileModal .card {
