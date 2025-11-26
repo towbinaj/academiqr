@@ -2502,6 +2502,62 @@
             color: #1e293b;
         }
 
+        /* Media Library Drop Zone */
+        .media-drop-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8fafc;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+
+        .media-drop-zone.drag-over {
+            border-color: #4f46e5;
+            background: #eef2ff;
+            transform: scale(1.02);
+        }
+
+        .media-drop-zone.hidden {
+            display: none;
+        }
+
+        .drop-zone-content {
+            pointer-events: none;
+        }
+
+        .drop-zone-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.6;
+        }
+
+        .drop-zone-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .drop-zone-subtext {
+            font-size: 14px;
+            color: #64748b;
+            margin: 12px 0;
+        }
+
+        .drop-zone-hint {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 16px;
+        }
+
+        .media-drop-zone .btn {
+            pointer-events: auto;
+            margin-top: 8px;
+        }
+
         /* Media Library Styles */
         .media-grid {
             display: flex;

@@ -7552,6 +7552,53 @@
             document.getElementById('mediaModal').classList.remove('hidden');
             loadMediaFiles();
             checkBackupAvailability();
+            setupDragAndDrop();
+        }
+
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('mediaDropZone');
+            const modalBody = document.querySelector('#mediaModal .modal-body');
+            
+            if (!dropZone || !modalBody) return;
+
+            // Prevent default drag behaviors on the document
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                modalBody.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            // Highlight drop zone when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                modalBody.addEventListener(eventName, () => {
+                    dropZone.classList.add('drag-over');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                modalBody.addEventListener(eventName, () => {
+                    dropZone.classList.remove('drag-over');
+                }, false);
+            });
+
+            // Handle dropped files
+            modalBody.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = Array.from(dt.files);
+                handleFileUpload({ target: { files: files } });
+            }
+
+            // Click on drop zone to trigger file input
+            dropZone.addEventListener('click', (e) => {
+                if (e.target.closest('.btn')) return; // Don't trigger if clicking the button
+                uploadImages();
+            });
         }
 
         function checkBackupAvailability() {
@@ -7582,17 +7629,21 @@
 
         function loadMediaFiles() {
             console.log('Loading media files...');
+            console.log('Current mediaFiles length before load:', mediaFiles.length);
             
-            // Try to load from localStorage first
+            // Always start fresh - clear existing array first
+            mediaFiles = [];
+            
+            // Try to load from localStorage
             try {
                 const stored = localStorage.getItem('academiq-media');
                 if (stored) {
                     const parsedFiles = JSON.parse(stored);
-                    if (Array.isArray(parsedFiles)) {
+                    if (Array.isArray(parsedFiles) && parsedFiles.length > 0) {
                         mediaFiles = parsedFiles;
-                        console.log('Successfully loaded media files:', mediaFiles.length);
+                        console.log('Successfully loaded media files from localStorage:', mediaFiles.length);
                     } else {
-                        console.warn('Invalid media files format, starting fresh');
+                        console.log('No valid files in storage, starting fresh');
                         mediaFiles = [];
                     }
                 } else {
@@ -7601,21 +7652,19 @@
                 }
             } catch (error) {
                 console.error('Error loading media files:', error);
-                console.log('Keeping existing mediaFiles array to prevent data loss');
-                // Don't clear the array - keep existing data if any
-                if (!Array.isArray(mediaFiles)) {
-                    mediaFiles = [];
-                }
-                // Only clear localStorage if it's definitely corrupted
+                console.log('Starting with empty array due to error');
+                // Clear corrupted data and start fresh
+                mediaFiles = [];
                 try {
-                    localStorage.getItem('academiq-media');
-                } catch (e) {
-                    console.log('localStorage is corrupted, clearing it');
                     localStorage.removeItem('academiq-media');
                     localStorage.removeItem('academiq-media-metadata');
+                    console.log('Cleared corrupted localStorage data');
+                } catch (e) {
+                    console.warn('Could not clear localStorage:', e);
                 }
             }
             
+            console.log('Final mediaFiles length after load:', mediaFiles.length);
             renderMediaGrid();
         }
 
@@ -7641,9 +7690,24 @@
                     console.warn('Could not create backup:', error);
                 }
                 
+                // Clear the array completely
                 mediaFiles = [];
+                
+                // Remove all media-related localStorage items
                 localStorage.removeItem('academiq-media');
                 localStorage.removeItem('academiq-media-metadata');
+                
+                // Force clear any cached data
+                try {
+                    const test = localStorage.getItem('academiq-media');
+                    if (test) {
+                        localStorage.removeItem('academiq-media');
+                    }
+                } catch (e) {
+                    console.warn('Error checking localStorage:', e);
+                }
+                
+                console.log('Media files cleared. Current mediaFiles length:', mediaFiles.length);
                 renderMediaGrid();
                 showMessage('All media files cleared', 'success');
             }
@@ -7811,7 +7875,13 @@
 
         function renderMediaGrid() {
             const grid = document.getElementById('mediaGrid');
+            const dropZone = document.getElementById('mediaDropZone');
             grid.innerHTML = '';
+
+            // Always show drop zone
+            if (dropZone) {
+                dropZone.classList.remove('hidden');
+            }
 
             mediaFiles.forEach(file => {
                 const item = document.createElement('div');
@@ -7893,55 +7963,112 @@
         }
 
         function handleFileUpload(event) {
-            const files = Array.from(event.target.files);
+            const files = Array.from(event.target.files || []);
+            if (!files || files.length === 0) return;
+            
             console.log('Files selected for upload:', files.length);
             
-            files.forEach((file, index) => {
-                console.log(`Processing file ${index + 1}:`, file.name, file.size, file.type);
+            const validFiles = [];
+            const invalidFiles = [];
+            
+            // First pass: validate all files
+            files.forEach((file) => {
+                if (!file.type.startsWith('image/')) {
+                    invalidFiles.push({ name: file.name, reason: 'not an image' });
+                } else if (file.size > 5 * 1024 * 1024) {
+                    invalidFiles.push({ name: file.name, reason: 'too large (max 5MB)' });
+                } else {
+                    validFiles.push(file);
+                }
+            });
+            
+            // Show warnings for invalid files
+            if (invalidFiles.length > 0) {
+                invalidFiles.forEach(({ name, reason }) => {
+                    showMessage(`Skipping "${name}" - ${reason}.`, 'warning');
+                });
+            }
+            
+            if (validFiles.length === 0) {
+                showMessage('No valid image files to upload.', 'error');
+                return;
+            }
+            
+            // Show success message for multiple files
+            if (validFiles.length > 1) {
+                showMessage(`Uploading ${validFiles.length} images...`, 'success');
+            }
+            
+            let processedCount = 0;
+            const totalFiles = validFiles.length;
+            
+            // Process valid files
+            validFiles.forEach((file, index) => {
+                console.log(`Processing file ${index + 1}/${totalFiles}:`, file.name, file.size, file.type);
                 
-                if (file.type.startsWith('image/')) {
-                    // Check file size (limit to 5MB to allow more files)
-                    if (file.size > 5 * 1024 * 1024) {
-                        showMessage(`File "${file.name}" too large. Please choose images smaller than 5MB.`, 'error');
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    console.log('File read successfully:', file.name);
+                    
+                    const newFile = {
+                        id: 'file-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                        name: file.name,
+                        url: e.target.result,
+                        type: file.type,
+                        size: file.size,
+                        uploadedAt: new Date().toISOString()
+                    };
+                    
+                    // Check for duplicates by comparing data URL
+                    const isDuplicate = mediaFiles.some(existingFile => existingFile.url === newFile.url);
+                    if (isDuplicate) {
+                        console.log('Skipping duplicate file:', file.name);
+                        showMessage(`Skipping "${file.name}" - file already exists in library.`, 'warning');
+                        processedCount++;
+                        if (processedCount === totalFiles) {
+                            renderMediaGrid();
+                            if (totalFiles === 1) {
+                                showMessage('File already exists in library.', 'warning');
+                            }
+                        }
                         return;
                     }
                     
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        console.log('File read successfully:', file.name);
-                        
-                        const newFile = {
-                            id: 'file-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                            name: file.name,
-                            url: e.target.result,
-                            type: file.type,
-                            size: file.size,
-                            uploadedAt: new Date().toISOString()
-                        };
-                        mediaFiles.push(newFile);
-                        console.log('Total files after upload:', mediaFiles.length);
-                        
-                        // Try to save, but don't fail if quota exceeded
-                        try {
-                            saveMediaFiles();
-                        } catch (error) {
-                            console.warn('Could not save file to localStorage:', error);
-                            showMessage('File uploaded but not saved to storage due to space limits.', 'warning');
+                    mediaFiles.push(newFile);
+                    processedCount++;
+                    
+                    console.log('Total files after upload:', mediaFiles.length);
+                    
+                    // Try to save, but don't fail if quota exceeded
+                    try {
+                        saveMediaFiles();
+                    } catch (error) {
+                        console.warn('Could not save file to localStorage:', error);
+                        if (processedCount === totalFiles) {
+                            showMessage('Files uploaded but not saved to storage due to space limits.', 'warning');
                         }
-                        
-                        renderMediaGrid();
-                    };
+                    }
                     
-                    reader.onerror = (e) => {
-                        console.error('Error reading file:', file.name, e);
-                        showMessage(`Error reading file "${file.name}"`, 'error');
-                    };
+                    // Update grid after each file or when all are done
+                    renderMediaGrid();
                     
-                    reader.readAsDataURL(file);
-                } else {
-                    console.log('Skipping non-image file:', file.name, file.type);
-                    showMessage(`Skipping "${file.name}" - only image files are supported.`, 'warning');
-                }
+                    // Show completion message
+                    if (processedCount === totalFiles) {
+                        if (totalFiles === 1) {
+                            showMessage(`Image "${file.name}" uploaded successfully!`, 'success');
+                        } else {
+                            showMessage(`Successfully uploaded ${totalFiles} images!`, 'success');
+                        }
+                    }
+                };
+                
+                reader.onerror = (e) => {
+                    console.error('Error reading file:', file.name, e);
+                    showMessage(`Error reading file "${file.name}"`, 'error');
+                    processedCount++;
+                };
+                
+                reader.readAsDataURL(file);
             });
         }
 
