@@ -4447,6 +4447,41 @@
             showMessage('URL copied to clipboard!', 'success');
         }
         
+        function copyCollectionURL() {
+            const urlInput = document.getElementById('qr-url');
+            if (!urlInput || !urlInput.value) {
+                showMessage('No URL to copy', 'error');
+                return;
+            }
+            
+            // Copy to clipboard without selecting text
+            const url = urlInput.value;
+            
+            // Use modern clipboard API if available
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showMessage('URL copied to clipboard!', 'success');
+                }).catch(() => {
+                    showMessage('Failed to copy URL', 'error');
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showMessage('URL copied to clipboard!', 'success');
+                } catch (err) {
+                    showMessage('Failed to copy URL', 'error');
+                }
+                document.body.removeChild(textArea);
+            }
+        }
+
         function downloadQRCode(format) {
             if (!currentQRCode) {
                 showMessage('Please generate a QR code first', 'error');

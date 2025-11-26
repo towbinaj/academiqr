@@ -661,7 +661,12 @@
                                 <div class="qr-settings">
                                     <div class="option-group">
                                         <label>Collection URL</label>
-                                        <input type="text" id="qr-url" class="form-input" readonly style="width: 100%;">
+                                        <div style="display: flex; gap: 8px; align-items: stretch;">
+                                            <input type="text" id="qr-url" class="form-input" readonly style="flex: 1;">
+                                            <button onclick="copyCollectionURL()" class="btn btn-primary" style="background: #1A2F5B; padding: 0 12px; display: flex; align-items: center; justify-content: center; width: auto; min-width: auto;">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                     
                                     <div class="option-group" style="display: flex !important; flex-direction: row !important; gap: 16px; align-items: flex-start;">
