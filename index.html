@@ -748,26 +748,6 @@
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <div class="option-group">
-                                        <h4>QR Code Theme Management</h4>
-                                        <div class="section-content" id="qr-theme-management-section">
-                                            <div class="option-group">
-                                                <h4>New Theme</h4>
-                                                <div class="input-group">
-                                                    <input type="text" id="qr-theme-name" class="form-input" maxlength="100" placeholder="Enter theme name">
-                                                    <button onclick="saveCurrentQRTheme()" class="btn btn-primary btn-save-compact">Save QR Theme</button>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="option-group">
-                                                <h4>Saved Themes</h4>
-                                                <div id="saved-qr-themes-list" class="saved-themes-list">
-                                                    <!-- Saved QR themes will be populated here -->
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
                                 </div>
                                 
                                 <div class="qr-preview">
@@ -788,6 +768,32 @@
                                         <button onclick="downloadQRCode('svg')" class="btn btn-primary" style="background: #1A2F5B;">
                                             <i class="fas fa-download"></i> SVG
                                         </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- QR Code Theme Management Section -->
+                                <div class="section qr-theme-management-fullwidth">
+                                    <div class="section-header" onclick="toggleSection('qr-theme-management-section')">
+                                        <h3>QR Code Theme Management</h3>
+                                        <svg class="section-chevron" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="section-content" id="qr-theme-management-section">
+                                        <div class="option-group">
+                                            <h4>New Theme</h4>
+                                            <div class="input-group">
+                                                <input type="text" id="qr-theme-name" class="form-input" maxlength="100" placeholder="Enter theme name">
+                                                <button onclick="saveCurrentQRTheme()" class="btn btn-primary btn-save-compact">Save QR Theme</button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="option-group">
+                                            <h4>Saved Themes</h4>
+                                            <div id="saved-qr-themes-list" class="saved-themes-list">
+                                                <!-- Saved QR themes will be populated here -->
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

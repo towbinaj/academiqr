@@ -1638,6 +1638,12 @@
             flex-direction: column;
         }
         
+        .qr-theme-management-fullwidth {
+            grid-column: 1 / span 2;
+            width: 100%;
+            max-width: 100%;
+        }
+        
         #qr-actions {
             display: flex;
         }
