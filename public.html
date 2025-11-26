@@ -1382,9 +1382,22 @@
                 const dateValue = document.getElementById('preview-date');
                 if (dateField && dateValue) {
                     // Format date to match live preview: "Month Day, Year" (e.g., "January 15, 2024")
-                    const date = new Date(presentationData.date);
-                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
-                    const formattedDate = date.toLocaleDateString('en-US', options);
+                    // Parse date string (YYYY-MM-DD) as local date to avoid timezone issues
+                    const dateParts = presentationData.date.split('-');
+                    let formattedDate = '';
+                    if (dateParts.length === 3) {
+                        const year = parseInt(dateParts[0], 10);
+                        const month = parseInt(dateParts[1], 10) - 1; // Month is 0-indexed
+                        const day = parseInt(dateParts[2], 10);
+                        const date = new Date(year, month, day);
+                        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                        formattedDate = date.toLocaleDateString('en-US', options);
+                    } else {
+                        // Fallback to original method if format is unexpected
+                        const date = new Date(presentationData.date);
+                        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                        formattedDate = date.toLocaleDateString('en-US', options);
+                    }
                     dateValue.textContent = formattedDate;
                     dateField.style.display = 'block';
                 }

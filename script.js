@@ -9384,10 +9384,23 @@
             // Format date for display
             let formattedDate = '';
             if (infoData.date) {
-                const date = new Date(infoData.date);
-                const options = { year: 'numeric', month: 'long', day: 'numeric' };
-                formattedDate = date.toLocaleDateString('en-US', options);
-                console.log('Formatted date:', formattedDate);
+                // Parse date string (YYYY-MM-DD) as local date to avoid timezone issues
+                const dateParts = infoData.date.split('-');
+                if (dateParts.length === 3) {
+                    const year = parseInt(dateParts[0], 10);
+                    const month = parseInt(dateParts[1], 10) - 1; // Month is 0-indexed
+                    const day = parseInt(dateParts[2], 10);
+                    const date = new Date(year, month, day);
+                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                    formattedDate = date.toLocaleDateString('en-US', options);
+                    console.log('Formatted date:', formattedDate);
+                } else {
+                    // Fallback to original method if format is unexpected
+                    const date = new Date(infoData.date);
+                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                    formattedDate = date.toLocaleDateString('en-US', options);
+                    console.log('Formatted date (fallback):', formattedDate);
+                }
             }
 
             // Check display checkbox states
