@@ -830,14 +830,14 @@
                 }
                 
                 const linkCount = collection.links ? collection.links.length : 0;
-                let visibilityIcon = '🌐';
+                let visibilityIcon = '<i class="fas fa-globe"></i>';
                 let visibilityText = 'public';
                 
                 if (collection.passkey && collection.passkey.trim() !== '') {
-                    visibilityIcon = '🔑';
+                    visibilityIcon = '<i class="fas fa-key"></i>';
                     visibilityText = 'passkey';
                 } else if (collection.visibility === 'private') {
-                    visibilityIcon = '🔒';
+                    visibilityIcon = '<i class="fas fa-lock"></i>';
                     visibilityText = 'private';
                 }
                 
@@ -882,7 +882,7 @@
                 
                 const visibilitySpan = document.createElement('span');
                 visibilitySpan.className = 'collection-visibility';
-                visibilitySpan.textContent = visibilityIcon + ' ' + visibilityText;
+                visibilitySpan.innerHTML = visibilityIcon + ' ' + visibilityText;
                 
                 // Create action buttons
                 const actionsDiv = document.createElement('div');
@@ -891,13 +891,13 @@
                 const duplicateBtn = document.createElement('button');
                 duplicateBtn.className = 'btn-icon';
                 duplicateBtn.title = 'Duplicate';
-                duplicateBtn.textContent = '📋';
+                duplicateBtn.innerHTML = '<i class="fas fa-copy"></i>';
                 duplicateBtn.onclick = function(e) { e.stopPropagation(); duplicateCollection(collection.id); };
                 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'btn-icon';
                 deleteBtn.title = 'Delete';
-                deleteBtn.textContent = '🗑️';
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
                 deleteBtn.onclick = function(e) { e.stopPropagation(); deleteCollection(collection.id); };
                 
                 actionsDiv.appendChild(duplicateBtn);
@@ -1220,7 +1220,7 @@
                 
                 const deleteBtn = document.createElement('button');
                 deleteBtn.className = 'btn btn-ghost btn-sm';
-                deleteBtn.innerHTML = '🗑️';
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
                 deleteBtn.onclick = function() { deleteLink(index); };
                 
                 actionsColumn.appendChild(deleteBtn);
@@ -7922,7 +7922,7 @@
                 } else {
                     // Show normal buttons when not selecting for anything
                     buttons = `
-                        <button class="delete-btn" onclick="deleteImage('${file.id}')" style="position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: none; background: #ef4444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px;">✕</button>
+                        <button class="delete-btn" onclick="deleteImage('${file.id}')" style="position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: none; background: #1A2F5B; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px;"><i class="fas fa-xmark"></i></button>
                     `;
                 }
                 
@@ -12492,7 +12492,7 @@
                             <div class="saved-theme-name">${escapedThemeNameDisplay}</div>
                         </div>
                         <div class="saved-theme-actions">
-                            <button onclick="event.stopPropagation(); deleteTheme('${escapedThemeName}')" class="btn-icon" title="Delete">🗑️</button>
+                            <button onclick="event.stopPropagation(); deleteTheme('${escapedThemeName}')" class="btn-icon" title="Delete"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 `;
@@ -12625,7 +12625,7 @@
                             <div class="saved-theme-name">${escapedThemeNameDisplay}</div>
                         </div>
                         <div class="saved-theme-actions">
-                            <button onclick="event.stopPropagation(); deleteQRTheme('${escapedThemeName}')" class="btn-icon" title="Delete">🗑️</button>
+                            <button onclick="event.stopPropagation(); deleteQRTheme('${escapedThemeName}')" class="btn-icon" title="Delete"><i class="fas fa-trash"></i></button>
                         </div>
                     </div>
                 `;

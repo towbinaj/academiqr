@@ -497,6 +497,18 @@
             flex-shrink: 0;
         }
 
+        .collection-visibility .fa-globe,
+        .collection-visibility .fa-lock,
+        .collection-visibility .fa-key {
+            color: #1A2F5B;
+        }
+
+        .collection-item.active .collection-visibility .fa-globe,
+        .collection-item.active .collection-visibility .fa-lock,
+        .collection-item.active .collection-visibility .fa-key {
+            color: #9ca3af;
+        }
+
         .collection-actions {
             display: flex;
             gap: 8px;
@@ -576,14 +588,34 @@
             min-width: 32px;
             min-height: 32px;
             line-height: 1;
+            color: #1A2F5B;
         }
 
         .btn-icon:hover {
             background: rgba(0, 0, 0, 0.1);
         }
 
+        .collection-item.active .btn-icon {
+            color: #9ca3af;
+        }
+
         .collection-item.active .btn-icon:hover {
             background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Trash icons should be brand color */
+        .fa-trash,
+        button .fa-trash,
+        .btn-icon .fa-trash,
+        .btn-ghost .fa-trash {
+            color: #1A2F5B !important;
+        }
+
+        /* Exception: Selected collection trash icon should be light gray */
+        .collection-item.active .fa-trash,
+        .collection-item.active button .fa-trash,
+        .collection-item.active .btn-icon .fa-trash {
+            color: #9ca3af !important;
         }
 
         .form-help {
@@ -2671,8 +2703,12 @@
         .delete-btn {
             top: 4px !important;
             right: 4px !important;
-            background: #ef4444 !important;
+            background: #1A2F5B !important;
             color: white !important;
+        }
+
+        .delete-btn:hover {
+            background: #152547 !important;
         }
 
         .search-input {
@@ -3654,7 +3690,7 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            background: #dc2626;
+            background: #1A2F5B;
             color: white;
             border: none;
             font-size: 16px;
@@ -3668,7 +3704,7 @@
         }
 
         .btn-remove-image:hover {
-            background: #b91c1c;
+            background: #152547;
         }
 
         #qr-logo-preview {
