@@ -230,10 +230,12 @@
         /* Main App Layout */
         .app-layout {
             display: grid;
-            grid-template-columns: 280px 1fr 400px;
+            grid-template-columns: 280px 900px 400px;
             height: 100vh;
             background: #f8fafc;
             gap: 0;
+            width: 1580px;
+            margin: 0 auto;
         }
 
         .sidebar {
@@ -252,7 +254,9 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            width: 100%;
+            width: 900px;
+            min-width: 900px;
+            max-width: 900px;
             padding: 0 20px;
         }
 
@@ -4099,6 +4103,8 @@
             width: 16px;
             height: 16px;
         }
+        /* Responsive media queries disabled - fixed layout */
+        /*
         @media (max-width: 1024px) {
             .content-header-new {
                 padding: 12px 16px;
@@ -4141,7 +4147,6 @@
             }
         }
 
-        /* Responsive adjustments */
         @media (max-width: 768px) {
             .media-grid {
                 grid-template-columns: repeat(4, 1fr);
@@ -4175,4 +4180,5 @@
                 max-height: 80px;
             }
         }
+        */
     
