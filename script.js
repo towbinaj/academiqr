@@ -153,7 +153,12 @@
                         
                         // Initialize asset URLs
                         initializeAssetUrls();
-                        initApp();
+                        
+                        // Wrap initApp in try-catch to ensure loading screen is always hidden
+                        initApp().catch(error => {
+                            console.error('Error in initApp:', error);
+                            showLogin();
+                        });
                         
                         // Don't automatically show dashboard - let the login flow handle visibility
                     } else {
@@ -166,7 +171,12 @@
                                 // Set up auth state change listener for automatic session management
                                 setupAuthStateListener();
                                 initializeAssetUrls();
-                                initApp();
+                                
+                                // Wrap initApp in try-catch to ensure loading screen is always hidden
+                                initApp().catch(error => {
+                                    console.error('Error in initApp:', error);
+                                    showLogin();
+                                });
                             } else {
                                 console.error('Supabase still not loaded, showing login anyway');
                                 showLogin();
@@ -306,9 +316,15 @@
                     if (loginElement) {
                         loginElement.classList.add('hidden');
                     }
+                } else {
+                    // No saved login - show login screen immediately
+                    showLogin();
+                    return;
                 }
             } catch (error) {
-                // Ignore errors in this check
+                // If we can't check saved login, show login screen
+                showLogin();
+                return;
             }
             
             // Check for OAuth callback
