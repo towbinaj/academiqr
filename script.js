@@ -1063,6 +1063,13 @@
             if (qrTab && qrTab.classList.contains('active')) {
                 initQRCodeTab();
             }
+            
+            // Update analytics if on analytics tab
+            // If analytics tab is active, refresh it to show new collection's data
+            const analyticsTab = document.getElementById('tab-analytics');
+            if (analyticsTab && analyticsTab.classList.contains('active')) {
+                refreshAnalytics();
+            }
         }
         function renderLinks() {
             console.log('renderLinks called, links array:', links);
