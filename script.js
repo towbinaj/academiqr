@@ -1097,7 +1097,7 @@
                 const dragHandle = document.createElement('div');
                 dragHandle.className = 'drag-handle';
                 dragHandle.draggable = true;
-                dragHandle.textContent = '⋮⋮';
+                dragHandle.innerHTML = '<i class="fas fa-grip-vertical"></i>';
                 dragColumn.appendChild(dragHandle);
                 
                 // Create image column
@@ -1119,14 +1119,14 @@
                     const removeBtn = document.createElement('button');
                     removeBtn.type = 'button';
                     removeBtn.className = 'btn-remove-link-image';
-                    removeBtn.textContent = '×';
+                    removeBtn.innerHTML = '<i class="fas fa-xmark"></i>';
                     removeBtn.onclick = function() { removeLinkImage(index); };
                     
                     const editBtn = document.createElement('button');
                     editBtn.type = 'button';
                     editBtn.className = 'btn-edit-link-image';
                     editBtn.title = 'Edit Image Position';
-                    editBtn.textContent = '✏️';
+                    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
                     editBtn.onclick = function() { toggleLinkImageEditor(index); };
                     
                     imageContainer.appendChild(img);
@@ -1141,17 +1141,17 @@
                 
                 const fileBtn = document.createElement('button');
                 fileBtn.type = 'button';
-                fileBtn.className = 'btn btn-secondary btn-icon';
+                fileBtn.className = 'btn-icon';
                 fileBtn.title = 'Choose File';
                 fileBtn.onclick = function() { openFileSelectorForLink(index); };
-                fileBtn.innerHTML = '<span>📁</span>';
+                fileBtn.innerHTML = '<i class="fas fa-folder-open"></i>';
                 
                 const mediaBtn = document.createElement('button');
                 mediaBtn.type = 'button';
-                mediaBtn.className = 'btn btn-secondary btn-icon';
+                mediaBtn.className = 'btn-icon';
                 mediaBtn.title = 'Media Library';
                 mediaBtn.onclick = function() { openMediaLibraryForLinkEdit(index); };
-                mediaBtn.innerHTML = '<span>📷</span>';
+                mediaBtn.innerHTML = '<i class="fas fa-images"></i>';
                 
                 imageButtons.appendChild(fileBtn);
                 imageButtons.appendChild(mediaBtn);
@@ -1219,7 +1219,8 @@
                 actionsColumn.className = 'link-actions';
                 
                 const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'btn btn-ghost btn-sm';
+                deleteBtn.className = 'btn-icon';
+                deleteBtn.title = 'Delete';
                 deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
                 deleteBtn.onclick = function() { deleteLink(index); };
                 
@@ -10179,7 +10180,7 @@
                 const dragHandle = document.createElement('div');
                 dragHandle.className = 'drag-handle';
                 dragHandle.style.cssText = 'cursor: grab; padding: 8px; color: #666; font-size: 14px; min-width: 32px; min-height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 4px;';
-                dragHandle.textContent = '⋮⋮';
+                dragHandle.innerHTML = '<i class="fas fa-grip-vertical"></i>';
                 
                 // Create color picker group (matching standard color pickers)
                 const colorGroup = document.createElement('div');
