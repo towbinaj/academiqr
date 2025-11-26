@@ -2746,6 +2746,9 @@
         let currentQRLogo = null; // Store the logo image data
         
         function initQRCodeTab() {
+            // Load saved QR themes
+            loadSavedQRThemes();
+            
             if (!currentList || !currentUser) {
                 document.getElementById('qr-url').value = 'Please select a collection first';
                 return;
@@ -12373,6 +12376,151 @@
             updatePreview();
             
             showMessage(`Theme "${themeName}" loaded and applied!`, 'success');
+        }
+
+        // QR Theme Management Functions
+        function saveCurrentQRTheme() {
+            const themeName = document.getElementById('qr-theme-name').value.trim();
+            if (!themeName) {
+                showMessage('Please enter a QR theme name', 'error');
+                return;
+            }
+
+            // Collect current QR theme data
+            const qrThemeToSave = {
+                name: themeName,
+                savedAt: new Date().toISOString(),
+                color: document.getElementById('qr-color')?.value || '#000000',
+                bgColor: document.getElementById('qr-bg-color')?.value || '#ffffff',
+                borderEnabled: document.getElementById('qr-border-enabled')?.checked || false,
+                borderColor: document.getElementById('qr-border-color')?.value || '#000000',
+                borderStyle: document.getElementById('qr-border-style')?.value || 'solid',
+                borderRadius: document.getElementById('qr-border-radius')?.value || '16',
+                logo: currentQRLogo || null
+            };
+
+            // Get existing QR themes from localStorage
+            let savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+            
+            // Check if theme name already exists
+            const existingIndex = savedQRThemes.findIndex(theme => theme.name === themeName);
+            if (existingIndex !== -1) {
+                if (confirm(`QR Theme "${themeName}" already exists. Do you want to overwrite it?`)) {
+                    savedQRThemes[existingIndex] = qrThemeToSave;
+                } else {
+                    return;
+                }
+            } else {
+                savedQRThemes.push(qrThemeToSave);
+            }
+
+            // Save to localStorage
+            localStorage.setItem('academiq_saved_qr_themes', JSON.stringify(savedQRThemes));
+            
+            // Clear the input
+            document.getElementById('qr-theme-name').value = '';
+            
+            // Refresh the saved QR themes list
+            loadSavedQRThemes();
+            
+            showMessage(`QR Theme "${themeName}" saved successfully!`, 'success');
+        }
+
+        function loadSavedQRThemes() {
+            const savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+            const themesList = document.getElementById('saved-qr-themes-list');
+            
+            if (!themesList) return;
+            
+            if (savedQRThemes.length === 0) {
+                themesList.innerHTML = '<p style="color: #6b7280; font-style: italic; text-align: center; padding: 20px;">No saved QR themes yet</p>';
+                return;
+            }
+
+            themesList.innerHTML = savedQRThemes.map(theme => {
+                // Escape theme.name to prevent XSS
+                const escapedThemeName = escapeHtml(theme.name).replace(/'/g, "\\'");
+                const escapedThemeNameDisplay = escapeHtml(theme.name);
+                return `
+                    <div class="saved-theme-item" onclick="loadQRTheme('${escapedThemeName}')">
+                        <div class="saved-theme-info">
+                            <div class="saved-theme-name">${escapedThemeNameDisplay}</div>
+                        </div>
+                        <div class="saved-theme-actions">
+                            <button onclick="event.stopPropagation(); deleteQRTheme('${escapedThemeName}')" class="btn-icon" title="Delete">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function loadQRTheme(themeName) {
+            const savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+            const theme = savedQRThemes.find(t => t.name === themeName);
+            
+            if (!theme) {
+                showMessage('QR Theme not found', 'error');
+                return;
+            }
+
+            // Load QR theme settings into form
+            if (theme.color) {
+                document.getElementById('qr-color').value = theme.color;
+                document.getElementById('qr-color-text').value = theme.color;
+            }
+            
+            if (theme.bgColor) {
+                document.getElementById('qr-bg-color').value = theme.bgColor;
+                document.getElementById('qr-bg-color-text').value = theme.bgColor;
+            }
+            
+            if (theme.borderEnabled !== undefined) {
+                document.getElementById('qr-border-enabled').checked = theme.borderEnabled;
+                document.getElementById('qr-border-options').style.display = theme.borderEnabled ? 'block' : 'none';
+            }
+            
+            if (theme.borderColor) {
+                document.getElementById('qr-border-color').value = theme.borderColor;
+                document.getElementById('qr-border-color-text').value = theme.borderColor;
+            }
+            
+            if (theme.borderStyle) {
+                document.getElementById('qr-border-style').value = theme.borderStyle;
+            }
+            
+            if (theme.borderRadius) {
+                document.getElementById('qr-border-radius').value = theme.borderRadius;
+            }
+            
+            // Load logo if present
+            if (theme.logo) {
+                currentQRLogo = theme.logo;
+                document.getElementById('qr-logo-img').src = theme.logo;
+                document.getElementById('qr-logo-preview').style.display = 'block';
+            } else {
+                currentQRLogo = null;
+                document.getElementById('qr-logo-preview').style.display = 'none';
+            }
+            
+            // Regenerate QR code with new settings
+            generateQRCode();
+            
+            showMessage(`QR Theme "${themeName}" loaded and applied!`, 'success');
+        }
+
+        function deleteQRTheme(themeName) {
+            if (!confirm(`Are you sure you want to delete QR Theme "${themeName}"?`)) {
+                return;
+            }
+
+            let savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+            savedQRThemes = savedQRThemes.filter(theme => theme.name !== themeName);
+            localStorage.setItem('academiq_saved_qr_themes', JSON.stringify(savedQRThemes));
+            
+            // Refresh the list
+            loadSavedQRThemes();
+            
+            showMessage(`QR Theme "${themeName}" deleted successfully!`, 'success');
         }
 
         function updateFormFromTheme() {

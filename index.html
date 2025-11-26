@@ -748,6 +748,26 @@
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    <div class="option-group">
+                                        <h4>QR Theme Management</h4>
+                                        <div class="section-content" id="qr-theme-management-section">
+                                            <div class="option-group">
+                                                <h4>New QR Theme</h4>
+                                                <div class="input-group">
+                                                    <input type="text" id="qr-theme-name" class="form-input" maxlength="100" placeholder="Enter theme name">
+                                                    <button onclick="saveCurrentQRTheme()" class="btn btn-primary btn-save-compact">Save QR Theme</button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="option-group">
+                                                <h4>Saved QR Themes</h4>
+                                                <div id="saved-qr-themes-list" class="saved-themes-list">
+                                                    <!-- Saved QR themes will be populated here -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div class="qr-preview">
