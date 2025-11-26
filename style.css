@@ -1705,29 +1705,61 @@
             display: flex;
             justify-content: center;
             align-items: flex-start;
+            overflow-y: auto; /* Allow vertical scroll if preview is taller than panel */
+            overflow-x: hidden;
         }
 
         .phone-mockup {
-            width: 320px;
-            height: 600px;
+            /* iPhone 15 Pro dimensions: 1179 x 2556 pixels (width x height) */
+            /* Usable height: 635px, plus 16px padding (8px top + 8px bottom) = 651px total */
+            width: 360px;
+            height: 651px; /* 635px usable + 16px padding */
             background: #1e293b;
             border-radius: 24px;
             padding: 8px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
             box-sizing: border-box;
+            flex-shrink: 0; /* Prevent shrinking */
         }
 
         .phone-screen {
             width: 100%;
-            height: 100%;
-            min-height: 584px; /* 600px - 8px padding * 2 */
+            height: 635px; /* Usable height - scrollbar appears if content extends beyond */
+            max-height: 635px; /* Ensure it doesn't exceed this */
             background: #ffffff; /* Default white background */
             border-radius: 16px;
-            overflow: hidden;
+            overflow-y: auto; /* Enable scrolling for content that extends beyond 635px */
+            overflow-x: hidden;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             position: relative;
+            /* Use -webkit-overflow-scrolling for smooth iOS scrolling */
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Make scrollbar less obvious in live preview */
+        .phone-screen::-webkit-scrollbar {
+            width: 6px; /* Thinner scrollbar */
+        }
+
+        .phone-screen::-webkit-scrollbar-track {
+            background: transparent; /* Transparent track */
+        }
+
+        .phone-screen::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2); /* Subtle, semi-transparent thumb */
+            border-radius: 3px;
+        }
+
+        .phone-screen::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3); /* Slightly more visible on hover */
+        }
+
+        /* Firefox scrollbar styling */
+        .phone-screen {
+            scrollbar-width: thin; /* Thin scrollbar */
+            scrollbar-color: rgba(0, 0, 0, 0.2) transparent; /* Subtle thumb, transparent track */
         }
 
         .preview-header-content {
@@ -1779,7 +1811,7 @@
         }
 
         .preview-name-section h4 {
-            font-size: 1.75rem !important; /* Match public.html */
+            font-size: 1.75rem; /* Match public.html */
             font-weight: 600;
             color: #1A2F5B;
             margin: 0 0 12px 0;
@@ -1886,7 +1918,7 @@
         .info-value {
             /* Color will be set by JavaScript from theme - no default to avoid conflicts */
             font-weight: 600; /* Bold presentation information */
-            font-size: 1.125rem !important; /* 18px - same as public.html */
+            font-size: 1.125rem; /* 18px - same as public.html */
         }
 
         .profile-info-section {
@@ -2103,10 +2135,13 @@
         .preview-links {
             flex: 1;
             padding: 16px;
+            padding-bottom: 8px;
             display: flex;
             flex-direction: column;
             gap: 8px;
             background: transparent;
+            overflow-y: auto;
+            overflow-x: hidden;
         }
 
         .preview-link {
@@ -2115,8 +2150,8 @@
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             text-decoration: none;
-            color: #1A2F5B;
-            font-size: 1.25rem; /* Slightly smaller than presentation info (matching public.html) */
+            color: #1e293b;
+            font-size: 1.25rem; /* Slightly smaller than presentation info - matches public.html */
             transition: all 0.2s;
             min-height: 64px;
             display: flex;
@@ -2124,7 +2159,36 @@
         }
         
         .preview-link-text {
-            font-size: inherit; /* Inherit from parent .preview-link */
+            font-size: inherit; /* Inherit from parent .preview-link - matches public.html */
+        }
+
+        .preview-footer {
+            padding: 8px 16px;
+            text-align: center;
+            border: none; /* No border - seamless gradient */
+            background: transparent; /* Fully transparent - let gradient show through */
+            flex-shrink: 0; /* Prevent footer from shrinking */
+            position: sticky;
+            bottom: 0;
+            z-index: 10;
+        }
+
+        .preview-footer-text {
+            font-size: 0.625rem; /* 10px - very small font */
+            /* Color will be set by JavaScript from theme - matches profile text color */
+            margin: 0;
+            line-height: 1.2;
+        }
+
+        .preview-footer-text a {
+            /* Color will be set by JavaScript from theme - matches profile text color */
+            text-decoration: none;
+            opacity: 0.8; /* Slightly transparent for link */
+        }
+
+        .preview-footer-text a:hover {
+            opacity: 1; /* Full opacity on hover */
+            text-decoration: underline;
         }
 
         .preview-link:hover {

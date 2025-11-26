@@ -472,7 +472,7 @@
                 if (previewNameElement) {
                     previewNameElement.textContent = displayName;
                     // Use fixed 1.75rem to match public.html - CSS handles font size
-                    previewNameElement.style.setProperty('font-size', '1.75rem', 'important');
+                    previewNameElement.style.setProperty('font-size', '1.75rem');
                 }
                 
                 // Reapply theme to ensure display name color is correct
@@ -718,7 +718,7 @@
                 previewNameElement.textContent = displayName;
                 // Apply dynamic font size based on text length
                 // Use fixed 1.75rem to match public.html - CSS handles font size
-                previewNameElement.style.setProperty('font-size', '1.75rem', 'important');
+                previewNameElement.style.setProperty('font-size', '1.75rem');
             }
             // Note: preview-bio was removed, so we skip it
             
@@ -1913,8 +1913,10 @@
                 linkEl.rel = 'noopener noreferrer';
                 
                 // Set font size immediately on the link element (matching public.html)
-                linkEl.style.setProperty('font-size', '1.25rem', 'important'); // Match public.html - slightly smaller than presentation info
+                // Start with 1.25rem like public.html, then applyButtonStyles will override to 1.375rem minimum
+                linkEl.style.setProperty('font-size', '1.25rem', 'important');
                 linkEl.style.fontSize = '1.25rem';
+                console.log(`🔍 updatePreview: Set initial font-size to 1.25rem for link "${link.title}"`);
                 
                 const imageWrapper = document.createElement('div');
                 imageWrapper.className = 'preview-link-image-wrapper';
@@ -1939,18 +1941,17 @@
                 linkEl.appendChild(imageWrapper);
                 
                 const textContainer = document.createElement('div');
-                textContainer.style.cssText = 'flex: 1; min-width: 0;';
+                textContainer.style.cssText = 'flex: 1;';
                 
                 const textElement = document.createElement('div');
                 textElement.className = 'preview-link-text';
-                textElement.style.cssText = 'font-weight: 600; font-size: 1.25rem !important;';
+                textElement.style.cssText = 'font-weight: 600; font-size: inherit !important;';
                 textElement.innerHTML = sanitizeHTML(link.title || '');
                 
                 textContainer.appendChild(textElement);
                 linkEl.appendChild(textContainer);
                 
-                textElement.style.setProperty('font-size', '1.25rem', 'important');
-                textElement.style.fontSize = '1.25rem';
+                // Font size is inherited from parent .preview-link, which will be set by applyButtonStyles
                 console.log(`Created link element for link ${index}:`, linkEl);
                 
                 // Note: Individual link formatting (font, bold, italic, underline) is now handled
@@ -3832,45 +3833,65 @@
                 if (theme.textFontWeight) element.style.fontWeight = theme.textFontWeight;
             });
             
-            // Set profile name font size to match public.html (1.75rem)
+            // Match profile name styling to public preview
             const previewName = document.getElementById('preview-name');
             if (previewName) {
-                previewName.style.setProperty('font-size', '1.75rem', 'important');
+                const nameColor = theme.presentationColor
+                    || theme.profileTextColor
+                    || theme.textColor
+                    || '#1f2937';
+                const nameFont = theme.presentationFont || theme.textFont || 'Arial';
+                previewName.style.removeProperty('color');
+                previewName.style.setProperty('color', nameColor);
+                previewName.style.color = nameColor;
+                const existingStyle = previewName.getAttribute('style') || '';
+                previewName.setAttribute('style', `${existingStyle}; color: ${nameColor}; font-size: 1.75rem;`);
+                previewName.style.setProperty('font-family', nameFont);
+                previewName.style.setProperty('font-weight', theme.textFontWeight || '600');
             }
             
-            // Set presentation info font size to match public.html (1.125rem)
+            // Presentation info styling
             const presentationFields = preview.querySelectorAll('.info-value');
+            const previewPresentationColor = theme.presentationColor
+                || theme.presentationTextColor
+                || theme.textColor
+                || '#4b5563';
             presentationFields.forEach(field => {
-                field.style.setProperty('font-size', '1.125rem', 'important');
+                field.style.removeProperty('color');
+                field.style.setProperty('color', previewPresentationColor);
+                field.style.color = previewPresentationColor;
+                const existingStyle = field.getAttribute('style') || '';
+                field.setAttribute('style', `${existingStyle}; color: ${previewPresentationColor}; font-size: 1.125rem;`);
             });
             
+            // Apply footer color (matches profile text color)
+            const footerText = preview.querySelector('.preview-footer-text');
+            const footerLink = preview.querySelector('.preview-footer-text a');
+            const profileColor = theme.presentationColor
+                || theme.profileTextColor
+                || theme.textColor
+                || '#1f2937';
+            if (footerText) {
+                footerText.style.setProperty('color', profileColor);
+                footerText.style.color = profileColor;
+                if (footerLink) {
+                    footerLink.style.setProperty('color', profileColor);
+                    footerLink.style.color = profileColor;
+                }
+            }
+
             // Apply button styles only to individual preview link buttons
             const previewLinks = preview.querySelectorAll('.preview-link');
-            previewLinks.forEach(link => {
-                // Only apply button styles to the actual link elements, not containers
-                if (link.classList.contains('preview-link')) {
-                    if (theme.buttonTextColor) link.style.color = theme.buttonTextColor;
-                    if (theme.buttonBackgroundColor) link.style.backgroundColor = theme.buttonBackgroundColor;
-                    if (theme.buttonBorderRadius) link.style.borderRadius = theme.buttonBorderRadius;
-                    if (theme.buttonPadding) link.style.padding = theme.buttonPadding;
-                    if (theme.buttonFontSize) link.style.fontSize = theme.buttonFontSize;
-                    if (theme.buttonFontWeight) link.style.fontWeight = theme.buttonFontWeight;
-                    
-                    // Apply button style (soft, solid, outline, etc.)
-                    if (theme.buttonStyle === 'soft') {
-                        link.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                        link.style.border = 'none';
-                    } else if (theme.buttonStyle === 'solid') {
-                        link.style.boxShadow = 'none';
-                        link.style.border = 'none';
-                    } else if (theme.buttonStyle === 'outline') {
-                        link.style.backgroundColor = 'transparent';
-                        // Sanitize CSS color values to prevent CSS injection
-                        const buttonColor = sanitizeCSSValue(theme.buttonBackgroundColor, 'color') || '#3b82f6';
-                        link.style.border = `2px solid ${buttonColor}`;
-                        link.style.color = buttonColor;
-                    }
-                }
+            console.log(`🔍 applyThemeToPreview: Found ${previewLinks.length} buttons, calling applyButtonStyles with theme.buttonFontSize="${theme.buttonFontSize}"`);
+            applyButtonStyles(previewLinks, theme);
+            
+            // Log final computed font-sizes after applyButtonStyles
+            previewLinks.forEach((button, index) => {
+                const buttonText = button.textContent?.trim() || button.querySelector('.preview-link-text')?.textContent?.trim() || `button ${index}`;
+                const textElement = button.querySelector('.preview-link-text');
+                const computedTextSize = textElement ? window.getComputedStyle(textElement).fontSize : 'N/A';
+                const computedButtonSize = window.getComputedStyle(button).fontSize;
+                console.log(`🔍 applyThemeToPreview: Final computed sizes for "${buttonText.substring(0, 30)}..." - text element: ${computedTextSize}, button element: ${computedButtonSize}`);
             });
         }
         function getCurrentThemeFromUI() {
@@ -5540,7 +5561,7 @@
                     previewNameElement.textContent = displayName || 'Your Name';
                     // Apply dynamic font size based on text length
                     // Use fixed 1.75rem to match public.html - CSS handles font size
-                    previewNameElement.style.setProperty('font-size', '1.75rem', 'important');
+                    previewNameElement.style.setProperty('font-size', '1.75rem');
                 }
                 
                 // Reapply theme to ensure display name color is correct
@@ -8326,7 +8347,7 @@
                             previewNameElement.textContent = this.value || 'Your Name';
                             // Apply dynamic font size based on text length
                             // Use fixed 1.75rem to match public.html - CSS handles font size
-                            previewNameElement.style.setProperty('font-size', '1.75rem', 'important');
+                            previewNameElement.style.setProperty('font-size', '1.75rem');
                         }
                     });
                 }
@@ -11643,181 +11664,96 @@
             const previewName = document.getElementById('preview-name');
             // Note: preview-bio was removed, so we skip it
             if (previewName) {
-                // Use presentationColor (same as presentation text) with fallback to descriptionColor
-                const nameColor = themeToApply.presentationColor || themeToApply.descriptionColor || '#000000';
-                previewName.style.setProperty('color', nameColor, 'important');
-                // Use presentationFont (same as presentation text) with fallback
+                const nameColor = themeToApply.presentationColor
+                    || themeToApply.profileTextColor
+                    || themeToApply.textColor
+                    || '#1f2937';
                 const nameFont = themeToApply.presentationFont || themeToApply.descriptionFont || 'Arial';
-                previewName.style.setProperty('font-family', nameFont, 'important');
-                
-                // Use fixed 1.75rem to match public.html exactly
-                previewName.style.setProperty('font-size', '1.75rem', 'important');
-                
-                previewName.style.setProperty('font-weight', themeToApply.descriptionBold ? 'bold' : 'normal', 'important');
-                previewName.style.setProperty('font-style', themeToApply.descriptionItalic ? 'italic' : 'normal', 'important');
-                previewName.style.setProperty('text-decoration', themeToApply.descriptionUnderline ? 'underline' : 'none', 'important');
-                // Don't overwrite the display name - it's set by loadUserData and saveProfile
-                // previewName.innerHTML = themeToApply.descriptionText || 'alexander.towbin';
+                previewName.style.removeProperty('color');
+                previewName.style.setProperty('color', nameColor);
+                previewName.style.color = nameColor;
+                const existingStyle = previewName.getAttribute('style') || '';
+                previewName.setAttribute('style', `${existingStyle}; color: ${nameColor}; font-size: 1.75rem;`);
+                previewName.style.setProperty('font-family', nameFont);
+                previewName.style.setProperty('font-weight', themeToApply.descriptionBold ? 'bold' : 'normal');
+                previewName.style.setProperty('font-style', themeToApply.descriptionItalic ? 'italic' : 'normal');
+                previewName.style.setProperty('text-decoration', themeToApply.descriptionUnderline ? 'underline' : 'none');
                 console.log('Applied presentation color to display name:', nameColor, 'font:', nameFont);
             }
             // Note: preview-bio was removed, so we skip bio formatting
 
             // Apply presentation information formatting
             const presentationFields = preview.querySelectorAll('.info-value');
+            const presentationColor = themeToApply.presentationColor
+                || themeToApply.presentationTextColor
+                || themeToApply.textColor
+                || '#4b5563';
             presentationFields.forEach(field => {
-                field.style.setProperty('color', themeToApply.presentationColor || '#000000', 'important');
-                field.style.setProperty('font-family', themeToApply.presentationFont || 'Arial', 'important');
-                // Use 1.125rem to match public.html exactly - CSS handles font size, but we set it here too for consistency
-                field.style.setProperty('font-size', '1.125rem', 'important');
-                field.style.setProperty('font-weight', '600', 'important'); // Bold presentation information
-                field.style.setProperty('font-style', themeToApply.presentationItalic ? 'italic' : 'normal', 'important');
-                field.style.setProperty('text-decoration', themeToApply.presentationUnderline ? 'underline' : 'none', 'important');
+                field.style.removeProperty('color');
+                field.style.setProperty('color', presentationColor);
+                field.style.color = presentationColor;
+                const currentStyle = field.getAttribute('style') || '';
+                field.setAttribute('style', `${currentStyle}; color: ${presentationColor}; font-size: 1.125rem;`);
+                field.style.setProperty('font-family', themeToApply.presentationFont || 'Arial');
+                field.style.setProperty('font-weight', '600'); // Bold presentation information
+                field.style.setProperty('font-style', themeToApply.presentationItalic ? 'italic' : 'normal');
+                field.style.setProperty('text-decoration', themeToApply.presentationUnderline ? 'underline' : 'none');
             });
             console.log('Applied presentation formatting to', presentationFields.length, 'fields');
 
-            // Apply button styles
+            // Apply footer color (matches profile text color)
+            const footerText = preview.querySelector('.preview-footer-text');
+            const footerLink = preview.querySelector('.preview-footer-text a');
+            const profileColor = themeToApply.presentationColor
+                || themeToApply.profileTextColor
+                || themeToApply.textColor
+                || '#1f2937';
+            if (footerText) {
+                footerText.style.setProperty('color', profileColor);
+                footerText.style.color = profileColor;
+                if (footerLink) {
+                    footerLink.style.setProperty('color', profileColor);
+                    footerLink.style.color = profileColor;
+                }
+            }
+
             const buttons = preview.querySelectorAll('.preview-link');
-            console.log('Found buttons:', buttons.length);
-            buttons.forEach(button => {
-                button.className = `preview-link ${themeToApply.buttonStyle}`;
-                
-                // Find the text element inside the button
-                // Button structure can be:
-                // 1. With image: <a><div class="preview-link-content"><div class="preview-link-image">...</div><div class="preview-link-text">text</div></div></a>
-                // 2. Without image: <a>text</a> or <a><div class="preview-link-text">text</div></a>
-                let targetElement = null;
-                
-                // First, try to find .preview-link-text directly
-                targetElement = button.querySelector('.preview-link-text');
-                
-                // If not found, check if there's a .preview-link-content structure
-                if (!targetElement) {
-                    const linkContent = button.querySelector('.preview-link-content');
-                    if (linkContent && linkContent.children.length > 1) {
-                        // The text element is the second child (index 1) of .preview-link-content
-                        targetElement = linkContent.children[1];
-                    }
-                }
-                
-                // If still not found, check button.children[1] structure (for public.html compatibility)
-                if (!targetElement && button.children.length > 1) {
-                    const textContainer = button.children[1];
-                    if (textContainer && textContainer.children.length > 0) {
-                        // Check if it's the text element or if we need to go deeper
-                        if (textContainer.classList && textContainer.classList.contains('preview-link-text')) {
-                            targetElement = textContainer;
-                        } else if (textContainer.children.length > 0) {
-                            // Try the first child
-                            targetElement = textContainer.children[0];
-                        }
-                    }
-                }
-                
-                // Last resort: use button itself if it has direct text content
-                if (!targetElement) {
-                    targetElement = button;
-                }
-                
-                console.log('Button text element found:', targetElement, 'for button:', button);
-                
-                // Apply styles to the button container
-                // Apply background color for solid button style
-                if (themeToApply.buttonStyle === 'solid') {
-                    button.style.setProperty('background-color', themeToApply.buttonBgColor || '#3b82f6', 'important');
-                    button.style.setProperty('border', 'none', 'important');
-                } else if (themeToApply.buttonStyle === 'soft') {
-                    // For soft glass style, use semi-transparent background with blur effect
-                    button.style.setProperty('background', 'rgba(255, 255, 255, 0.1)', 'important');
-                    button.style.setProperty('backdrop-filter', 'blur(10px)', 'important');
-                    button.style.setProperty('border', '1px solid rgba(255, 255, 255, 0.2)', 'important');
-                    button.style.setProperty('box-shadow', '0 4px 15px rgba(0, 0, 0, 0.1)', 'important');
-                } else if (themeToApply.buttonStyle === 'outline' && themeToApply.buttonTextColor) {
-                    button.style.setProperty('background-color', 'transparent', 'important');
-                    button.style.setProperty('border', `2px solid ${themeToApply.buttonTextColor}`, 'important');
-                } else {
-                    button.style.setProperty('background-color', 'transparent', 'important');
-                    button.style.setProperty('border', '1px solid rgba(255, 255, 255, 0.2)', 'important');
-                }
-                
-                // Apply text styles to the text element
-                if (themeToApply.buttonTextColor) {
-                    targetElement.style.setProperty('color', themeToApply.buttonTextColor, 'important');
-                }
-                if (themeToApply.buttonTextFont) {
-                    targetElement.style.setProperty('font-family', themeToApply.buttonTextFont, 'important');
-                }
-                // Apply font size with minimum of 1.25rem (20px) for readability (matching public.html)
-                if (themeToApply.buttonFontSize) {
-                    const themeSizeValue = parseFloat(themeToApply.buttonFontSize);
-                    const minSizeValue = 20; // 1.25rem = 20px
-                    // If theme size is smaller than minimum, use minimum instead
-                    if (themeSizeValue < minSizeValue) {
-                        targetElement.style.setProperty('font-size', '1.25rem', 'important');
-                    } else {
-                        targetElement.style.setProperty('font-size', themeToApply.buttonFontSize, 'important');
-                    }
-                } else {
-                    // Default to 1.25rem if no buttonFontSize is set (matching public.html - slightly smaller than presentation info)
-                    targetElement.style.setProperty('font-size', '1.25rem', 'important');
-                }
-                // Verify the font size was applied
-                const computedButtonSize = window.getComputedStyle(targetElement).fontSize;
-                console.log('Button text font size:', computedButtonSize, 'expected: 20px (1.25rem)');
-                if (themeToApply.buttonFontWeight) {
-                    targetElement.style.setProperty('font-weight', themeToApply.buttonFontWeight, 'important');
-                } else {
-                    targetElement.style.setProperty('font-weight', themeToApply.buttonTextBold ? 'bold' : 'normal', 'important');
-                }
-                targetElement.style.setProperty('font-style', themeToApply.buttonTextItalic ? 'italic' : 'normal', 'important');
-                targetElement.style.setProperty('text-decoration', themeToApply.buttonTextUnderline ? 'underline' : 'none', 'important');
-                
-                // Apply font size to button element itself (for consistency)
-                // Ensure minimum of 1.25rem (20px) for readability (matching public.html - slightly smaller than presentation info)
-                if (themeToApply.buttonFontSize) {
-                    const themeSizeValue = parseFloat(themeToApply.buttonFontSize);
-                    const minSizeValue = 20; // 1.25rem = 20px
-                    // If theme size is smaller than minimum, use minimum instead
-                    if (themeSizeValue < minSizeValue) {
-                        button.style.setProperty('font-size', '1.25rem', 'important');
-                    } else {
-                        button.style.setProperty('font-size', themeToApply.buttonFontSize, 'important');
-                    }
-                } else {
-                    // Default to 1.25rem if no buttonFontSize is set (matching public.html - slightly smaller than presentation info)
-                    button.style.setProperty('font-size', '1.25rem', 'important');
-                }
-                
-                // Apply button border radius and padding
-                if (themeToApply.buttonBorderRadius) {
-                    const borderRadius = themeToApply.buttonBorderRadius === '50%' ? '12px' : themeToApply.buttonBorderRadius;
-                    button.style.setProperty('border-radius', borderRadius, 'important');
-                }
-                if (themeToApply.buttonPadding) {
-                    button.style.setProperty('padding', themeToApply.buttonPadding, 'important');
-                }
-                
-                console.log('Applied button style:', themeToApply.buttonStyle, 'text color:', themeToApply.buttonTextColor, 'bg color:', themeToApply.buttonBgColor, 'font:', themeToApply.buttonTextFont);
+            console.log(`🔍 applyTheme: Found ${buttons.length} buttons, calling applyButtonStyles with theme.buttonFontSize="${themeToApply.buttonFontSize}"`);
+            applyButtonStyles(buttons, themeToApply);
+            
+            // Log final computed font-sizes after applyButtonStyles
+            buttons.forEach((button, index) => {
+                const buttonText = button.textContent?.trim() || button.querySelector('.preview-link-text')?.textContent?.trim() || `button ${index}`;
+                const textElement = button.querySelector('.preview-link-text');
+                const computedTextSize = textElement ? window.getComputedStyle(textElement).fontSize : 'N/A';
+                const computedButtonSize = window.getComputedStyle(button).fontSize;
+                console.log(`🔍 applyTheme: Final computed sizes for "${buttonText.substring(0, 30)}..." - text element: ${computedTextSize}, button element: ${computedButtonSize}`);
             });
             
-            // Final safeguard: Re-apply font sizes after a short delay to ensure they stick
-            // This handles cases where other code might override the font sizes
+            // Show font size debug overlay on mobile (visible on page)
+            showFontSizeDebugOverlay();
+            
+            // Final safeguard: re-apply styles after a short delay in case other code overrides them
             setTimeout(() => {
-                // Re-apply presentation info font sizes
-                // Note: Profile name font size is handled by CSS (1.75rem !important), same as public.html
                 const presentationFields = preview.querySelectorAll('.info-value');
                 presentationFields.forEach(field => {
-                    field.style.setProperty('font-size', '1.125rem', 'important');
-                    field.style.setProperty('font-weight', '600', 'important');
+                    field.style.setProperty('font-size', '1.125rem');
+                    field.style.setProperty('font-weight', '600');
                 });
+                const latestButtons = preview.querySelectorAll('.preview-link');
+                console.log(`🔍 applyTheme setTimeout: Re-applying button styles to ${latestButtons.length} buttons`);
+                applyButtonStyles(latestButtons, themeToApply);
                 
-                // Re-apply button font sizes (keep at 1.25rem to match public.html)
-                const buttons = preview.querySelectorAll('.preview-link');
-                buttons.forEach(button => {
-                    button.style.setProperty('font-size', '1.25rem', 'important');
+                // Update debug overlay after setTimeout
+                showFontSizeDebugOverlay();
+                
+                // Log final computed font-sizes after setTimeout
+                latestButtons.forEach((button, index) => {
+                    const buttonText = button.textContent?.trim() || button.querySelector('.preview-link-text')?.textContent?.trim() || `button ${index}`;
                     const textElement = button.querySelector('.preview-link-text');
-                    if (textElement) {
-                        textElement.style.setProperty('font-size', '1.25rem', 'important');
-                    }
+                    const computedTextSize = textElement ? window.getComputedStyle(textElement).fontSize : 'N/A';
+                    const computedButtonSize = window.getComputedStyle(button).fontSize;
+                    console.log(`🔍 applyTheme setTimeout: Final computed sizes for "${buttonText.substring(0, 30)}..." - text element: ${computedTextSize}, button element: ${computedButtonSize}`);
                 });
             }, 100);
 
@@ -11987,6 +11923,117 @@
             }
             
             return '';
+        }
+
+        function normalizeButtonFontSize(fontSize) {
+            const defaultPx = 22; // 1.375rem
+            const defaultRem = `${defaultPx / 16}rem`;
+            if (!fontSize) {
+                console.log(`🔍 normalizeButtonFontSize: No fontSize provided, returning default: ${defaultRem}`);
+                return defaultRem;
+            }
+            const raw = fontSize.toString().trim().toLowerCase();
+            const numeric = parseFloat(raw);
+            if (isNaN(numeric)) {
+                console.log(`🔍 normalizeButtonFontSize: Invalid numeric value "${fontSize}", returning default: ${defaultRem}`);
+                return defaultRem;
+            }
+            let pxValue = numeric;
+            if (raw.includes('rem')) {
+                pxValue = numeric * 16;
+            } else if (!raw.includes('px')) {
+                pxValue = numeric;
+            }
+            const originalPx = pxValue;
+            pxValue = Math.max(pxValue, defaultPx);
+            let result;
+            if (raw.includes('px')) {
+                result = `${pxValue}px`;
+            } else {
+                result = `${pxValue / 16}rem`;
+            }
+            console.log(`🔍 normalizeButtonFontSize: Input="${fontSize}" (${originalPx}px) -> Output="${result}" (${pxValue}px, min=${defaultPx}px)`);
+            return result;
+        }
+
+        function findButtonTextElement(button) {
+            if (!button) return null;
+            let target = button.querySelector('.preview-link-text');
+            if (!target) {
+                const content = button.querySelector('.preview-link-content');
+                if (content && content.children.length > 1) {
+                    target = content.children[1];
+                }
+            }
+            if (!target && button.children.length > 1) {
+                const textContainer = button.children[1];
+                if (textContainer) {
+                    target = textContainer.querySelector('.preview-link-text') || textContainer.children[0] || null;
+                }
+            }
+            return target || null;
+        }
+
+        function applyButtonStyles(buttons, theme) {
+            if (!buttons || !buttons.length) return;
+            console.log(`🔍 applyButtonStyles: Called with ${buttons.length} buttons, theme.buttonFontSize="${theme.buttonFontSize}"`);
+            const fontSizeToApply = normalizeButtonFontSize(theme.buttonFontSize);
+            const buttonStyle = theme.buttonStyle || 'soft';
+            const buttonBackground = theme.buttonBackgroundColor || theme.buttonBgColor;
+            buttons.forEach((button, index) => {
+                const buttonText = button.textContent?.trim() || button.querySelector('.preview-link-text')?.textContent?.trim() || `button ${index}`;
+                console.log(`🔍 applyButtonStyles: Processing button "${buttonText.substring(0, 30)}...", applying fontSize="${fontSizeToApply}"`);
+                button.className = `preview-link ${buttonStyle}`;
+                const textElement = findButtonTextElement(button);
+                if (buttonStyle === 'solid') {
+                    const solidBg = buttonBackground || '#4f46e5';
+                    button.style.setProperty('background-color', solidBg, 'important');
+                    button.style.setProperty('border', 'none', 'important');
+                } else if (buttonStyle === 'soft') {
+                    button.style.setProperty('background', 'rgba(255, 255, 255, 0.1)', 'important');
+                    button.style.setProperty('backdrop-filter', 'blur(10px)', 'important');
+                    button.style.setProperty('border', '1px solid rgba(255, 255, 255, 0.2)', 'important');
+                    button.style.setProperty('box-shadow', '0 4px 15px rgba(0, 0, 0, 0.1)', 'important');
+                } else if (buttonStyle === 'outline') {
+                    const outlineColor = sanitizeCSSValue(theme.buttonTextColor, 'color')
+                        || sanitizeCSSValue(buttonBackground, 'color')
+                        || '#4f46e5';
+                        button.style.setProperty('background-color', 'transparent', 'important');
+                        button.style.setProperty('border', `2px solid ${outlineColor}`, 'important');
+                }
+                if (theme.buttonPadding) {
+                    button.style.setProperty('padding', theme.buttonPadding, 'important');
+                }
+                if (theme.buttonBorderRadius) {
+                    const borderRadius = theme.buttonBorderRadius === '50%' ? '12px' : theme.buttonBorderRadius;
+                    button.style.setProperty('border-radius', borderRadius, 'important');
+                }
+                // Don't set font-size on button element - only on text element
+                // The button element font-size can be overridden by CSS, so we only set it on the text element
+                
+                if (textElement) {
+                    textElement.style.setProperty('font-size', fontSizeToApply, 'important');
+                    textElement.style.fontSize = fontSizeToApply;
+                    
+                    // Log computed font-size for text element
+                    const computedTextSize = window.getComputedStyle(textElement).fontSize;
+                    console.log(`🔍 applyButtonStyles: Text element font-size set to "${fontSizeToApply}", computed="${computedTextSize}"`);
+                    
+                    // Also check button computed size for debugging
+                    const computedButtonSize = window.getComputedStyle(button).fontSize;
+                    console.log(`🔍 applyButtonStyles: Button element computed font-size="${computedButtonSize}" (text element="${computedTextSize}")`);
+                    
+                    if (theme.buttonFontWeight) {
+                        textElement.style.setProperty('font-weight', theme.buttonFontWeight);
+                    }
+                    if (theme.buttonTextColor) {
+                        textElement.style.setProperty('color', theme.buttonTextColor, 'important');
+                    }
+                } else {
+                    console.log(`🔍 applyButtonStyles: No textElement found for button "${buttonText.substring(0, 30)}..."`);
+                }
+            });
+            console.log(`🔍 applyButtonStyles: Completed processing ${buttons.length} buttons`);
         }
 
         function handleBackgroundImageUpload(event) {
@@ -12464,9 +12511,120 @@
             showMessage(`Theme "${themeName}" deleted successfully!`, 'success');
         }
 
+        // Visual debug overlay for font sizes (visible on mobile)
+        function showFontSizeDebugOverlay() {
+            // Check if debug overlay should be shown (via URL parameter or localStorage)
+            const urlParams = new URLSearchParams(window.location.search);
+            const showDebug = urlParams.get('debug') === 'fonts' || localStorage.getItem('showFontDebug') === 'true';
+            
+            if (!showDebug) return;
+            
+            const preview = document.querySelector('.phone-screen');
+            if (!preview) return;
+            
+            // Remove existing overlay if any
+            let overlay = document.getElementById('font-size-debug-overlay');
+            if (overlay) {
+                overlay.remove();
+            }
+            
+            // Create overlay
+            overlay = document.createElement('div');
+            overlay.id = 'font-size-debug-overlay';
+            overlay.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: rgba(0, 0, 0, 0.85);
+                color: #00ff00;
+                padding: 12px;
+                border-radius: 8px;
+                font-family: monospace;
+                font-size: 11px;
+                z-index: 99999;
+                max-width: 300px;
+                max-height: 80vh;
+                overflow-y: auto;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            `;
+            
+            let debugHTML = '<div style="font-weight: bold; margin-bottom: 8px; color: #ffff00;">📱 Font Sizes Debug</div>';
+            
+            // Check profile name
+            const profileName = preview.querySelector('#preview-name, .preview-name-section h4');
+            if (profileName) {
+                const computed = window.getComputedStyle(profileName).fontSize;
+                debugHTML += `<div>Profile Name: <span style="color: #00ffff;">${computed}</span></div>`;
+            }
+            
+            // Check presentation info
+            const presentationFields = preview.querySelectorAll('.info-value');
+            if (presentationFields.length > 0) {
+                const firstField = presentationFields[0];
+                const computed = window.getComputedStyle(firstField).fontSize;
+                debugHTML += `<div>Presentation: <span style="color: #00ffff;">${computed}</span></div>`;
+            }
+            
+            // Check buttons
+            const buttons = preview.querySelectorAll('.preview-link');
+            if (buttons.length > 0) {
+                const firstButton = buttons[0];
+                const textElement = firstButton.querySelector('.preview-link-text');
+                if (textElement) {
+                    const computedText = window.getComputedStyle(textElement).fontSize;
+                    const computedButton = window.getComputedStyle(firstButton).fontSize;
+                    debugHTML += `<div>Button Text: <span style="color: #00ffff;">${computedText}</span></div>`;
+                    debugHTML += `<div>Button Element: <span style="color: #ff8888;">${computedButton}</span></div>`;
+                }
+            }
+            
+            // Add viewport info
+            debugHTML += `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #444;">`;
+            debugHTML += `<div>Viewport: ${window.innerWidth}x${window.innerHeight}</div>`;
+            debugHTML += `<div>Device Pixel Ratio: ${window.devicePixelRatio || 1}</div>`;
+            debugHTML += `</div>`;
+            
+            // Add close button
+            debugHTML += `<div style="margin-top: 8px; text-align: center;">`;
+            debugHTML += `<button onclick="localStorage.setItem('showFontDebug', 'false'); document.getElementById('font-size-debug-overlay').remove();" style="background: #ff4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">Close</button>`;
+            debugHTML += `</div>`;
+            
+            overlay.innerHTML = debugHTML;
+            document.body.appendChild(overlay);
+        }
+        
+        // Enable debug overlay with ?debug=fonts in URL or tap 5 times on preview
+        let tapCount = 0;
+        let lastTapTime = 0;
+        document.addEventListener('click', function(e) {
+            const preview = document.querySelector('.phone-screen');
+            if (preview && preview.contains(e.target)) {
+                const now = Date.now();
+                if (now - lastTapTime < 500) {
+                    tapCount++;
+                } else {
+                    tapCount = 1;
+                }
+                lastTapTime = now;
+                
+                if (tapCount >= 5) {
+                    localStorage.setItem('showFontDebug', 'true');
+                    showFontSizeDebugOverlay();
+                    tapCount = 0;
+                }
+            }
+        });
+        
         // Initialize saved themes list when the page loads
         document.addEventListener('DOMContentLoaded', function() {
             // Load saved themes after a short delay to ensure the DOM is ready
             setTimeout(loadSavedThemes, 1000);
+            
+            // Check for debug parameter on load
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('debug') === 'fonts') {
+                localStorage.setItem('showFontDebug', 'true');
+                setTimeout(showFontSizeDebugOverlay, 2000);
+            }
         });
     
