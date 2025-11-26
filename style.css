@@ -417,12 +417,12 @@
         }
 
         .collection-item.active {
-            background: #3b82f6;
+            background: #1A2F5B;
             color: white;
         }
 
         .collection-item.active + .collection-item {
-            border-top-color: #2563eb;
+            border-top-color: #1A2F5B;
         }
 
         .collection-header {
