@@ -935,6 +935,9 @@
             console.log('Loading collection:', collection);
             currentList = collection;
             
+            // Always reload links from database to ensure we have the latest data
+            await loadCollectionLinks(collection);
+            
             // Set the links array from the collection
             links = collection.links || [];
             console.log('Loaded', links.length, 'links for collection:', collection.slug);
@@ -12565,13 +12568,16 @@
 
             // Update background color
             if (themeToApply.backgroundColor) {
-                document.getElementById('bg-color').value = themeToApply.backgroundColor;
-                document.getElementById('bg-color-text').value = themeToApply.backgroundColor;
+                const bgColorPicker = document.getElementById('bg-color');
+                const bgColorText = document.getElementById('bg-color-text');
+                if (bgColorPicker) bgColorPicker.value = themeToApply.backgroundColor;
+                if (bgColorText) bgColorText.value = themeToApply.backgroundColor;
             }
 
             // Update gradient
             if (themeToApply.gradientText) {
-                document.getElementById('gradient-text').value = themeToApply.gradientText;
+                const gradientTextInput = document.getElementById('gradient-text');
+                if (gradientTextInput) gradientTextInput.value = themeToApply.gradientText;
             }
 
             // Update description formatting
@@ -12622,7 +12628,8 @@
 
             // Update button style
             if (themeToApply.buttonStyle) {
-                document.getElementById('button-style').value = themeToApply.buttonStyle;
+                const buttonStyleSelect = document.getElementById('button-style');
+                if (buttonStyleSelect) buttonStyleSelect.value = themeToApply.buttonStyle;
             }
 
             // Update button colors and formatting
@@ -12641,25 +12648,33 @@
                 }
             }
             if (themeToApply.buttonTextFont) {
-                document.getElementById('button-text-font').value = themeToApply.buttonTextFont;
+                const buttonTextFontSelect = document.getElementById('button-text-font');
+                if (buttonTextFontSelect) buttonTextFontSelect.value = themeToApply.buttonTextFont;
             }
             if (themeToApply.buttonTextBold !== undefined) {
-                document.getElementById('button-text-bold').checked = themeToApply.buttonTextBold;
+                const buttonTextBoldCheckbox = document.getElementById('button-text-bold');
+                if (buttonTextBoldCheckbox) buttonTextBoldCheckbox.checked = themeToApply.buttonTextBold;
             }
             if (themeToApply.buttonTextItalic !== undefined) {
-                document.getElementById('button-text-italic').checked = themeToApply.buttonTextItalic;
+                const buttonTextItalicCheckbox = document.getElementById('button-text-italic');
+                if (buttonTextItalicCheckbox) buttonTextItalicCheckbox.checked = themeToApply.buttonTextItalic;
             }
             if (themeToApply.buttonTextUnderline !== undefined) {
-                document.getElementById('button-text-underline').checked = themeToApply.buttonTextUnderline;
+                const buttonTextUnderlineCheckbox = document.getElementById('button-text-underline');
+                if (buttonTextUnderlineCheckbox) buttonTextUnderlineCheckbox.checked = themeToApply.buttonTextUnderline;
             }
             if (themeToApply.buttonBgColor) {
-                document.getElementById('button-bg-color').value = themeToApply.buttonBgColor;
+                const buttonBgColorPicker = document.getElementById('button-bg-color');
+                if (buttonBgColorPicker) buttonBgColorPicker.value = themeToApply.buttonBgColor;
             }
 
             // Update gradient border toggle
             if (themeToApply.gradientBorderEnabled !== undefined) {
-                document.getElementById('gradient-border-toggle').checked = themeToApply.gradientBorderEnabled;
-                updateGradientBorder();
+                const gradientBorderToggle = document.getElementById('gradient-border-toggle');
+                if (gradientBorderToggle) {
+                    gradientBorderToggle.checked = themeToApply.gradientBorderEnabled;
+                    updateGradientBorder();
+                }
             }
 
             // Update border type
@@ -12694,19 +12709,27 @@
 
             // Update border gradient
             if (themeToApply.borderGradientText) {
-                document.getElementById('border-gradient-input').value = themeToApply.borderGradientText;
+                const borderGradientInput = document.getElementById('border-gradient-input');
+                if (borderGradientInput) borderGradientInput.value = themeToApply.borderGradientText;
             }
 
             // Update image positioning if there's a background image
             if (themeToApply.backgroundImage) {
                 showImagePreview(themeToApply.backgroundImage);
                 if (themeToApply.imagePosition) {
-                    document.getElementById('position-x').value = themeToApply.imagePosition.x;
-                    document.getElementById('position-y').value = themeToApply.imagePosition.y;
-                    document.getElementById('position-scale').value = themeToApply.imagePosition.scale;
-                    document.getElementById('position-x-value').textContent = themeToApply.imagePosition.x;
-                    document.getElementById('position-y-value').textContent = themeToApply.imagePosition.y;
-                    document.getElementById('position-scale-value').textContent = themeToApply.imagePosition.scale;
+                    const positionX = document.getElementById('position-x');
+                    const positionY = document.getElementById('position-y');
+                    const positionScale = document.getElementById('position-scale');
+                    const positionXValue = document.getElementById('position-x-value');
+                    const positionYValue = document.getElementById('position-y-value');
+                    const positionScaleValue = document.getElementById('position-scale-value');
+                    
+                    if (positionX) positionX.value = themeToApply.imagePosition.x;
+                    if (positionY) positionY.value = themeToApply.imagePosition.y;
+                    if (positionScale) positionScale.value = themeToApply.imagePosition.scale;
+                    if (positionXValue) positionXValue.textContent = themeToApply.imagePosition.x;
+                    if (positionYValue) positionYValue.textContent = themeToApply.imagePosition.y;
+                    if (positionScaleValue) positionScaleValue.textContent = themeToApply.imagePosition.scale;
                 }
             }
         }
