@@ -477,8 +477,8 @@
                                         <div class="option-group" id="button-bg-color-group" style="display: none;">
                                             <label>Button Background Color</label>
                                             <div class="color-options">
-                                                <input type="color" id="button-bg-color" value="#3b82f6" class="color-picker">
-                                                <input type="text" id="button-bg-color-text" value="#3b82f6" class="color-input">
+                                                <input type="color" id="button-bg-color" value="#ffffff" class="color-picker">
+                                                <input type="text" id="button-bg-color-text" value="#ffffff" class="color-input">
                                             </div>
                                             <div class="color-presets-container">
                                                 <div class="color-preset active" data-color="#ffffff" style="background-color: #ffffff; border: 1px solid #e5e7eb;" title="White"></div>
@@ -636,7 +636,7 @@
                                         <div class="option-group">
                                             <h4>New Theme</h4>
                                             <div class="input-group">
-                                                <input type="text" id="theme-name" class="form-input" maxlength="100">
+                                                <input type="text" id="theme-name" class="form-input" maxlength="100" placeholder="Enter theme name">
                                                 <button onclick="saveCurrentTheme()" class="btn btn-primary btn-save-compact">Save Theme</button>
                                             </div>
                                         </div>
@@ -687,13 +687,11 @@
                                     </div>
                                     
                                     <div class="option-group">
-                                        <label>Border</label>
-                                        <div style="display: flex; flex-direction: column; gap: 12px;">
-                                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                                <input type="checkbox" id="qr-border-enabled" onchange="generateQRCode()" style="width: 16px; height: 16px; cursor: pointer;">
-                                                <span>Add border</span>
-                                            </label>
-                                            
+                                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                            <input type="checkbox" id="qr-border-enabled" onchange="generateQRCode()" style="width: 16px; height: 16px; cursor: pointer;">
+                                            <span>Border</span>
+                                        </label>
+                                        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 12px;">
                                             <div id="qr-border-options" style="display: none; padding-left: 24px; border-left: 3px solid #e5e7eb;">
                                                 <div style="display: flex; flex-direction: column; gap: 12px;">
                                                     <div>

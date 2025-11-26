@@ -8723,6 +8723,19 @@
                 buttonBgGroup.style.display = style === 'solid' ? 'block' : 'none';
             }
             
+            // Set default white color when switching to solid style if no color is set
+            if (style === 'solid') {
+                const buttonBgColorPicker = document.getElementById('button-bg-color');
+                const buttonBgColorText = document.getElementById('button-bg-color-text');
+                if (buttonBgColorPicker && (!buttonBgColorPicker.value || buttonBgColorPicker.value === '#3b82f6' || buttonBgColorPicker.value === '#4f46e5')) {
+                    buttonBgColorPicker.value = '#ffffff';
+                    if (buttonBgColorText) {
+                        buttonBgColorText.value = '#ffffff';
+                    }
+                    updateThemeProperty('buttonBackgroundColor', '#ffffff');
+                }
+            }
+            
             applyTheme();
             updatePreview(); // Update preview with new button styles
         }
@@ -12026,7 +12039,7 @@
                 button.className = `preview-link ${buttonStyle}`;
                 const textElement = findButtonTextElement(button);
                 if (buttonStyle === 'solid') {
-                    const solidBg = buttonBackground || '#4f46e5';
+                    const solidBg = buttonBackground || '#ffffff';
                     button.style.setProperty('background-color', solidBg, 'important');
                     button.style.setProperty('border', 'none', 'important');
                 } else if (buttonStyle === 'soft') {
