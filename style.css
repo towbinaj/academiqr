@@ -1811,7 +1811,7 @@
         }
 
         .preview-name-section h4 {
-            font-size: 1.75rem; /* Match public.html */
+            font-size: 1.59rem; /* Scaled for iPhone aspect ratio (1.75rem * 0.91) */
             font-weight: 600;
             color: #1A2F5B;
             margin: 0 0 12px 0;
@@ -1829,21 +1829,21 @@
 
         .preview-social {
             display: flex;
-            gap: 6px;
+            gap: 5.5px; /* Scaled for iPhone aspect ratio (6px * 0.91) */
             margin: 0;
             justify-content: flex-start;
             flex-wrap: wrap;
         }
 
         .social-icon {
-            width: 28px;
-            height: 28px;
+            width: 25.5px; /* Scaled for iPhone aspect ratio (28px * 0.91) */
+            height: 25.5px; /* Scaled for iPhone aspect ratio (28px * 0.91) */
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             text-decoration: none;
-            font-size: 14px;
+            font-size: 12.7px; /* Scaled for iPhone aspect ratio (14px * 0.91) */
             transition: transform 0.2s;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
@@ -1918,7 +1918,7 @@
         .info-value {
             /* Color will be set by JavaScript from theme - no default to avoid conflicts */
             font-weight: 600; /* Bold presentation information */
-            font-size: 1.125rem; /* 18px - same as public.html */
+            font-size: 1.02rem; /* Scaled for iPhone aspect ratio (1.125rem * 0.91) */
         }
 
         .profile-info-section {
@@ -2151,7 +2151,7 @@
             border-radius: 8px;
             text-decoration: none;
             color: #1e293b;
-            font-size: 1.25rem; /* Slightly smaller than presentation info - matches public.html */
+            font-size: 1.14rem; /* Scaled for iPhone aspect ratio (1.25rem * 0.91) */
             transition: all 0.2s;
             min-height: 64px;
             display: flex;
@@ -2174,7 +2174,7 @@
         }
 
         .preview-footer-text {
-            font-size: 0.625rem; /* 10px - very small font */
+            font-size: 0.57rem; /* Scaled for iPhone aspect ratio (0.625rem * 0.91) */
             /* Color will be set by JavaScript from theme - matches profile text color */
             margin: 0;
             line-height: 1.2;

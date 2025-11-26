@@ -472,7 +472,7 @@
                 if (previewNameElement) {
                     previewNameElement.textContent = displayName;
                     // Use fixed 1.75rem to match public.html - CSS handles font size
-                    previewNameElement.style.setProperty('font-size', '1.75rem');
+                    previewNameElement.style.setProperty('font-size', '1.59rem');
                 }
                 
                 // Reapply theme to ensure display name color is correct
@@ -717,8 +717,8 @@
             if (previewNameElement) {
                 previewNameElement.textContent = displayName;
                 // Apply dynamic font size based on text length
-                // Use fixed 1.75rem to match public.html - CSS handles font size
-                previewNameElement.style.setProperty('font-size', '1.75rem');
+                // Use fixed 1.59rem (scaled for iPhone aspect ratio) - CSS handles font size
+                previewNameElement.style.setProperty('font-size', '1.59rem');
             }
             // Note: preview-bio was removed, so we skip it
             
@@ -1912,11 +1912,11 @@
                 linkEl.target = '_blank';
                 linkEl.rel = 'noopener noreferrer';
                 
-                // Set font size immediately on the link element (matching public.html)
-                // Start with 1.25rem like public.html, then applyButtonStyles will override to 1.375rem minimum
-                linkEl.style.setProperty('font-size', '1.25rem', 'important');
-                linkEl.style.fontSize = '1.25rem';
-                console.log(`🔍 updatePreview: Set initial font-size to 1.25rem for link "${link.title}"`);
+                // Set font size immediately on the link element (scaled for iPhone aspect ratio)
+                // Start with 1.14rem (scaled from 1.25rem * 0.91), then applyButtonStyles will override if needed
+                linkEl.style.setProperty('font-size', '1.14rem', 'important');
+                linkEl.style.fontSize = '1.14rem';
+                console.log(`🔍 updatePreview: Set initial font-size to 1.14rem for link "${link.title}"`);
                 
                 const imageWrapper = document.createElement('div');
                 imageWrapper.className = 'preview-link-image-wrapper';
@@ -3827,6 +3827,8 @@
                 if (element.id === 'preview-name') return;
                 // Skip social icons and their children - they keep fixed sizing to match public preview
                 if (element.classList.contains('social-icon') || element.closest('.preview-social')) return;
+                // Skip footer text - it has its own font size setting (0.57rem scaled for iPhone)
+                if (element.classList.contains('preview-footer-text') || element.closest('.preview-footer')) return;
                 if (theme.profileTextColor) element.style.color = theme.profileTextColor;
                 if (theme.presentationTextColor) element.style.color = theme.presentationTextColor;
                 if (theme.textFontSize) element.style.fontSize = theme.textFontSize;
@@ -3845,7 +3847,7 @@
                 previewName.style.setProperty('color', nameColor);
                 previewName.style.color = nameColor;
                 const existingStyle = previewName.getAttribute('style') || '';
-                previewName.setAttribute('style', `${existingStyle}; color: ${nameColor}; font-size: 1.75rem;`);
+                previewName.setAttribute('style', `${existingStyle}; color: ${nameColor}; font-size: 1.59rem;`);
                 previewName.style.setProperty('font-family', nameFont);
                 previewName.style.setProperty('font-weight', theme.textFontWeight || '600');
             }
@@ -3861,10 +3863,10 @@
                 field.style.setProperty('color', previewPresentationColor);
                 field.style.color = previewPresentationColor;
                 const existingStyle = field.getAttribute('style') || '';
-                field.setAttribute('style', `${existingStyle}; color: ${previewPresentationColor}; font-size: 1.125rem;`);
+                field.setAttribute('style', `${existingStyle}; color: ${previewPresentationColor}; font-size: 1.02rem;`);
             });
             
-            // Apply footer color (matches profile text color)
+            // Apply footer color (matches profile text color) and ensure font-size is correct
             const footerText = preview.querySelector('.preview-footer-text');
             const footerLink = preview.querySelector('.preview-footer-text a');
             const profileColor = theme.presentationColor
@@ -3874,6 +3876,8 @@
             if (footerText) {
                 footerText.style.setProperty('color', profileColor);
                 footerText.style.color = profileColor;
+                // Ensure footer font-size is set correctly (scaled for iPhone aspect ratio)
+                footerText.style.setProperty('font-size', '0.57rem');
                 if (footerLink) {
                     footerLink.style.setProperty('color', profileColor);
                     footerLink.style.color = profileColor;
@@ -5561,7 +5565,7 @@
                     previewNameElement.textContent = displayName || 'Your Name';
                     // Apply dynamic font size based on text length
                     // Use fixed 1.75rem to match public.html - CSS handles font size
-                    previewNameElement.style.setProperty('font-size', '1.75rem');
+                    previewNameElement.style.setProperty('font-size', '1.59rem');
                 }
                 
                 // Reapply theme to ensure display name color is correct
@@ -8347,7 +8351,7 @@
                             previewNameElement.textContent = this.value || 'Your Name';
                             // Apply dynamic font size based on text length
                             // Use fixed 1.75rem to match public.html - CSS handles font size
-                            previewNameElement.style.setProperty('font-size', '1.75rem');
+                            previewNameElement.style.setProperty('font-size', '1.59rem');
                         }
                     });
                 }
@@ -11673,7 +11677,7 @@
                 previewName.style.setProperty('color', nameColor);
                 previewName.style.color = nameColor;
                 const existingStyle = previewName.getAttribute('style') || '';
-                previewName.setAttribute('style', `${existingStyle}; color: ${nameColor}; font-size: 1.75rem;`);
+                previewName.setAttribute('style', `${existingStyle}; color: ${nameColor}; font-size: 1.59rem;`);
                 previewName.style.setProperty('font-family', nameFont);
                 previewName.style.setProperty('font-weight', themeToApply.descriptionBold ? 'bold' : 'normal');
                 previewName.style.setProperty('font-style', themeToApply.descriptionItalic ? 'italic' : 'normal');
@@ -11693,7 +11697,7 @@
                 field.style.setProperty('color', presentationColor);
                 field.style.color = presentationColor;
                 const currentStyle = field.getAttribute('style') || '';
-                field.setAttribute('style', `${currentStyle}; color: ${presentationColor}; font-size: 1.125rem;`);
+                field.setAttribute('style', `${currentStyle}; color: ${presentationColor}; font-size: 1.02rem;`);
                 field.style.setProperty('font-family', themeToApply.presentationFont || 'Arial');
                 field.style.setProperty('font-weight', '600'); // Bold presentation information
                 field.style.setProperty('font-style', themeToApply.presentationItalic ? 'italic' : 'normal');
@@ -11701,7 +11705,7 @@
             });
             console.log('Applied presentation formatting to', presentationFields.length, 'fields');
 
-            // Apply footer color (matches profile text color)
+            // Apply footer color (matches profile text color) and ensure font-size is correct
             const footerText = preview.querySelector('.preview-footer-text');
             const footerLink = preview.querySelector('.preview-footer-text a');
             const profileColor = themeToApply.presentationColor
@@ -11711,6 +11715,8 @@
             if (footerText) {
                 footerText.style.setProperty('color', profileColor);
                 footerText.style.color = profileColor;
+                // Ensure footer font-size is set correctly (scaled for iPhone aspect ratio)
+                footerText.style.setProperty('font-size', '0.57rem');
                 if (footerLink) {
                     footerLink.style.setProperty('color', profileColor);
                     footerLink.style.color = profileColor;
@@ -11737,7 +11743,7 @@
             setTimeout(() => {
                 const presentationFields = preview.querySelectorAll('.info-value');
                 presentationFields.forEach(field => {
-                    field.style.setProperty('font-size', '1.125rem');
+                    field.style.setProperty('font-size', '1.02rem');
                     field.style.setProperty('font-weight', '600');
                 });
                 const latestButtons = preview.querySelectorAll('.preview-link');
@@ -11868,7 +11874,7 @@
             } catch (error) {
                 console.error('Error applying dynamic display name size:', error);
                 // Fallback to default size if there's an error
-                nameElement.style.setProperty('font-size', '1.75rem', 'important');
+                nameElement.style.setProperty('font-size', '1.59rem', 'important');
             }
         }
 
@@ -11926,8 +11932,8 @@
         }
 
         function normalizeButtonFontSize(fontSize) {
-            const defaultPx = 22; // 1.375rem
-            const defaultRem = `${defaultPx / 16}rem`;
+            const defaultPx = 20; // Scaled for iPhone aspect ratio (22px * 0.91 ≈ 20px, or 1.375rem * 0.91 = 1.25rem)
+            const defaultRem = `${defaultPx / 16}rem`; // 1.25rem
             if (!fontSize) {
                 console.log(`🔍 normalizeButtonFontSize: No fontSize provided, returning default: ${defaultRem}`);
                 return defaultRem;
@@ -11945,6 +11951,8 @@
                 pxValue = numeric;
             }
             const originalPx = pxValue;
+            // Scale the font size by 0.91 for iPhone aspect ratio
+            pxValue = pxValue * 0.91;
             pxValue = Math.max(pxValue, defaultPx);
             let result;
             if (raw.includes('px')) {
