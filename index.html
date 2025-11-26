@@ -903,11 +903,10 @@
     <div id="mediaModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>🖼️ Media Library</h3>
+                <button onclick="closeMediaLibrary()" class="media-modal-close" aria-label="Close">×</button>
                 <div class="modal-actions">
-                    <button onclick="uploadImages()" class="btn btn-primary btn-sm">📤 Upload</button>
-                    <button onclick="clearAllMedia()" class="btn btn-primary btn-sm">🗑️ Clear All</button>
-                    <button onclick="closeMediaLibrary()" class="btn btn-primary btn-sm">✕ Close</button>
+                    <button onclick="uploadImages()" class="btn btn-primary btn-sm">Upload</button>
+                    <button onclick="clearAllMedia()" class="btn btn-primary btn-sm">Clear All</button>
                 </div>
             </div>
             <div class="modal-body">
