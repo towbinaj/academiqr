@@ -7915,7 +7915,6 @@
                 } else {
                     // Show normal buttons when not selecting for anything
                     buttons = `
-                        <button class="edit-btn" onclick="editImage('${file.id}')" style="position: absolute; top: 4px; left: 4px; width: 24px; height: 24px; border-radius: 50%; border: none; background: #3b82f6; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px;">✏️</button>
                         <button class="delete-btn" onclick="deleteImage('${file.id}')" style="position: absolute; top: 4px; right: 4px; width: 24px; height: 24px; border-radius: 50%; border: none; background: #ef4444; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px;">✕</button>
                     `;
                 }
