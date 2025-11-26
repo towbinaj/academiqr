@@ -471,8 +471,8 @@
                 if (displayNameElement) displayNameElement.value = displayName;
                 if (previewNameElement) {
                     previewNameElement.textContent = displayName;
-                    // Apply dynamic font size based on text length
-                    applyDynamicDisplayNameSize(previewNameElement);
+                    // Use fixed 1.75rem to match public.html - CSS handles font size
+                    previewNameElement.style.setProperty('font-size', '1.75rem', 'important');
                 }
                 
                 // Reapply theme to ensure display name color is correct
@@ -717,7 +717,8 @@
             if (previewNameElement) {
                 previewNameElement.textContent = displayName;
                 // Apply dynamic font size based on text length
-                applyDynamicDisplayNameSize(previewNameElement);
+                // Use fixed 1.75rem to match public.html - CSS handles font size
+                previewNameElement.style.setProperty('font-size', '1.75rem', 'important');
             }
             // Note: preview-bio was removed, so we skip it
             
@@ -1915,67 +1916,41 @@
                 linkEl.style.setProperty('font-size', '1.25rem', 'important'); // Match public.html - slightly smaller than presentation info
                 linkEl.style.fontSize = '1.25rem';
                 
-                // Create link structure matching public.html exactly
+                const imageWrapper = document.createElement('div');
+                imageWrapper.className = 'preview-link-image-wrapper';
+                
+                const imageDiv = document.createElement('div');
+                imageDiv.className = 'preview-link-image';
+                
                 if (link.image) {
-                    // Create the image div (matching public.html structure)
-                    const imageDiv = document.createElement('div');
-                    imageDiv.style.cssText = 'width: 48px; height: 48px; border-radius: 8px; margin-right: 12px; overflow: hidden; background: #e5e7eb; display: flex; align-items: center; justify-content: center;';
-                    
                     const img = document.createElement('img');
                     img.src = link.image;
                     img.alt = 'Link Icon';
                     img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
                     imageDiv.appendChild(img);
-                    
-                    // Create text container
-                    const textContainer = document.createElement('div');
-                    textContainer.style.cssText = 'flex: 1; min-width: 0;';
-                    
-                    // Create text element with proper styling
-                    const textElement = document.createElement('div');
-                    textElement.className = 'preview-link-text';
-                    textElement.style.cssText = 'font-weight: 600; font-size: 1.25rem !important;';
-                    // Use innerHTML to preserve HTML formatting (bold, italic, underline)
-                    // Sanitize HTML to prevent XSS attacks
-                    textElement.innerHTML = sanitizeHTML(link.title || '');
-                    
-                    textContainer.appendChild(textElement);
-                    linkEl.appendChild(imageDiv);
-                    linkEl.appendChild(textContainer);
-                    
-                    // Ensure font size is set (already set in cssText above, but double-check)
-                    textElement.style.setProperty('font-size', '1.25rem', 'important');
-                    textElement.style.fontSize = '1.25rem';
                 } else {
-                    // No image - create icon div and text container
-                    const imageDiv = document.createElement('div');
-                    imageDiv.style.cssText = 'width: 48px; height: 48px; border-radius: 8px; margin-right: 12px; overflow: hidden; background: #e5e7eb; display: flex; align-items: center; justify-content: center;';
-                    
                     const icon = document.createElement('i');
                     icon.className = 'fas fa-link';
                     icon.style.color = '#6b7280';
                     imageDiv.appendChild(icon);
-                    
-                    // Create text container
-                    const textContainer = document.createElement('div');
-                    textContainer.style.cssText = 'flex: 1; min-width: 0;';
-                    
-                    // Create text element with proper styling
-                    const textElement = document.createElement('div');
-                    textElement.className = 'preview-link-text';
-                    textElement.style.cssText = 'font-weight: 600; font-size: 1.25rem !important;';
-                    // Use innerHTML to preserve HTML formatting
-                    // Sanitize HTML to prevent XSS attacks
-                    textElement.innerHTML = sanitizeHTML(link.title || '');
-                    
-                    textContainer.appendChild(textElement);
-                    linkEl.appendChild(imageDiv);
-                    linkEl.appendChild(textContainer);
-                    
-                    // Ensure font size is set (already set in cssText above, but double-check)
-                    textElement.style.setProperty('font-size', '1.25rem', 'important');
-                    textElement.style.fontSize = '1.25rem';
                 }
+                
+                imageWrapper.appendChild(imageDiv);
+                linkEl.appendChild(imageWrapper);
+                
+                const textContainer = document.createElement('div');
+                textContainer.style.cssText = 'flex: 1; min-width: 0;';
+                
+                const textElement = document.createElement('div');
+                textElement.className = 'preview-link-text';
+                textElement.style.cssText = 'font-weight: 600; font-size: 1.25rem !important;';
+                textElement.innerHTML = sanitizeHTML(link.title || '');
+                
+                textContainer.appendChild(textElement);
+                linkEl.appendChild(textContainer);
+                
+                textElement.style.setProperty('font-size', '1.25rem', 'important');
+                textElement.style.fontSize = '1.25rem';
                 console.log(`Created link element for link ${index}:`, linkEl);
                 
                 // Note: Individual link formatting (font, bold, italic, underline) is now handled
@@ -3842,15 +3817,31 @@
             if (theme.borderColor) preview.style.borderColor = theme.borderColor;
             
             // Apply profile and presentation text colors
-            // Exclude .info-value elements as they have their own font size (18px)
+            // Exclude .info-value elements and profile name - they have their own font size settings
             const textElements = preview.querySelectorAll('h1, h2, h3, h4, h5, h6, p, span, div, [class*="text"], [class*="name"], [class*="title"]');
             textElements.forEach(element => {
-                // Skip .info-value elements - they have their own font size setting
+                // Skip .info-value elements - they have their own font size setting (1.125rem / 18px)
                 if (element.classList.contains('info-value')) return;
+                // Skip profile name - it has its own font size setting (1.75rem / 28px to match public.html)
+                if (element.id === 'preview-name') return;
+                // Skip social icons and their children - they keep fixed sizing to match public preview
+                if (element.classList.contains('social-icon') || element.closest('.preview-social')) return;
                 if (theme.profileTextColor) element.style.color = theme.profileTextColor;
                 if (theme.presentationTextColor) element.style.color = theme.presentationTextColor;
                 if (theme.textFontSize) element.style.fontSize = theme.textFontSize;
                 if (theme.textFontWeight) element.style.fontWeight = theme.textFontWeight;
+            });
+            
+            // Set profile name font size to match public.html (1.75rem)
+            const previewName = document.getElementById('preview-name');
+            if (previewName) {
+                previewName.style.setProperty('font-size', '1.75rem', 'important');
+            }
+            
+            // Set presentation info font size to match public.html (1.125rem)
+            const presentationFields = preview.querySelectorAll('.info-value');
+            presentationFields.forEach(field => {
+                field.style.setProperty('font-size', '1.125rem', 'important');
             });
             
             // Apply button styles only to individual preview link buttons
@@ -5548,7 +5539,8 @@
                 if (previewNameElement) {
                     previewNameElement.textContent = displayName || 'Your Name';
                     // Apply dynamic font size based on text length
-                    applyDynamicDisplayNameSize(previewNameElement);
+                    // Use fixed 1.75rem to match public.html - CSS handles font size
+                    previewNameElement.style.setProperty('font-size', '1.75rem', 'important');
                 }
                 
                 // Reapply theme to ensure display name color is correct
@@ -8333,7 +8325,8 @@
                         if (previewNameElement) {
                             previewNameElement.textContent = this.value || 'Your Name';
                             // Apply dynamic font size based on text length
-                            applyDynamicDisplayNameSize(previewNameElement);
+                            // Use fixed 1.75rem to match public.html - CSS handles font size
+                            previewNameElement.style.setProperty('font-size', '1.75rem', 'important');
                         }
                     });
                 }
@@ -11657,21 +11650,8 @@
                 const nameFont = themeToApply.presentationFont || themeToApply.descriptionFont || 'Arial';
                 previewName.style.setProperty('font-family', nameFont, 'important');
                 
-                // Apply dynamic font size based on text length
-                // Use 1.75rem as default to match public.html, don't use textFontSize from theme
-                if (typeof applyDynamicDisplayNameSize === 'function') {
-                    applyDynamicDisplayNameSize(previewName, themeToApply);
-                } else {
-                    // Fallback to direct calculation if function not available
-                    const nameText = previewName.textContent || '';
-                    const maxFontSize = '1.75rem'; // Match public.html
-                    const minFontSize = '1.25rem'; // Minimum for readability
-                    const dynamicFontSize = calculateDisplayNameFontSize(nameText, maxFontSize, minFontSize);
-                    previewName.style.setProperty('font-size', dynamicFontSize, 'important');
-                }
-                const nameText = previewName.textContent || '';
-                const computedNameSize = window.getComputedStyle(previewName).fontSize;
-                console.log('Applied dynamic font size to display name for text length:', nameText.length, 'max size: 1.75rem', 'computed:', computedNameSize);
+                // Use fixed 1.75rem to match public.html exactly
+                previewName.style.setProperty('font-size', '1.75rem', 'important');
                 
                 previewName.style.setProperty('font-weight', themeToApply.descriptionBold ? 'bold' : 'normal', 'important');
                 previewName.style.setProperty('font-style', themeToApply.descriptionItalic ? 'italic' : 'normal', 'important');
@@ -11687,8 +11667,8 @@
             presentationFields.forEach(field => {
                 field.style.setProperty('color', themeToApply.presentationColor || '#000000', 'important');
                 field.style.setProperty('font-family', themeToApply.presentationFont || 'Arial', 'important');
-                // Use 18px for presentation info in preview - ignore any theme font size
-                field.style.setProperty('font-size', '18px', 'important');
+                // Use 1.125rem to match public.html exactly - CSS handles font size, but we set it here too for consistency
+                field.style.setProperty('font-size', '1.125rem', 'important');
                 field.style.setProperty('font-weight', '600', 'important'); // Bold presentation information
                 field.style.setProperty('font-style', themeToApply.presentationItalic ? 'italic' : 'normal', 'important');
                 field.style.setProperty('text-decoration', themeToApply.presentationUnderline ? 'underline' : 'none', 'important');
@@ -11822,15 +11802,11 @@
             // Final safeguard: Re-apply font sizes after a short delay to ensure they stick
             // This handles cases where other code might override the font sizes
             setTimeout(() => {
-                // Re-apply display name font size
-                if (previewName && typeof applyDynamicDisplayNameSize === 'function') {
-                    applyDynamicDisplayNameSize(previewName, themeToApply);
-                }
-                
                 // Re-apply presentation info font sizes
+                // Note: Profile name font size is handled by CSS (1.75rem !important), same as public.html
                 const presentationFields = preview.querySelectorAll('.info-value');
                 presentationFields.forEach(field => {
-                    field.style.setProperty('font-size', '18px', 'important');
+                    field.style.setProperty('font-size', '1.125rem', 'important');
                     field.style.setProperty('font-weight', '600', 'important');
                 });
                 

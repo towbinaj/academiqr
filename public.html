@@ -231,7 +231,7 @@
         .info-value {
             /* Color will be set by JavaScript from theme - no default to avoid conflicts */
             font-weight: 600; /* Bold presentation information */
-            font-size: 1.375rem !important; /* Same size as link descriptions */
+            font-size: 1.125rem !important; /* 18px - same as live preview */
             display: block;
             word-break: break-word;
             overflow-wrap: break-word;
@@ -297,6 +297,28 @@
         
         .preview-link-text {
             font-size: inherit; /* Inherit from parent .preview-link */
+        }
+
+        .preview-link-image {
+            width: 48px;
+            height: 48px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #e5e7eb;
+            border: 1px solid #d1d5db;
+        }
+
+        .preview-link-image-wrapper {
+            padding: 6px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
         }
 
         .preview-link:hover {
@@ -1255,8 +1277,11 @@
                 linkElement.style.fontSize = '1.25rem';
 
                 // Create the link structure
+                const imageWrapper = document.createElement('div');
+                imageWrapper.className = 'preview-link-image-wrapper';
+                
                 const imageDiv = document.createElement('div');
-                imageDiv.style.cssText = 'width: 48px; height: 48px; border-radius: 8px; margin-right: 12px; overflow: hidden; background: #e5e7eb; display: flex; align-items: center; justify-content: center;';
+                imageDiv.className = 'preview-link-image';
                 
                 if (link.image) {
                     // Sanitize and validate image URL to prevent XSS
@@ -1281,6 +1306,9 @@
                     imageDiv.appendChild(icon);
                 }
                 
+                imageWrapper.appendChild(imageDiv);
+                linkElement.appendChild(imageWrapper);
+                
                 const textContainer = document.createElement('div');
                 textContainer.style.cssText = 'flex: 1;';
                 
@@ -1291,7 +1319,6 @@
                 textElement.innerHTML = sanitizeHTML(link.title || '');
                 
                 textContainer.appendChild(textElement);
-                linkElement.appendChild(imageDiv);
                 linkElement.appendChild(textContainer);
                 
                 // Set font size on the text element

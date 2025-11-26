@@ -1886,7 +1886,7 @@
         .info-value {
             /* Color will be set by JavaScript from theme - no default to avoid conflicts */
             font-weight: 600; /* Bold presentation information */
-            font-size: 18px !important; /* Same as public.html */
+            font-size: 1.125rem !important; /* 18px - same as public.html */
         }
 
         .profile-info-section {
@@ -3442,6 +3442,18 @@
             justify-content: center;
             overflow: hidden;
             border-radius: 8px;
+            background: #e5e7eb;
+            border: 1px solid #d1d5db;
+            box-sizing: border-box;
+        }
+
+        .preview-link-image-wrapper {
+            padding: 6px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
         }
 
         .preview-link-image img {
