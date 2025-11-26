@@ -639,30 +639,25 @@
         }
 
         /* Profile Modal Styling */
-        #profileModal .modal-content {
+        #profileModal .modal-body {
             width: 900px !important;
             max-width: 900px !important;
             min-width: 600px;
             max-height: 80vh;
             border-radius: 12px !important;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
+            overflow-y: auto;
+            position: relative;
+            background: white;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            padding: 20px;
         }
         
         @media (max-width: 950px) {
-            #profileModal .modal-content {
+            #profileModal .modal-body {
                 width: 90vw !important;
                 max-width: 90vw !important;
                 min-width: auto;
             }
-        }
-        
-        #profileModal .modal-body {
-            overflow-y: auto;
-            flex: 1;
-            border-radius: 12px;
-            position: relative;
         }
         
         #profileModal .profile-modal-close {
