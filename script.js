@@ -2846,7 +2846,7 @@
                     const preview = document.getElementById('qr-logo-preview');
                     const img = document.getElementById('qr-logo-img');
                     img.src = currentQRLogo;
-                    preview.style.display = 'block';
+                    preview.style.display = 'inline-block';
                 } else {
                     currentQRLogo = null;
                     document.getElementById('qr-logo-preview').style.display = 'none';
@@ -4740,7 +4740,7 @@
                 const preview = document.getElementById('qr-logo-preview');
                 const img = document.getElementById('qr-logo-img');
                 img.src = currentQRLogo;
-                preview.style.display = 'block';
+                preview.style.display = 'inline-block';
                 
                 // Regenerate QR code with logo
                 generateQRCode();
@@ -4776,7 +4776,7 @@
             const preview = document.getElementById('qr-logo-preview');
             const img = document.getElementById('qr-logo-img');
             img.src = currentQRLogo;
-            preview.style.display = 'block';
+            preview.style.display = 'inline-block';
             
             // Clear the flag
             window.selectingImageForQRLogo = false;
@@ -4798,7 +4798,7 @@
             const preview = document.getElementById('qr-logo-preview');
             const img = document.getElementById('qr-logo-img');
             img.src = currentQRLogo;
-            preview.style.display = 'block';
+            preview.style.display = 'inline-block';
             
             // Regenerate QR code with logo
             generateQRCode();
@@ -12674,7 +12674,7 @@
             if (theme.logo) {
                 currentQRLogo = theme.logo;
                 document.getElementById('qr-logo-img').src = theme.logo;
-                document.getElementById('qr-logo-preview').style.display = 'block';
+                document.getElementById('qr-logo-preview').style.display = 'inline-block';
             } else {
                 currentQRLogo = null;
                 document.getElementById('qr-logo-preview').style.display = 'none';
