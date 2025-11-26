@@ -274,7 +274,6 @@
 
         .sidebar-header {
             padding: 12px;
-            border-bottom: 1px solid #e2e8f0;
             width: 100%;
             min-height: auto;
             display: flex;
@@ -641,9 +640,33 @@
 
         /* Profile Modal Styling */
         #profileModal .modal-content {
-            max-width: 600px;
+            width: 900px !important;
+            max-width: 900px !important;
+            min-width: 600px;
             max-height: 80vh;
+            border-radius: 12px !important;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (max-width: 950px) {
+            #profileModal .modal-content {
+                width: 90vw !important;
+                max-width: 90vw !important;
+                min-width: auto;
+            }
+        }
+        
+        #profileModal .modal-header {
+            border-radius: 12px 12px 0 0;
+            flex-shrink: 0;
+        }
+        
+        #profileModal .modal-body {
             overflow-y: auto;
+            flex: 1;
+            border-radius: 0 0 12px 12px;
         }
 
         #profileModal .card {
@@ -1698,7 +1721,6 @@
             justify-content: space-between;
             align-items: center;
             padding: 16px 20px 16px 48px;
-            border-bottom: 1px solid #e2e8f0;
         }
 
         .preview-header h3 {
