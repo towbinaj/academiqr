@@ -664,17 +664,6 @@
                                         <input type="text" id="qr-url" class="form-input" readonly style="width: 100%;">
                                     </div>
                                     
-                                    <div class="option-group">
-                                        <label>QR Code Size</label>
-                                        <select id="qr-size" class="form-input" onchange="generateQRCode()">
-                                            <option value="200">Small (200x200)</option>
-                                            <option value="300" selected>Medium (300x300)</option>
-                                            <option value="400">Large (400x400)</option>
-                                            <option value="600">Extra Large (600x600)</option>
-                                        </select>
-                                    </div>
-                                    
-                                    
                                     <div class="option-group" style="display: flex !important; flex-direction: row !important; gap: 16px; align-items: flex-start;">
                                         <div style="flex: 1; min-width: 0;">
                                             <label>QR Code Color</label>
@@ -693,21 +682,6 @@
                                     </div>
                                     
                                     <div class="option-group">
-                                        <label>Padding (Quiet Zone)</label>
-                                        <div style="display: flex; flex-direction: column; gap: 8px;">
-                                            <label style="display: block; font-size: 0.9em; color: #6b7280;">White space around QR code</label>
-                                            <select id="qr-padding" class="form-input" onchange="generateQRCode()">
-                                                <option value="0">None (0px)</option>
-                                                <option value="8">Small (8px)</option>
-                                                <option value="16">Medium (16px)</option>
-                                                <option value="24" selected>Standard (24px)</option>
-                                                <option value="32">Large (32px)</option>
-                                                <option value="48">Extra Large (48px)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="option-group">
                                         <label>Border</label>
                                         <div style="display: flex; flex-direction: column; gap: 12px;">
                                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -718,29 +692,31 @@
                                             <div id="qr-border-options" style="display: none; padding-left: 24px; border-left: 3px solid #e5e7eb;">
                                                 <div style="display: flex; flex-direction: column; gap: 12px;">
                                                     <div>
-                                                        <label style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #6b7280;">Border Color</label>
+                                                        <label style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #6b7280;">Color</label>
                                                         <div class="color-options">
                                                             <input type="color" id="qr-border-color" value="#000000" class="color-picker" onchange="generateQRCode()">
                                                             <input type="text" id="qr-border-color-text" value="#000000" class="color-input" oninput="updateQRBorderColorFromText()">
                                                         </div>
                                                     </div>
                                                     
-                                                    <div>
-                                                        <label style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #6b7280;">Border Style</label>
-                                                        <select id="qr-border-style" class="form-input" onchange="generateQRCode()">
-                                                            <option value="solid" selected>Solid</option>
-                                                            <option value="dashed">Dashed</option>
-                                                            <option value="dotted">Dotted</option>
-                                                            <option value="double">Double</option>
-                                                        </select>
-                                                    </div>
-                                                    
-                                                    <div>
-                                                        <label style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #6b7280;">Corners</label>
-                                                        <select id="qr-border-radius" class="form-input" onchange="generateQRCode()">
-                                                            <option value="0">Square</option>
-                                                            <option value="16" selected>Rounded</option>
-                                                        </select>
+                                                    <div style="display: flex; flex-direction: row !important; gap: 16px; align-items: flex-start;">
+                                                        <div style="flex: 1; min-width: 0;">
+                                                            <label style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #6b7280;">Style</label>
+                                                            <select id="qr-border-style" class="form-input" onchange="generateQRCode()">
+                                                                <option value="solid" selected>Solid</option>
+                                                                <option value="dashed">Dashed</option>
+                                                                <option value="dotted">Dotted</option>
+                                                                <option value="double">Double</option>
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <div style="flex: 1; min-width: 0;">
+                                                            <label style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #6b7280;">Corners</label>
+                                                            <select id="qr-border-radius" class="form-input" onchange="generateQRCode()">
+                                                                <option value="16" selected>Rounded</option>
+                                                                <option value="0">Square</option>
+                                                            </select>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -748,15 +724,15 @@
                                     </div>
                                     
                                     <div class="option-group">
-                                        <label>Logo/Icon (Optional)</label>
+                                        <label>Center Logo</label>
                                         <div style="display: flex; flex-direction: column; gap: 8px;">
                                             <input type="file" id="qr-logo-upload" accept="image/*" style="display: none;" onchange="handleQRLogoUpload(event)">
                                             <div style="display: flex; gap: 8px;">
-                                                <button onclick="document.getElementById('qr-logo-upload').click()" class="btn btn-ghost" style="flex: 1;">
-                                                    📁 Upload New
+                                                <button onclick="document.getElementById('qr-logo-upload').click()" class="btn btn-primary" style="flex: 1; background: #1A2F5B;">
+                                                    Upload New
                                                 </button>
-                                                <button onclick="selectQRLogoFromLibrary()" class="btn btn-ghost" style="flex: 1;">
-                                                    🖼️ From Library
+                                                <button onclick="selectQRLogoFromLibrary()" class="btn btn-primary" style="flex: 1; background: #1A2F5B;">
+                                                    From Library
                                                 </button>
                                             </div>
                                             <div id="qr-logo-preview" style="display: none; position: relative;">

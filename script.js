@@ -2643,17 +2643,17 @@
                 
                 // Save QR code style data
                 const qrCodeData = {
-                    size: document.getElementById('qr-size')?.value || '300',
+                    size: '300', // Always 300px (medium)
                     pattern: 'square', // Always square pattern
                     color: document.getElementById('qr-color')?.value || '#000000',
                     bgColor: document.getElementById('qr-bg-color')?.value || '#ffffff',
-                    padding: document.getElementById('qr-padding')?.value || '24',
+                    padding: '16', // Always 16px
                     logo: currentQRLogo || null,
                     borderEnabled: document.getElementById('qr-border-enabled')?.checked || false,
                     borderWidth: '8', // Always 8px
                     borderColor: document.getElementById('qr-border-color')?.value || '#000000',
                     borderStyle: document.getElementById('qr-border-style')?.value || 'solid',
-                    borderRadius: document.getElementById('qr-border-radius')?.value || '8'
+                    borderRadius: document.getElementById('qr-border-radius')?.value || '16'
                 };
                 
                 // Update collection with QR code data
@@ -2787,10 +2787,7 @@
                 const qrData = currentList.qr_code_data;
                 
                 // Update size dropdown
-                const sizeSelect = document.getElementById('qr-size');
-                if (sizeSelect && qrData.size) {
-                    sizeSelect.value = qrData.size;
-                }
+                // QR size is always 300px, no need to set it
                 
                 
                 // Pattern is always square (no pattern selector needed)
@@ -2812,10 +2809,7 @@
                 }
                 
                 // Update padding dropdown
-                const paddingSelect = document.getElementById('qr-padding');
-                if (paddingSelect && qrData.padding) {
-                    paddingSelect.value = qrData.padding;
-                }
+                // Padding is always 16px, no need to set it
                 
                 // Load logo if present
                 if (qrData.logo) {
@@ -2847,20 +2841,20 @@
                 }
             } else {
                 // Set default values if no saved settings
-                document.getElementById('qr-size').value = '300';
+                // QR size is always 300px, no element needed
                 // Pattern is always square (no pattern selector)
                 document.getElementById('qr-color').value = '#000000';
                 document.getElementById('qr-color-text').value = '#000000';
                 document.getElementById('qr-bg-color').value = '#ffffff';
                 document.getElementById('qr-bg-color-text').value = '#ffffff';
-                document.getElementById('qr-padding').value = '24';
+                // Padding is always 16px, no element needed
                 document.getElementById('qr-border-enabled').checked = false;
                 document.getElementById('qr-border-options').style.display = 'none';
                 // Border width is always 8px, no element needed
                 document.getElementById('qr-border-color').value = '#000000';
                 document.getElementById('qr-border-color-text').value = '#000000';
                 document.getElementById('qr-border-style').value = 'solid';
-                document.getElementById('qr-border-radius').value = '8';
+                document.getElementById('qr-border-radius').value = '16';
                 currentQRLogo = null;
                 document.getElementById('qr-logo-preview').style.display = 'none';
             }
@@ -2884,7 +2878,7 @@
             // Use normalized user ID (first 12 hex chars, no hyphens) for consistent URL format
             const userId = getNormalizedUserId(currentUser.id);
             const url = `https://academiqr.com/public.html?user=${userId}&collection=${collectionId}`;
-            const size = parseInt(document.getElementById('qr-size').value);
+            const size = 300; // Always 300px (medium)
             const color = document.getElementById('qr-color').value;
             const bgColor = document.getElementById('qr-bg-color').value;
             const pattern = 'square'; // Always use square pattern
@@ -2957,7 +2951,7 @@
             try {
                 // Start with outer container size and work inward
                 const containerSize = 400; // Fixed container size
-                const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
+                const qrPadding = 16; // Always 16px
                 const borderEnabled = document.getElementById('qr-border-enabled').checked;
                 const borderWidth = borderEnabled ? 8 : 0; // Always 8px when enabled
                 
@@ -2986,7 +2980,7 @@
                     
                     // Get padding and border settings (same as calculated above)
                     const containerSize = 400; // Fixed container size
-                    const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
+                    const qrPadding = 16; // Always 16px
                     const borderEnabled = document.getElementById('qr-border-enabled').checked;
                     const borderWidth = borderEnabled ? 8 : 0; // Always 8px when enabled
                     
@@ -4470,7 +4464,7 @@
             if (format === 'png') {
                 // Download as PNG
                 // Get padding (quiet zone) and border settings
-                const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
+                const qrPadding = 16; // Always 16px
                 const borderEnabled = document.getElementById('qr-border-enabled').checked;
                 const borderWidth = borderEnabled ? 8 : 0; // Always 8px when enabled
                 
@@ -4571,7 +4565,7 @@
             } else if (format === 'jpeg') {
                 // Download as JPEG
                 // Get padding (quiet zone) and border settings
-                const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
+                const qrPadding = 16; // Always 16px
                 const borderEnabled = document.getElementById('qr-border-enabled').checked;
                 const borderWidth = borderEnabled ? 8 : 0; // Always 8px when enabled
                 
