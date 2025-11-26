@@ -2650,7 +2650,7 @@
                     padding: document.getElementById('qr-padding')?.value || '24',
                     logo: currentQRLogo || null,
                     borderEnabled: document.getElementById('qr-border-enabled')?.checked || false,
-                    borderWidth: document.getElementById('qr-border-width')?.value || '8',
+                    borderWidth: '8', // Always 8px
                     borderColor: document.getElementById('qr-border-color')?.value || '#000000',
                     borderStyle: document.getElementById('qr-border-style')?.value || 'solid',
                     borderRadius: document.getElementById('qr-border-radius')?.value || '8'
@@ -2834,7 +2834,7 @@
                     document.getElementById('qr-border-enabled').checked = true;
                     document.getElementById('qr-border-options').style.display = 'block';
                     
-                    if (qrData.borderWidth) document.getElementById('qr-border-width').value = qrData.borderWidth;
+                    // Border width is always 8px, no need to set it
                     if (qrData.borderColor) {
                         document.getElementById('qr-border-color').value = qrData.borderColor;
                         document.getElementById('qr-border-color-text').value = qrData.borderColor;
@@ -2856,7 +2856,7 @@
                 document.getElementById('qr-padding').value = '24';
                 document.getElementById('qr-border-enabled').checked = false;
                 document.getElementById('qr-border-options').style.display = 'none';
-                document.getElementById('qr-border-width').value = '8';
+                // Border width is always 8px, no element needed
                 document.getElementById('qr-border-color').value = '#000000';
                 document.getElementById('qr-border-color-text').value = '#000000';
                 document.getElementById('qr-border-style').value = 'solid';
@@ -2959,7 +2959,7 @@
                 const containerSize = 400; // Fixed container size
                 const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
                 const borderEnabled = document.getElementById('qr-border-enabled').checked;
-                const borderWidth = borderEnabled ? parseInt(document.getElementById('qr-border-width').value) : 0;
+                const borderWidth = borderEnabled ? 8 : 0; // Always 8px when enabled
                 
                 // Calculate QR code size: container - border - padding
                 // Border takes borderWidth on each side = borderWidth * 2 total
@@ -2988,7 +2988,7 @@
                     const containerSize = 400; // Fixed container size
                     const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
                     const borderEnabled = document.getElementById('qr-border-enabled').checked;
-                    const borderWidth = borderEnabled ? parseInt(document.getElementById('qr-border-width').value) : 0;
+                    const borderWidth = borderEnabled ? 8 : 0; // Always 8px when enabled
                     
                     // Remove any existing composite images first (in case of regeneration)
                     const existingCompositeImgs = container.querySelectorAll('img[data-composite="true"]');
@@ -4472,7 +4472,7 @@
                 // Get padding (quiet zone) and border settings
                 const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
                 const borderEnabled = document.getElementById('qr-border-enabled').checked;
-                const borderWidth = borderEnabled ? parseInt(document.getElementById('qr-border-width').value) : 0;
+                const borderWidth = borderEnabled ? 8 : 0; // Always 8px when enabled
                 
                 // Total padding is just the QR padding (quiet zone) - border is drawn inside/around QR code
                 const totalPadding = qrPadding * 2;
@@ -4573,7 +4573,7 @@
                 // Get padding (quiet zone) and border settings
                 const qrPadding = parseInt(document.getElementById('qr-padding').value) || 0;
                 const borderEnabled = document.getElementById('qr-border-enabled').checked;
-                const borderWidth = borderEnabled ? parseInt(document.getElementById('qr-border-width').value) : 0;
+                const borderWidth = borderEnabled ? 8 : 0; // Always 8px when enabled
                 
                 // Calculate total padding: QR padding (quiet zone) + border width on each side
                 const totalPadding = qrPadding * 2 + (borderWidth * 2);

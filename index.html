@@ -675,19 +675,20 @@
                                     </div>
                                     
                                     
-                                    <div class="option-group">
-                                        <label>QR Code Color</label>
-                                        <div class="color-options">
-                                            <input type="color" id="qr-color" value="#000000" class="color-picker" onchange="generateQRCode()">
-                                            <input type="text" id="qr-color-text" value="#000000" class="color-input" oninput="updateQRColorFromText()">
+                                    <div class="option-group" style="display: flex !important; flex-direction: row !important; gap: 16px; align-items: flex-start;">
+                                        <div style="flex: 1; min-width: 0;">
+                                            <label>QR Code Color</label>
+                                            <div class="color-options">
+                                                <input type="color" id="qr-color" value="#000000" class="color-picker" onchange="generateQRCode()">
+                                                <input type="text" id="qr-color-text" value="#000000" class="color-input" oninput="updateQRColorFromText()">
+                                            </div>
                                         </div>
-                                    </div>
-                                    
-                                    <div class="option-group">
-                                        <label>Background Color</label>
-                                        <div class="color-options">
-                                            <input type="color" id="qr-bg-color" value="#ffffff" class="color-picker" onchange="generateQRCode()">
-                                            <input type="text" id="qr-bg-color-text" value="#ffffff" class="color-input" oninput="updateQRBgColorFromText()">
+                                        <div style="flex: 1; min-width: 0;">
+                                            <label>Background Color</label>
+                                            <div class="color-options">
+                                                <input type="color" id="qr-bg-color" value="#ffffff" class="color-picker" onchange="generateQRCode()">
+                                                <input type="text" id="qr-bg-color-text" value="#ffffff" class="color-input" oninput="updateQRBgColorFromText()">
+                                            </div>
                                         </div>
                                     </div>
                                     
@@ -707,26 +708,15 @@
                                     </div>
                                     
                                     <div class="option-group">
-                                        <label>Decorative Border</label>
+                                        <label>Border</label>
                                         <div style="display: flex; flex-direction: column; gap: 12px;">
                                             <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                                                 <input type="checkbox" id="qr-border-enabled" onchange="generateQRCode()" style="width: 16px; height: 16px; cursor: pointer;">
-                                                <span>Add decorative border</span>
+                                                <span>Add border</span>
                                             </label>
                                             
                                             <div id="qr-border-options" style="display: none; padding-left: 24px; border-left: 3px solid #e5e7eb;">
                                                 <div style="display: flex; flex-direction: column; gap: 12px;">
-                                                    <div>
-                                                        <label style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #6b7280;">Border Width</label>
-                                                        <select id="qr-border-width" class="form-input" onchange="generateQRCode()">
-                                                            <option value="2">Thin (2px)</option>
-                                                            <option value="4">Medium (4px)</option>
-                                                            <option value="8" selected>Thick (8px)</option>
-                                                            <option value="12">Extra Thick (12px)</option>
-                                                            <option value="16">Bold (16px)</option>
-                                                        </select>
-                                                    </div>
-                                                    
                                                     <div>
                                                         <label style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #6b7280;">Border Color</label>
                                                         <div class="color-options">
@@ -746,14 +736,10 @@
                                                     </div>
                                                     
                                                     <div>
-                                                        <label style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #6b7280;">Border Radius</label>
+                                                        <label style="display: block; margin-bottom: 4px; font-size: 0.9em; color: #6b7280;">Corners</label>
                                                         <select id="qr-border-radius" class="form-input" onchange="generateQRCode()">
-                                                            <option value="0">Square (0px)</option>
-                                                            <option value="4">Slightly Rounded (4px)</option>
-                                                            <option value="8" selected>Rounded (8px)</option>
-                                                            <option value="12">Very Rounded (12px)</option>
-                                                            <option value="16">Extra Rounded (16px)</option>
-                                                            <option value="24">Pill (24px)</option>
+                                                            <option value="0">Square</option>
+                                                            <option value="16" selected>Rounded</option>
                                                         </select>
                                                     </div>
                                                 </div>
