@@ -685,6 +685,27 @@
             padding: 12px 24px;
             font-size: 16px;
         }
+        
+        /* Profile Photo Section Layout */
+        #profileModal #profileAvatar {
+            width: 100%;
+        }
+        
+        #profileModal #profileAvatar::file-selector-button {
+            background: #1A2F5B;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 12px;
+            transition: background-color 0.2s;
+        }
+        
+        #profileModal #profileAvatar::file-selector-button:hover {
+            background: #152547;
+        }
 
         .nav-item {
             display: flex;
