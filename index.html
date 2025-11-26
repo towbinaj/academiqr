@@ -655,7 +655,6 @@
                         <div id="tab-qrcode" class="tab-panel">
                             <div class="qr-header">
                                 <h3>QR Code Generator</h3>
-                                <p class="subtitle">Generate a QR code for your link collection</p>
                             </div>
                             
                             <div class="qr-content">
@@ -663,7 +662,6 @@
                                     <div class="option-group">
                                         <label>Collection URL</label>
                                         <input type="text" id="qr-url" class="form-input" readonly style="width: 100%;">
-                                        <small style="color: #6b7280; margin-top: 4px; display: block;">This is the public URL for your collection</small>
                                     </div>
                                     
                                     <div class="option-group">
@@ -705,7 +703,6 @@
                                                 <option value="32">Large (32px)</option>
                                                 <option value="48">Extra Large (48px)</option>
                                             </select>
-                                            <small style="color: #6b7280;">Padding improves scannability</small>
                                         </div>
                                     </div>
                                     
@@ -782,7 +779,6 @@
                                                     ✕ Remove Logo
                                                 </button>
                                             </div>
-                                            <small style="color: #6b7280;">Logo will be placed in the center of the QR code (max 20% of QR size for scannability)</small>
                                         </div>
                                     </div>
                                 </div>
@@ -795,15 +791,15 @@
                                         </div>
                                     </div>
                                     
-                                    <div id="qr-actions" style="display: none; margin-top: 16px; gap: 8px; flex-wrap: wrap;">
-                                        <button onclick="downloadQRCode('png')" class="btn btn-primary">
-                                            💾 Download PNG
+                                    <div id="qr-actions" style="display: none; margin-top: 16px; gap: 8px; flex-wrap: nowrap; justify-content: center;">
+                                        <button onclick="downloadQRCode('png')" class="btn btn-primary" style="background: #1A2F5B;">
+                                            <i class="fas fa-download"></i> PNG
                                         </button>
-                                        <button onclick="downloadQRCode('jpeg')" class="btn btn-primary" style="background: #059669;">
-                                            💾 Download JPEG
+                                        <button onclick="downloadQRCode('jpeg')" class="btn btn-primary" style="background: #1A2F5B;">
+                                            <i class="fas fa-download"></i> JPEG
                                         </button>
-                                        <button onclick="downloadQRCode('svg')" class="btn btn-ghost">
-                                            💾 Download SVG
+                                        <button onclick="downloadQRCode('svg')" class="btn btn-primary" style="background: #1A2F5B;">
+                                            <i class="fas fa-download"></i> SVG
                                         </button>
                                     </div>
                                 </div>
