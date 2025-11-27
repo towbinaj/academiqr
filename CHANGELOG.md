@@ -5,6 +5,17 @@ All notable changes to AcademiQR will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2025-01-XX
+
+### Added
+- Drag and drop reordering for collections in the sidebar menu
+- Collection order persistence to database using order_index field
+- Compact drag handle with hover visibility
+
+### Changed
+- Updated browser tab title to remove "Link-in-Bio Builder" text
+- Improved collection list layout with smaller drag handle
+
 ## [0.6.0] - 2025-01-XX
 
 ### Changed
