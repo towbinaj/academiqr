@@ -13557,8 +13557,11 @@
             document.getElementById('position-y-value').textContent = y;
             document.getElementById('position-scale-value').textContent = scale;
             
-            const backgroundImage = document.getElementById('bg-image-preview').style.backgroundImage;
-            if (backgroundImage && backgroundImage !== 'none') {
+            // Check if there's a background image in the current theme
+            const currentTheme = getCurrentThemeFromUI();
+            const hasBackgroundImage = currentTheme && currentTheme.backgroundImage && currentTheme.backgroundImage.trim() !== '';
+            
+            if (hasBackgroundImage) {
                 updateThemeProperty('imagePosition', { x: parseInt(x), y: parseInt(y), scale: parseInt(scale) });
                 applyTheme();
             }
