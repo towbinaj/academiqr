@@ -631,6 +631,11 @@
         .btn-icon:hover {
             background: rgba(0, 0, 0, 0.1);
         }
+        
+        .btn-icon .fa-copy,
+        .btn-icon i.fa-copy {
+            color: #1A2F5B;
+        }
 
         .collection-item.active .btn-icon {
             color: #9ca3af;
