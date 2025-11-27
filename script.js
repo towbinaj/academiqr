@@ -4734,13 +4734,57 @@
             return;
         }
         
-        function handleQRLogoUpload(event) {
+        async function handleQRLogoUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
             
+            // Validate file
+            if (!file.type.startsWith('image/')) {
+                showMessage('Please select an image file', 'error');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                showMessage('Image file is too large (max 5MB)', 'error');
+                return;
+            }
+            
             const reader = new FileReader();
-            reader.onload = function(e) {
-                currentQRLogo = e.target.result;
+            reader.onload = async function(e) {
+                const dataUrl = e.target.result;
+                currentQRLogo = dataUrl;
+                
+                // Save to media library database if user is logged in
+                if (currentUser && supabaseClient) {
+                    try {
+                        // Check if this image already exists in media library
+                        const existingFile = mediaFiles.find(f => f.url === dataUrl);
+                        
+                        if (!existingFile) {
+                            // Create new media file entry
+                            const newFile = {
+                                id: 'file-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                                name: file.name || 'qr-logo-' + Date.now() + '.png',
+                                url: dataUrl,
+                                type: file.type,
+                                size: file.size,
+                                uploadedAt: new Date().toISOString()
+                            };
+                            
+                            // Add to mediaFiles array
+                            mediaFiles.push(newFile);
+                            
+                            // Save to database
+                            await saveMediaFiles();
+                            console.log('✅ QR logo saved to media library database');
+                        } else {
+                            console.log('QR logo already exists in media library');
+                        }
+                    } catch (error) {
+                        console.error('Error saving QR logo to database:', error);
+                        // Continue anyway - logo is still set in currentQRLogo
+                    }
+                }
                 
                 // Show preview
                 const preview = document.getElementById('qr-logo-preview');
@@ -13478,6 +13522,44 @@
             }
 
             // Collect current QR theme data
+            // If logo is a data URL and not in media library, ensure it's saved
+            let logoToSave = currentQRLogo || null;
+            
+            if (logoToSave && currentUser && supabaseClient) {
+                // Check if logo is a data URL and exists in media library
+                const existingFile = mediaFiles.find(f => f.url === logoToSave);
+                if (!existingFile && logoToSave.startsWith('data:image/')) {
+                    // Try to find it by checking if it's already in the database
+                    try {
+                        const { data } = await supabaseClient
+                            .from('user_media')
+                            .select('*')
+                            .eq('user_id', currentUser.id)
+                            .eq('url', logoToSave)
+                            .limit(1);
+                        
+                        if (!data || data.length === 0) {
+                            // Logo not in database, but it's a data URL - save it
+                            const tempFile = {
+                                id: 'file-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                                name: 'qr-logo-' + themeName + '-' + Date.now() + '.png',
+                                url: logoToSave,
+                                type: 'image/png', // Default to PNG for data URLs
+                                size: logoToSave.length, // Approximate size
+                                uploadedAt: new Date().toISOString()
+                            };
+                            
+                            mediaFiles.push(tempFile);
+                            await saveMediaFiles();
+                            console.log('✅ QR logo saved to media library when saving theme');
+                        }
+                    } catch (error) {
+                        console.error('Error checking/saving QR logo:', error);
+                        // Continue anyway - logo will still be saved in theme
+                    }
+                }
+            }
+            
             const qrThemeToSave = {
                 name: themeName,
                 savedAt: new Date().toISOString(),
@@ -13487,7 +13569,7 @@
                 borderColor: document.getElementById('qr-border-color')?.value || '#000000',
                 borderStyle: document.getElementById('qr-border-style')?.value || 'solid',
                 borderRadius: document.getElementById('qr-border-radius')?.value || '16',
-                logo: currentQRLogo || null
+                logo: logoToSave
             };
 
             // If user is logged in, save to database
@@ -13745,6 +13827,42 @@
                 currentQRLogo = theme.logo;
                 document.getElementById('qr-logo-img').src = theme.logo;
                 document.getElementById('qr-logo-preview').style.display = 'inline-block';
+                
+                // If logo is a data URL and user is logged in, ensure it's in media library
+                if (theme.logo.startsWith('data:image/') && currentUser && supabaseClient) {
+                    const existingFile = mediaFiles.find(f => f.url === theme.logo);
+                    if (!existingFile) {
+                        // Check database
+                        (async () => {
+                            try {
+                                const { data } = await supabaseClient
+                                    .from('user_media')
+                                    .select('*')
+                                    .eq('user_id', currentUser.id)
+                                    .eq('url', theme.logo)
+                                    .limit(1);
+                                
+                                if (!data || data.length === 0) {
+                                    // Logo not in database, add it
+                                    const tempFile = {
+                                        id: 'file-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                                        name: 'qr-logo-' + theme.name + '-' + Date.now() + '.png',
+                                        url: theme.logo,
+                                        type: 'image/png',
+                                        size: theme.logo.length,
+                                        uploadedAt: new Date().toISOString()
+                                    };
+                                    
+                                    mediaFiles.push(tempFile);
+                                    await saveMediaFiles();
+                                    console.log('✅ QR logo from theme saved to media library');
+                                }
+                            } catch (error) {
+                                console.error('Error checking/saving QR logo from theme:', error);
+                            }
+                        })();
+                    }
+                }
             } else {
                 currentQRLogo = null;
                 document.getElementById('qr-logo-preview').style.display = 'none';
