@@ -669,8 +669,8 @@
                                         <div style="flex: 1; min-width: 0;">
                                             <label>QR Code Color</label>
                                             <div class="color-options">
-                                                <input type="color" id="qr-color" value="#000000" class="color-picker" onchange="generateQRCode()">
-                                                <input type="text" id="qr-color-text" value="#000000" class="color-input" oninput="updateQRColorFromText()">
+                                                <input type="color" id="qr-color" value="#1A2F5B" class="color-picker" onchange="generateQRCode()">
+                                                <input type="text" id="qr-color-text" value="#1A2F5B" class="color-input" oninput="updateQRColorFromText()">
                                             </div>
                                         </div>
                                         <div style="flex: 1; min-width: 0;">
@@ -898,6 +898,22 @@
                 <button onclick="closeMediaLibrary()" class="media-modal-close" aria-label="Close">×</button>
             </div>
             <div class="modal-body">
+                <!-- Upload Progress Indicator -->
+                <div id="uploadProgressContainer" class="upload-progress-container hidden">
+                    <div class="upload-progress-ring">
+                        <svg class="progress-ring" width="80" height="80">
+                            <circle class="progress-ring-circle-bg" cx="40" cy="40" r="36" fill="transparent" stroke="#e5e7eb" stroke-width="6"/>
+                            <circle class="progress-ring-circle" cx="40" cy="40" r="36" fill="transparent" stroke="#1A2F5B" stroke-width="6" stroke-linecap="round" transform="rotate(-90 40 40)"/>
+                        </svg>
+                        <div class="progress-text">
+                            <span id="progressCount">0</span>
+                            <span class="progress-separator">/</span>
+                            <span id="progressTotal">0</span>
+                        </div>
+                    </div>
+                    <p class="progress-label">Uploading images...</p>
+                </div>
+                
                 <div id="mediaDropZone" class="media-drop-zone">
                     <div class="drop-zone-content">
                         <div class="drop-zone-main">
@@ -910,7 +926,7 @@
                         <button onclick="uploadImages()" class="btn btn-primary btn-sm">Choose Files</button>
                     </div>
                 </div>
-                <div id="mediaGrid" class="media-grid">
+                <div id="mediaGrid" class="media-grid" style="position: relative; z-index: 1;">
                     <!-- Media items will be rendered here -->
                 </div>
                 <button onclick="clearAllMedia()" class="btn btn-primary btn-sm media-clear-all-btn">Clear All</button>
@@ -1102,6 +1118,6 @@
     <!-- TODO: Get SRI hash from https://www.srihash.org/ for this URL -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
     
-    <script src="script.js"></script>
+    <script src="script.js?v=0.6.1"></script>
 </body>
 </html>

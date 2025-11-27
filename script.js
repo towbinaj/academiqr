@@ -2677,7 +2677,7 @@
                 const qrCodeData = {
                     size: '300', // Always 300px (medium)
                     pattern: 'square', // Always square pattern
-                    color: document.getElementById('qr-color')?.value || '#000000',
+                    color: document.getElementById('qr-color')?.value || '#1A2F5B',
                     bgColor: document.getElementById('qr-bg-color')?.value || '#ffffff',
                     padding: '16', // Always 16px
                     logo: currentQRLogo || null,
@@ -2878,8 +2878,8 @@
                 // Set default values if no saved settings
                 // QR size is always 300px, no element needed
                 // Pattern is always square (no pattern selector)
-                document.getElementById('qr-color').value = '#000000';
-                document.getElementById('qr-color-text').value = '#000000';
+                document.getElementById('qr-color').value = '#1A2F5B';
+                document.getElementById('qr-color-text').value = '#1A2F5B';
                 document.getElementById('qr-bg-color').value = '#ffffff';
                 document.getElementById('qr-bg-color-text').value = '#ffffff';
                 // Padding is always 16px, no element needed
@@ -13563,7 +13563,7 @@
             const qrThemeToSave = {
                 name: themeName,
                 savedAt: new Date().toISOString(),
-                color: document.getElementById('qr-color')?.value || '#000000',
+                color: document.getElementById('qr-color')?.value || '#1A2F5B',
                 bgColor: document.getElementById('qr-bg-color')?.value || '#ffffff',
                 borderEnabled: document.getElementById('qr-border-enabled')?.checked || false,
                 borderColor: document.getElementById('qr-border-color')?.value || '#000000',
