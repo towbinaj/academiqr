@@ -1289,6 +1289,22 @@
                     delete cleanedTheme.backgroundImage;
                 }
                 
+                // Convert old separate image position properties to imagePosition object if needed
+                if (cleanedTheme.backgroundType === 'image' && cleanedTheme.backgroundImage) {
+                    if (!cleanedTheme.imagePosition && (cleanedTheme.imagePositionX || cleanedTheme.imagePositionY || cleanedTheme.imageScale)) {
+                        cleanedTheme.imagePosition = {
+                            x: cleanedTheme.imagePositionX || 50,
+                            y: cleanedTheme.imagePositionY || 50,
+                            scale: cleanedTheme.imageScale || 100
+                        };
+                        // Remove old properties
+                        delete cleanedTheme.imagePositionX;
+                        delete cleanedTheme.imagePositionY;
+                        delete cleanedTheme.imageScale;
+                        console.log('🔄 Converted old image position format to object:', cleanedTheme.imagePosition);
+                    }
+                }
+                
                 // Update currentList.theme with cleaned theme to ensure it's used everywhere
                 // This MUST happen before applyTheme() is called
                 if (currentList) {
@@ -4085,45 +4101,48 @@
             }
             
             // Load image positioning settings
-            if (theme.imagePositionX) {
-                console.log('🎨 Setting image position X to:', theme.imagePositionX);
+            // Handle image position - support both old format (separate properties) and new format (object)
+            let imagePosition = theme.imagePosition;
+            
+            // Convert old separate properties to imagePosition object if needed
+            if (!imagePosition && (theme.imagePositionX || theme.imagePositionY || theme.imageScale)) {
+                imagePosition = {
+                    x: theme.imagePositionX || 50,
+                    y: theme.imagePositionY || 50,
+                    scale: theme.imageScale || 100
+                };
+                console.log('🔄 Converted old image position format to object:', imagePosition);
+            }
+            
+            if (imagePosition) {
+                console.log('🎨 Setting image position from object:', imagePosition);
                 const positionX = document.getElementById('position-x');
+                const positionY = document.getElementById('position-y');
+                const positionScale = document.getElementById('position-scale');
                 const positionXValue = document.getElementById('position-x-value');
+                const positionYValue = document.getElementById('position-y-value');
+                const positionScaleValue = document.getElementById('position-scale-value');
+                
                 if (positionX) {
-                    positionX.value = theme.imagePositionX;
+                    positionX.value = imagePosition.x || 50;
                     console.log('🎨 Set position X:', positionX.value);
                 }
-                if (positionXValue) {
-                    positionXValue.textContent = theme.imagePositionX;
-                    console.log('🎨 Set position X value display:', positionXValue.textContent);
-                }
-            }
-            
-            if (theme.imagePositionY) {
-                console.log('🎨 Setting image position Y to:', theme.imagePositionY);
-                const positionY = document.getElementById('position-y');
-                const positionYValue = document.getElementById('position-y-value');
                 if (positionY) {
-                    positionY.value = theme.imagePositionY;
+                    positionY.value = imagePosition.y || 50;
                     console.log('🎨 Set position Y:', positionY.value);
                 }
-                if (positionYValue) {
-                    positionYValue.textContent = theme.imagePositionY;
-                    console.log('🎨 Set position Y value display:', positionYValue.textContent);
-                }
-            }
-            
-            if (theme.imageScale) {
-                console.log('🎨 Setting image scale to:', theme.imageScale);
-                const positionScale = document.getElementById('position-scale');
-                const positionScaleValue = document.getElementById('position-scale-value');
                 if (positionScale) {
-                    positionScale.value = theme.imageScale;
+                    positionScale.value = imagePosition.scale || 100;
                     console.log('🎨 Set position scale:', positionScale.value);
                 }
+                if (positionXValue) {
+                    positionXValue.textContent = imagePosition.x || 50;
+                }
+                if (positionYValue) {
+                    positionYValue.textContent = imagePosition.y || 50;
+                }
                 if (positionScaleValue) {
-                    positionScaleValue.textContent = theme.imageScale;
-                    console.log('🎨 Set position scale value display:', positionScaleValue.textContent);
+                    positionScaleValue.textContent = imagePosition.scale || 100;
                 }
             }
             
@@ -4453,13 +4472,9 @@
                                 break;
                             // Image positioning controls
                             case 'position-x':
-                                theme.imagePositionX = value;
-                                break;
                             case 'position-y':
-                                theme.imagePositionY = value;
-                                break;
                             case 'position-scale':
-                                theme.imageScale = value;
+                                // These are handled below to construct imagePosition object
                                 break;
                             // Border gradient controls
                             case 'border-gradient-input':
@@ -4492,6 +4507,36 @@
                 borderColor: theme.borderColor
             });
             
+            // Construct imagePosition object from slider values if they exist
+            // Check if position sliders have values (they might be hidden but still have values)
+            const positionX = document.getElementById('position-x');
+            const positionY = document.getElementById('position-y');
+            const positionScale = document.getElementById('position-scale');
+            
+            if (positionX && positionY && positionScale) {
+                // Use slider values if they exist, otherwise use existing theme values
+                const x = positionX.value || (theme.imagePosition && theme.imagePosition.x) || 50;
+                const y = positionY.value || (theme.imagePosition && theme.imagePosition.y) || 50;
+                const scale = positionScale.value || (theme.imagePosition && theme.imagePosition.scale) || 100;
+                
+                // Only set imagePosition if there's a background image
+                if (theme.backgroundImage && theme.backgroundImage.trim() !== '') {
+                    theme.imagePosition = {
+                        x: parseInt(x),
+                        y: parseInt(y),
+                        scale: parseInt(scale)
+                    };
+                }
+            } else if (theme.imagePosition) {
+                // Preserve existing imagePosition if sliders don't exist
+                // (e.g., when loading from database)
+            }
+            
+            // Clean up old separate position properties if they exist
+            delete theme.imagePositionX;
+            delete theme.imagePositionY;
+            delete theme.imageScale;
+            
             // Remove backgroundImage if it's null, empty, or just whitespace
             // Only remove backgroundImage if it's null, undefined, or empty
             // Don't filter data URLs here - this is when saving, and user uploads are data URLs
@@ -4499,11 +4544,14 @@
             if (theme.backgroundImage === null || theme.backgroundImage === undefined || 
                 (typeof theme.backgroundImage === 'string' && theme.backgroundImage.trim() === '')) {
                 delete theme.backgroundImage;
+                // Also remove imagePosition if there's no image
+                delete theme.imagePosition;
             }
             
             console.log('🎨 Final theme object being returned:', theme);
             console.log('🎨 Theme object keys:', Object.keys(theme));
             console.log('🎨 Theme object size:', JSON.stringify(theme).length, 'characters');
+            console.log('🎨 Image position:', theme.imagePosition);
             
             return theme;
         }

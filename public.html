@@ -1546,13 +1546,27 @@
                     console.log('Applying background image:', theme.backgroundImage);
                     // Apply background image
                     phoneScreen.style.setProperty('background-image', `url(${theme.backgroundImage})`, 'important');
-                    phoneScreen.style.setProperty('background-size', 'cover', 'important');
-                    phoneScreen.style.setProperty('background-position', 'center', 'important');
+                    
+                    // Use imagePosition if available, otherwise use defaults
+                    if (theme.imagePosition) {
+                        const { x, y, scale } = theme.imagePosition;
+                        const scaleMultiplier = scale / 100;
+                        const baseSize = 200; // Base size in percentage
+                        const scaledSize = baseSize * scaleMultiplier;
+                        phoneScreen.style.setProperty('background-size', `${scaledSize}%`, 'important');
+                        phoneScreen.style.setProperty('background-position', `${x}% ${y}%`, 'important');
+                        // Also try direct style setting for mobile compatibility
+                        phoneScreen.style.backgroundSize = `${scaledSize}%`;
+                        phoneScreen.style.backgroundPosition = `${x}% ${y}%`;
+                    } else {
+                        phoneScreen.style.setProperty('background-size', 'cover', 'important');
+                        phoneScreen.style.setProperty('background-position', 'center', 'important');
+                        // Also try direct style setting for mobile compatibility
+                        phoneScreen.style.backgroundSize = 'cover';
+                        phoneScreen.style.backgroundPosition = 'center';
+                    }
+                    
                     phoneScreen.style.setProperty('background-repeat', 'no-repeat', 'important');
-                    // Also try direct style setting for mobile compatibility
-                    phoneScreen.style.backgroundImage = `url(${theme.backgroundImage})`;
-                    phoneScreen.style.backgroundSize = 'cover';
-                    phoneScreen.style.backgroundPosition = 'center';
                     phoneScreen.style.backgroundRepeat = 'no-repeat';
                 }
                 
