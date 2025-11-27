@@ -13446,6 +13446,19 @@
                 return true;
             }
             
+            // Supabase storage URLs and external HTTP/HTTPS URLs are always legitimate user-saved images
+            // Check for these FIRST before checking for placeholders
+            if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+                // Check if it's a Supabase storage URL
+                if (trimmed.includes('supabase.co') || trimmed.includes('supabase')) {
+                    console.log('  isDefaultOrPlaceholderImage: Detected Supabase storage URL, treating as legitimate.');
+                    return false;
+                }
+                // Other HTTP/HTTPS URLs are also likely legitimate
+                console.log('  isDefaultOrPlaceholderImage: Detected HTTP/HTTPS URL, treating as legitimate.');
+                return false;
+            }
+            
             // Check if it's a URL that looks like a placeholder
             if (trimmed.includes('placeholder') || trimmed.includes('default')) {
                 console.log('  isDefaultOrPlaceholderImage: URL contains "placeholder" or "default", treating as placeholder.');
@@ -13475,8 +13488,8 @@
                 }
             }
             
-            // If it's a Supabase storage URL or external URL, it's likely a user-saved image
-            console.log('  isDefaultOrPlaceholderImage: Image URL appears legitimate (HTTP/HTTPS/Supabase URL), returning false.');
+            // If it's any other URL format, treat it as potentially legitimate
+            console.log('  isDefaultOrPlaceholderImage: Image URL appears legitimate, returning false.');
             return false;
         }
 
@@ -14660,4 +14673,5 @@
                 setTimeout(showFontSizeDebugOverlay, 2000);
             }
         });
+    
     
