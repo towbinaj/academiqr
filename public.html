@@ -1394,8 +1394,8 @@
                         formattedDate = date.toLocaleDateString('en-US', options);
                     } else {
                         // Fallback to original method if format is unexpected
-                        const date = new Date(presentationData.date);
-                        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                    const date = new Date(presentationData.date);
+                    const options = { year: 'numeric', month: 'long', day: 'numeric' };
                         formattedDate = date.toLocaleDateString('en-US', options);
                     }
                     dateValue.textContent = formattedDate;
