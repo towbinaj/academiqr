@@ -904,7 +904,7 @@
                 const [linksResult, profileResult] = await Promise.all([
                     supabase
                         .from('link_items')
-                        .select('id, title, url, image, image_url, image_position, image_scale, order_index')
+                        .select('*')
                         .eq('list_id', collection.id)
                         .order('order_index', { ascending: true }),
                     supabase
@@ -916,9 +916,11 @@
 
                 // Process links
                 if (linksResult.error) {
+                    console.error('Error loading links:', linksResult.error);
                     collection.links = [];
                 } else {
                     collection.links = linksResult.data || [];
+                    console.log('Loaded links:', collection.links.length, collection.links);
                     
                     // Map database fields to camelCase and ensure imagePosition/imageScale are properly set
                     collection.links.forEach(link => {
