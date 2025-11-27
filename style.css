@@ -4056,7 +4056,7 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background: #dc2626;
+            background: #1A2F5B;
             color: white;
             border: none;
             font-size: 12px;
@@ -4070,7 +4070,7 @@
         }
 
         .btn-remove-link-image:hover {
-            background: #b91c1c;
+            background: #152547;
         }
         .btn-edit-link-image {
             position: absolute;
