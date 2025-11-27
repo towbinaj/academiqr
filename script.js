@@ -586,11 +586,26 @@
                 
                 // Slugs are stored as plain text, no need to decode
                 if (data) {
-                    data.forEach(collection => {
+                    data.forEach((collection, index) => {
                         // Keep slug as-is since it's stored as plain text
                         if (collection.slug) {
                             collection.slug = collection.slug;
                         }
+                        // Ensure order_index exists, default to index * 100 if not set
+                        if (collection.order_index === null || collection.order_index === undefined) {
+                            collection.order_index = index * 100;
+                        }
+                    });
+                    
+                    // Sort by order_index, then by created_at as fallback
+                    data.sort((a, b) => {
+                        const orderA = a.order_index !== null && a.order_index !== undefined ? a.order_index : Infinity;
+                        const orderB = b.order_index !== null && b.order_index !== undefined ? b.order_index : Infinity;
+                        if (orderA !== orderB) {
+                            return orderA - orderB;
+                        }
+                        // Fallback to created_at if order_index is the same
+                        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
                     });
                 }
                 collections = data || [];
@@ -694,7 +709,8 @@
                         owner_id: currentUser.id,
                         slug: 'my-links',
                         visibility: 'public',
-                        theme: theme
+                        theme: theme,
+                        order_index: 0
                     })
                     .select()
                     .single();
@@ -825,11 +841,23 @@
         
         function renderCollections() {
             const container = document.getElementById('collections-list');
+            if (!container) {
+                console.error('Collections list container not found!');
+                return;
+            }
+            
             container.innerHTML = '';
             
-            collections.forEach(collection => {
+            if (collections.length === 0) {
+                return;
+            }
+            
+            collections.forEach((collection, index) => {
                 const item = document.createElement('div');
                 item.className = 'collection-item';
+                item.draggable = true;
+                item.dataset.collectionId = collection.id;
+                item.dataset.collectionIndex = index;
                 if (currentList && currentList.id === collection.id) {
                     item.classList.add('active');
                 }
@@ -851,6 +879,13 @@
                 // Create collection header
                 const header = document.createElement('div');
                 header.className = 'collection-header';
+                
+                // Add drag handle
+                const dragHandle = document.createElement('div');
+                dragHandle.className = 'collection-drag-handle';
+                dragHandle.innerHTML = '<i class="fas fa-grip-vertical"></i>';
+                dragHandle.title = 'Drag to reorder';
+                header.appendChild(dragHandle);
                 
                 const nameDiv = document.createElement('div');
                 nameDiv.className = 'collection-name';
@@ -927,13 +962,180 @@
                     item.appendChild(statusDiv);
                 }
                 item.onclick = (e) => {
-                    // Don't trigger if clicking on action buttons
-                    if (!e.target.closest('.collection-actions')) {
+                    // Don't trigger if clicking on action buttons or drag handle
+                    if (!e.target.closest('.collection-actions') && !e.target.closest('.collection-drag-handle')) {
                         loadCollection(collection);
                     }
                 };
+                
+                // Add drag event handlers
+                item.addEventListener('dragstart', handleCollectionDragStart);
+                item.addEventListener('dragover', handleCollectionDragOver);
+                item.addEventListener('drop', handleCollectionDrop);
+                item.addEventListener('dragend', handleCollectionDragEnd);
+                
                 container.appendChild(item);
             });
+        }
+        
+        // Drag and drop variables for collections
+        let draggedCollectionIndex = null;
+        let draggedCollectionElement = null;
+        
+        function handleCollectionDragStart(e) {
+            const item = e.currentTarget;
+            draggedCollectionIndex = parseInt(item.dataset.collectionIndex);
+            draggedCollectionElement = item;
+            item.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', item.innerHTML);
+        }
+        
+        function handleCollectionDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const container = e.target.closest('#collections-list');
+            if (!container) return;
+            
+            const dragging = document.querySelector('.collection-item.dragging');
+            if (!dragging) return;
+            
+            const afterElement = getDragAfterElement(container, e.clientY);
+            const items = container.querySelectorAll('.collection-item:not(.dragging)');
+            
+            // Remove visual feedback from all items
+            items.forEach(item => {
+                item.style.borderTop = '';
+            });
+            
+            // Add visual feedback to show where item will be dropped
+            if (afterElement == null) {
+                // Will be dropped at the end
+                const lastItem = container.querySelector('.collection-item:not(.dragging):last-child');
+                if (lastItem) {
+                    lastItem.style.borderTop = '2px solid #3b82f6';
+                }
+            } else {
+                afterElement.style.borderTop = '2px solid #3b82f6';
+            }
+        }
+        
+        async function handleCollectionDrop(e) {
+            e.preventDefault();
+            const container = e.target.closest('#collections-list');
+            if (!container) return;
+            
+            const dragging = document.querySelector('.collection-item.dragging');
+            if (!dragging) return;
+            
+            const afterElement = getDragAfterElement(container, e.clientY);
+            
+            // Remove visual feedback
+            const items = container.querySelectorAll('.collection-item');
+            items.forEach(item => {
+                item.style.borderTop = '';
+            });
+            
+            // Move the element in the DOM
+            if (afterElement == null) {
+                container.appendChild(dragging);
+            } else {
+                container.insertBefore(dragging, afterElement);
+            }
+            
+            // Get new index
+            const allItems = Array.from(container.querySelectorAll('.collection-item'));
+            const newIndex = allItems.indexOf(dragging);
+            
+            if (draggedCollectionIndex !== null && draggedCollectionIndex !== newIndex) {
+                await reorderCollections(draggedCollectionIndex, newIndex);
+            }
+        }
+        
+        function handleCollectionDragEnd(e) {
+            const item = e.currentTarget;
+            item.classList.remove('dragging');
+            // Remove any visual feedback
+            const items = document.querySelectorAll('.collection-item');
+            items.forEach(item => {
+                item.style.borderTop = '';
+            });
+            draggedCollectionIndex = null;
+            draggedCollectionElement = null;
+        }
+        
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.collection-item:not(.dragging)')];
+            
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        
+        async function reorderCollections(fromIndex, toIndex) {
+            // Update local array
+            const [movedCollection] = collections.splice(fromIndex, 1);
+            collections.splice(toIndex, 0, movedCollection);
+            
+            // Update order_index for all collections
+            collections.forEach((collection, index) => {
+                collection.order_index = index * 100;
+            });
+            
+            // Save order to database
+            if (currentUser && supabaseClient) {
+                try {
+                    // Only update collections that have database IDs (not local-only)
+                    const updates = collections
+                        .filter(collection => collection.id && !collection.id.startsWith('local-'))
+                        .map(collection => ({
+                            id: collection.id,
+                            order_index: collection.order_index
+                        }));
+                    
+                    if (updates.length === 0) {
+                        return;
+                    }
+                    
+                    // Update each collection's order_index
+                    let successCount = 0;
+                    let errorCount = 0;
+                    
+                    for (const update of updates) {
+                        const { error } = await supabaseClient
+                            .from('link_lists')
+                            .update({ order_index: update.order_index })
+                            .eq('id', update.id);
+                        
+                        if (error) {
+                            console.error('Error updating collection order:', error);
+                            errorCount++;
+                        } else {
+                            successCount++;
+                        }
+                    }
+                    
+                    if (errorCount === 0) {
+                        showMessage('Collection order saved!', 'success');
+                    } else {
+                        showMessage(`Warning: Failed to save order for ${errorCount} collection(s).`, 'error');
+                    }
+                } catch (error) {
+                    console.error('Error saving collection order:', error);
+                    showMessage('Failed to save collection order. Please try again.', 'error');
+                }
+            }
+            
+            // Re-render to update indices
+            renderCollections();
         }
         
         async function loadCollection(collection) {
@@ -2097,13 +2299,19 @@
         async function createDefaultList() {
             console.log('Creating default list...');
             try {
+                const maxOrderIndex = collections.length > 0 
+                    ? Math.max(...collections.map(c => c.order_index || 0)) 
+                    : -1;
+                const newOrderIndex = maxOrderIndex + 100;
+                
                 const { data, error } = await supabaseClient
                     .from('link_lists')
                     .insert({
                         owner_id: currentUser.id,
                         slug: 'my-links',
                         visibility: 'public',
-                        theme: theme
+                        theme: theme,
+                        order_index: newOrderIndex
                     })
                     .select()
                     .single();
@@ -2139,13 +2347,19 @@
                 // Capture the current theme from the UI
                 const collectionTheme = getCurrentThemeFromUI();
                 
+                const maxOrderIndex = collections.length > 0 
+                    ? Math.max(...collections.map(c => c.order_index || 0)) 
+                    : -1;
+                const newOrderIndex = maxOrderIndex + 100;
+                
                 const { data, error } = await supabaseClient
                     .from('link_lists')
                     .insert({
                         owner_id: currentUser.id,
                         slug: autoName,
                         visibility: visibility,
-                        theme: collectionTheme
+                        theme: collectionTheme,
+                        order_index: newOrderIndex
                     })
                     .select()
                     .single();
@@ -2251,13 +2465,19 @@
                     buttonStyle: 'soft'
                 };
                 
+                const maxOrderIndex = collections.length > 0 
+                    ? Math.max(...collections.map(c => c.order_index || 0)) 
+                    : -1;
+                const newOrderIndex = maxOrderIndex + 100;
+                
                 const { data, error } = await supabaseClient
                     .from('link_lists')
                     .insert({
                         owner_id: currentUser.id,
                         slug: finalName,
                         visibility: visibility,
-                        theme: collectionTheme
+                        theme: collectionTheme,
+                        order_index: newOrderIndex
                     })
                     .select()
                     .single();
@@ -2342,13 +2562,19 @@
             
             try {
                 // Create new collection
+                const maxOrderIndex = collections.length > 0 
+                    ? Math.max(...collections.map(c => c.order_index || 0)) 
+                    : -1;
+                const newOrderIndex = maxOrderIndex + 100;
+                
                 const { data: newCollection, error: collectionError } = await supabaseClient
                     .from('link_lists')
                     .insert({
                         owner_id: currentUser.id,
                         slug: newSlug,
                         visibility: collection.visibility,
-                        theme: collection.theme
+                        theme: collection.theme,
+                        order_index: newOrderIndex
                     })
                     .select()
                     .single();

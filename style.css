@@ -440,6 +440,35 @@
             margin-bottom: 4px;
         }
 
+        .collection-drag-handle {
+            cursor: grab;
+            color: #94a3b8;
+            margin-right: 8px;
+            padding: 2px 4px;
+            display: flex;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .collection-drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .collection-item:hover .collection-drag-handle {
+            opacity: 1;
+        }
+
+        .collection-item.active .collection-drag-handle {
+            opacity: 1;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .collection-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
         .collection-header .collection-name {
             flex: 1;
             min-width: 0;
