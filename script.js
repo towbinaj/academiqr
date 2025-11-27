@@ -6142,13 +6142,9 @@
                             // Add to media files array
                             mediaFiles.push(mediaItem);
                             
-                            // Save to localStorage
-                            try {
-                                localStorage.setItem('academiq-media', JSON.stringify(mediaFiles));
-                                console.log('Image added to media library:', mediaItem.name);
-                            } catch (storageError) {
-                                console.warn('Could not save to localStorage:', storageError);
-                            }
+                            // Save to database (or localStorage if not logged in)
+                            await saveMediaFiles();
+                            console.log('Image added to media library:', mediaItem.name);
                             
                             // Update preview
                             previewImg.src = base64;
@@ -7563,22 +7559,35 @@
             setupDragAndDrop();
         }
 
+        // Track if drag and drop is already set up to prevent duplicate listeners
+        let dragAndDropSetup = false;
+        // Track if upload is in progress to prevent duplicate calls
+        let uploadInProgress = false;
+        
         function setupDragAndDrop() {
             const dropZone = document.getElementById('mediaDropZone');
             const modalBody = document.querySelector('#mediaModal .modal-body');
             
             if (!dropZone || !modalBody) return;
+            
+            // Only set up once
+            if (dragAndDropSetup) {
+                console.log('Drag and drop already set up, skipping');
+                return;
+            }
+            
+            dragAndDropSetup = true;
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
 
             // Prevent default drag behaviors on the document
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 modalBody.addEventListener(eventName, preventDefaults, false);
                 document.body.addEventListener(eventName, preventDefaults, false);
             });
-
-            function preventDefaults(e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
 
             // Highlight drop zone when item is dragged over it
             ['dragenter', 'dragover'].forEach(eventName => {
@@ -7594,13 +7603,15 @@
             });
 
             // Handle dropped files
-            modalBody.addEventListener('drop', handleDrop, false);
-
             function handleDrop(e) {
                 const dt = e.dataTransfer;
                 const files = Array.from(dt.files);
-                handleFileUpload({ target: { files: files } });
+                if (files.length > 0) {
+                    handleFileUpload({ target: { files: files } });
+                }
             }
+            
+            modalBody.addEventListener('drop', handleDrop, false);
 
             // Click on drop zone to trigger file input
             dropZone.addEventListener('click', (e) => {
@@ -7635,14 +7646,98 @@
             document.getElementById('mediaModal').classList.add('hidden');
         }
 
-        function loadMediaFiles() {
+        // Function to verify media files in database (for debugging)
+        async function verifyMediaInDatabase() {
+            if (!currentUser || !supabaseClient) {
+                console.log('❌ User not logged in - cannot verify database');
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('user_media')
+                    .select('id, name, type, size, uploaded_at')
+                    .eq('user_id', currentUser.id)
+                    .order('uploaded_at', { ascending: false });
+                
+                if (error) {
+                    console.error('❌ Error checking database:', error);
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    console.log('✅ Found', data.length, 'media files in database:');
+                    data.forEach((file, index) => {
+                        const sizeKB = (file.size / 1024).toFixed(2);
+                        console.log(`  ${index + 1}. ${file.name} (${file.type}, ${sizeKB}KB) - ID: ${file.id}`);
+                    });
+                    showMessage(`Found ${data.length} media files in database`, 'success');
+                } else {
+                    console.log('⚠️ No media files found in database');
+                    showMessage('No media files in database', 'warning');
+                }
+            } catch (error) {
+                console.error('❌ Error verifying database:', error);
+            }
+        }
+        
+        // Make verifyMediaInDatabase available globally for console debugging
+        window.verifyMediaInDatabase = verifyMediaInDatabase;
+        
+        async function loadMediaFiles() {
             console.log('Loading media files...');
             console.log('Current mediaFiles length before load:', mediaFiles.length);
             
             // Always start fresh - clear existing array first
             mediaFiles = [];
             
-            // Try to load from localStorage
+            // If user is logged in, try to load from database
+            if (currentUser && supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('user_media')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .order('uploaded_at', { ascending: false });
+                    
+                    if (error) {
+                        console.error('Error loading media from database:', error);
+                        // Fall back to localStorage
+                        await loadMediaFilesFromLocalStorage();
+                    } else if (data && data.length > 0) {
+                        // Convert database records to mediaFiles format
+                        mediaFiles = data.map(record => ({
+                            id: record.id,
+                            name: record.name,
+                            url: record.url,
+                            size: record.size,
+                            type: record.type,
+                            uploadedAt: record.uploaded_at
+                        }));
+                        console.log('Successfully loaded', mediaFiles.length, 'media files from database');
+                        
+                        // Migrate any localStorage data to database (one-time migration)
+                        await migrateLocalStorageToDatabase();
+                    } else {
+                        console.log('No media files in database');
+                        // Check localStorage for migration
+                        await migrateLocalStorageToDatabase();
+                    }
+                } catch (error) {
+                    console.error('Error loading from database:', error);
+                    // Fall back to localStorage
+                    await loadMediaFilesFromLocalStorage();
+                }
+            } else {
+                // User not logged in, load from localStorage
+                await loadMediaFilesFromLocalStorage();
+            }
+            
+            console.log('Final mediaFiles length after load:', mediaFiles.length);
+            renderMediaGrid();
+        }
+        
+        async function loadMediaFilesFromLocalStorage() {
             try {
                 const stored = localStorage.getItem('academiq-media');
                 if (stored) {
@@ -7651,7 +7746,7 @@
                         mediaFiles = parsedFiles;
                         console.log('Successfully loaded media files from localStorage:', mediaFiles.length);
                     } else {
-                        console.log('No valid files in storage, starting fresh');
+                        console.log('No valid files in localStorage, starting fresh');
                         mediaFiles = [];
                     }
                 } else {
@@ -7659,7 +7754,7 @@
                     mediaFiles = [];
                 }
             } catch (error) {
-                console.error('Error loading media files:', error);
+                console.error('Error loading media files from localStorage:', error);
                 console.log('Starting with empty array due to error');
                 // Clear corrupted data and start fresh
                 mediaFiles = [];
@@ -7671,9 +7766,70 @@
                     console.warn('Could not clear localStorage:', e);
                 }
             }
+        }
+        
+        async function migrateLocalStorageToDatabase() {
+            // One-time migration: move localStorage data to database
+            if (!currentUser || !supabaseClient) {
+                return;
+            }
             
-            console.log('Final mediaFiles length after load:', mediaFiles.length);
-            renderMediaGrid();
+            try {
+                const stored = localStorage.getItem('academiq-media');
+                if (!stored) {
+                    return; // Nothing to migrate
+                }
+                
+                const parsedFiles = JSON.parse(stored);
+                if (!Array.isArray(parsedFiles) || parsedFiles.length === 0) {
+                    return; // Nothing to migrate
+                }
+                
+                console.log('Migrating', parsedFiles.length, 'media files from localStorage to database...');
+                
+                // Check if we already have these files in the database
+                const { data: existingData } = await supabaseClient
+                    .from('user_media')
+                    .select('id, name, uploaded_at')
+                    .eq('user_id', currentUser.id);
+                
+                const existingNames = new Set(existingData?.map(f => f.name) || []);
+                
+                // Only migrate files that don't already exist
+                const filesToMigrate = parsedFiles.filter(file => !existingNames.has(file.name));
+                
+                if (filesToMigrate.length > 0) {
+                    const mediaRecords = filesToMigrate.map(file => ({
+                        user_id: currentUser.id,
+                        name: file.name,
+                        url: file.url,
+                        size: file.size,
+                        type: file.type,
+                        uploaded_at: file.uploadedAt || new Date().toISOString()
+                    }));
+                    
+                    const { error } = await supabaseClient
+                        .from('user_media')
+                        .insert(mediaRecords);
+                    
+                    if (error) {
+                        console.error('Error migrating media files:', error);
+                    } else {
+                        console.log('Successfully migrated', filesToMigrate.length, 'media files to database');
+                        // Update mediaFiles array to include migrated files
+                        mediaFiles = [...mediaFiles, ...filesToMigrate];
+                        // Clear localStorage after successful migration
+                        localStorage.removeItem('academiq-media');
+                    }
+                } else {
+                    console.log('All localStorage files already exist in database');
+                    // Clear localStorage since everything is migrated
+                    localStorage.removeItem('academiq-media');
+                }
+            } catch (error) {
+                console.error('Error during migration:', error);
+                // Don't clear localStorage if migration fails
+            }
         }
 
         function clearOldMediaData() {
@@ -7682,7 +7838,9 @@
             console.log('Cleared old media metadata');
         }
 
-        function clearAllMedia() {
+        async function clearAllMedia() {
+            console.log('clearAllMedia called, current mediaFiles count:', mediaFiles.length);
+            
             if (confirm('Are you sure you want to clear all media files? This cannot be undone.')) {
                 // Create backup before clearing
                 const backup = {
@@ -7698,8 +7856,32 @@
                     console.warn('Could not create backup:', error);
                 }
                 
+                // Delete from database if user is logged in
+                if (currentUser && supabaseClient) {
+                    try {
+                        console.log('Deleting media from database for user:', currentUser.id);
+                        const { error, count } = await supabaseClient
+                            .from('user_media')
+                            .delete()
+                            .eq('user_id', currentUser.id);
+                        
+                        if (error) {
+                            console.error('Error deleting from database:', error);
+                            showMessage('Error clearing media from database. Local storage cleared.', 'error');
+                        } else {
+                            console.log('✅ Cleared all media from database. Deleted count:', count);
+                        }
+                    } catch (error) {
+                        console.error('Error clearing database:', error);
+                        showMessage('Error clearing media from database.', 'error');
+                    }
+                } else {
+                    console.log('User not logged in, skipping database clear');
+                }
+                
                 // Clear the array completely
                 mediaFiles = [];
+                console.log('MediaFiles array cleared. Length:', mediaFiles.length);
                 
                 // Remove all media-related localStorage items
                 localStorage.removeItem('academiq-media');
@@ -7715,9 +7897,16 @@
                     console.warn('Error checking localStorage:', e);
                 }
                 
-                console.log('Media files cleared. Current mediaFiles length:', mediaFiles.length);
+                // Reload media files to ensure UI is updated (should be empty now)
+                await loadMediaFiles();
+                console.log('After reload, mediaFiles length:', mediaFiles.length);
+                
+                // Render the grid (should be empty)
                 renderMediaGrid();
+                
                 showMessage('All media files cleared', 'success');
+            } else {
+                console.log('Clear operation cancelled by user');
             }
         }
 
@@ -7770,26 +7959,111 @@
             }
         }
 
-        function saveMediaFiles() {
+        async function saveMediaFiles() {
             console.log('Saving media files:', mediaFiles.length, 'files');
+            console.log('currentUser:', currentUser ? 'exists' : 'null/undefined');
+            console.log('supabaseClient:', supabaseClient ? 'exists' : 'null/undefined');
+            
+            // If user is not logged in, fall back to localStorage
+            if (!currentUser || !supabaseClient) {
+                console.log('⚠️ User not logged in or Supabase client not available, saving to localStorage');
+                try {
+                    const dataToSave = JSON.stringify(mediaFiles);
+                    localStorage.setItem('academiq-media', dataToSave);
+                    console.log('Successfully saved media files to localStorage');
+                } catch (error) {
+                    console.error('Error saving to localStorage:', error);
+                    if (error.name === 'QuotaExceededError') {
+                        console.log('Quota exceeded, compressing images...');
+                        compressAllImages();
+                    } else {
+                        showMessage('Error saving media files. Please try again.', 'error');
+                    }
+                }
+                return;
+            }
+            
             try {
-                const dataToSave = JSON.stringify(mediaFiles);
-                console.log('Data size:', dataToSave.length, 'characters');
-                localStorage.setItem('academiq-media', dataToSave);
-                console.log('Successfully saved media files to localStorage');
+                if (mediaFiles.length > 0) {
+                    // Delete all existing media for this user, then insert all current files
+                    // This ensures the database matches the current mediaFiles array exactly
+                    // The unique constraint on (user_id, name) will prevent duplicates within the batch
+                    const { error: deleteError } = await supabaseClient
+                        .from('user_media')
+                        .delete()
+                        .eq('user_id', currentUser.id);
+                    
+                    if (deleteError) {
+                        console.error('Error deleting old media:', deleteError);
+                        // Continue anyway - try to insert new records
+                    }
+                    
+                    // Insert all media files
+                    const mediaRecords = mediaFiles.map(file => ({
+                        user_id: currentUser.id,
+                        name: file.name,
+                        url: file.url,
+                        size: file.size,
+                        type: file.type,
+                        uploaded_at: file.uploadedAt || new Date().toISOString()
+                    }));
+                    
+                    const { data, error } = await supabaseClient
+                        .from('user_media')
+                        .insert(mediaRecords)
+                        .select();
+                    
+                    if (error) {
+                        console.error('Error saving media files to database:', error);
+                        // Fall back to localStorage
+                        const dataToSave = JSON.stringify(mediaFiles);
+                        localStorage.setItem('academiq-media', dataToSave);
+                        console.log('Fell back to localStorage due to database error');
+                    } else {
+                        console.log('✅ Successfully saved', data.length, 'media files to database');
+                        console.log('Database records:', data.map(r => ({ id: r.id, name: r.name, size: r.size })));
+                        // Update mediaFiles array with database IDs
+                        if (data && data.length === mediaFiles.length) {
+                            // Map database records back to mediaFiles array by matching name and uploaded_at
+                            const updatedFiles = mediaFiles.map(file => {
+                                const dbRecord = data.find(record => 
+                                    record.name === file.name && 
+                                    Math.abs(new Date(record.uploaded_at) - new Date(file.uploadedAt || record.uploaded_at)) < 1000
+                                );
+                                if (dbRecord) {
+                                    return {
+                                        ...file,
+                                        id: dbRecord.id // Use database UUID instead of temporary ID
+                                    };
+                                }
+                                return file;
+                            });
+                            mediaFiles = updatedFiles;
+                        }
+                        // Clear localStorage since we're using database now
+                        localStorage.removeItem('academiq-media');
+                        showMessage(`Saved ${data.length} media files to database`, 'success');
+                    }
+                } else {
+                    console.log('No media files to save');
+                    // Clear localStorage
+                    localStorage.removeItem('academiq-media');
+                }
             } catch (error) {
                 console.error('Error saving media files:', error);
-                console.log('Error details:', {
-                    name: error.name,
-                    // Don't log error.message to prevent information disclosure
-                    mediaFilesCount: mediaFiles.length
-                });
-                
-                if (error.name === 'QuotaExceededError') {
-                    console.log('Quota exceeded, compressing images...');
-                    compressAllImages();
-                } else {
-                    showMessage('Error saving media files. Please try again.', 'error');
+                // Fall back to localStorage
+                try {
+                    const dataToSave = JSON.stringify(mediaFiles);
+                    localStorage.setItem('academiq-media', dataToSave);
+                    console.log('Fell back to localStorage due to error');
+                } catch (localError) {
+                    console.error('Error saving to localStorage:', localError);
+                    if (localError.name === 'QuotaExceededError') {
+                        console.log('Quota exceeded, compressing images...');
+                        compressAllImages();
+                    } else {
+                        showMessage('Error saving media files. Please try again.', 'error');
+                    }
                 }
             }
         }
@@ -7965,14 +8239,28 @@
             input.type = 'file';
             input.multiple = true;
             input.accept = 'image/*';
-            input.onchange = handleFileUpload;
+            // Use a one-time handler to prevent duplicate calls
+            input.onchange = function(event) {
+                if (event.target.files && event.target.files.length > 0) {
+                    handleFileUpload(event);
+                }
+                // Clear the input to allow selecting the same files again
+                input.value = '';
+            };
             input.click();
         }
 
         function handleFileUpload(event) {
+            // Prevent duplicate calls
+            if (uploadInProgress) {
+                console.log('Upload already in progress, ignoring duplicate call');
+                return;
+            }
+            
             const files = Array.from(event.target.files || []);
             if (!files || files.length === 0) return;
             
+            uploadInProgress = true;
             console.log('Files selected for upload:', files.length);
             
             const validFiles = [];
@@ -8008,6 +8296,15 @@
             
             let processedCount = 0;
             const totalFiles = validFiles.length;
+            const newFiles = [];
+            
+            // Show progress indicator
+            // Ensure media modal is open so progress indicator is visible
+            const mediaModal = document.getElementById('mediaModal');
+            if (mediaModal && mediaModal.classList.contains('hidden')) {
+                showMediaLibrary();
+            }
+            showUploadProgress(0, totalFiles);
             
             // Process valid files
             validFiles.forEach((file, index) => {
@@ -8032,62 +8329,181 @@
                         console.log('Skipping duplicate file:', file.name);
                         showMessage(`Skipping "${file.name}" - file already exists in library.`, 'warning');
                         processedCount++;
-                        if (processedCount === totalFiles) {
-                            renderMediaGrid();
-                            if (totalFiles === 1) {
-                                showMessage('File already exists in library.', 'warning');
-                            }
-                        }
+                        updateUploadProgress(processedCount, totalFiles);
+                        checkAndSaveAfterAllProcessed();
                         return;
                     }
                     
                     mediaFiles.push(newFile);
+                    newFiles.push(newFile);
                     processedCount++;
                     
                     console.log('Total files after upload:', mediaFiles.length);
                     
-                    // Try to save, but don't fail if quota exceeded
-                    try {
-                        saveMediaFiles();
-                    } catch (error) {
-                        console.warn('Could not save file to localStorage:', error);
-                        if (processedCount === totalFiles) {
-                            showMessage('Files uploaded but not saved to storage due to space limits.', 'warning');
-                        }
-                    }
+                    // Update progress
+                    updateUploadProgress(processedCount, totalFiles);
                     
-                    // Update grid after each file or when all are done
+                    // Update grid after each file
                     renderMediaGrid();
                     
-                    // Show completion message
-                    if (processedCount === totalFiles) {
-                        if (totalFiles === 1) {
-                            showMessage(`Image "${file.name}" uploaded successfully!`, 'success');
-                        } else {
-                            showMessage(`Successfully uploaded ${totalFiles} images!`, 'success');
-                        }
-                    }
+                    // Check if all files are processed, then save once
+                    checkAndSaveAfterAllProcessed();
                 };
                 
                 reader.onerror = (e) => {
                     console.error('Error reading file:', file.name, e);
                     showMessage(`Error reading file "${file.name}"`, 'error');
                     processedCount++;
+                    updateUploadProgress(processedCount, totalFiles);
+                    checkAndSaveAfterAllProcessed();
                 };
                 
                 reader.readAsDataURL(file);
             });
+            
+            // Function to check if all files are processed and save once
+            function checkAndSaveAfterAllProcessed() {
+                if (processedCount === totalFiles) {
+                    // All files processed - save once to database
+                    if (newFiles.length > 0) {
+                        console.log(`All ${totalFiles} files processed. Saving ${newFiles.length} new files to database...`);
+                        saveMediaFiles().then(() => {
+                            // Hide progress after successful save
+                            setTimeout(() => {
+                                hideUploadProgress();
+                                uploadInProgress = false; // Reset flag
+                            }, 500);
+                        }).catch(error => {
+                            console.error('Could not save files:', error);
+                            showMessage('Files uploaded but not saved to storage due to error.', 'warning');
+                            hideUploadProgress();
+                            uploadInProgress = false; // Reset flag
+                        });
+                    } else {
+                        // No new files, just hide progress
+                        hideUploadProgress();
+                        uploadInProgress = false; // Reset flag
+                    }
+                    
+                    // Show completion message
+                    if (totalFiles === 1) {
+                        if (newFiles.length > 0) {
+                            showMessage(`Image "${validFiles[0].name}" uploaded successfully!`, 'success');
+                        }
+                    } else {
+                        if (newFiles.length > 0) {
+                            showMessage(`Successfully uploaded ${newFiles.length} images!`, 'success');
+                        } else if (processedCount === totalFiles) {
+                            showMessage('All files were duplicates.', 'warning');
+                        }
+                    }
+                }
+            }
         }
 
-        function deleteImage(fileId) {
+        // Upload Progress Functions
+        function showUploadProgress(current, total) {
+            console.log('showUploadProgress called:', current, total);
+            const container = document.getElementById('uploadProgressContainer');
+            const progressCount = document.getElementById('progressCount');
+            const progressTotal = document.getElementById('progressTotal');
+            const progressCircle = document.querySelector('.progress-ring-circle');
+            
+            console.log('Progress elements found:', {
+                container: !!container,
+                progressCount: !!progressCount,
+                progressTotal: !!progressTotal,
+                progressCircle: !!progressCircle
+            });
+            
+            if (container && progressCount && progressTotal && progressCircle) {
+                container.classList.remove('hidden');
+                // Force display to ensure it's visible (override global .hidden class)
+                container.style.display = 'flex';
+                container.style.visibility = 'visible';
+                container.style.opacity = '1';
+                progressCount.textContent = current;
+                progressTotal.textContent = total;
+                updateProgressRing(progressCircle, current, total);
+                console.log('Progress indicator shown, container display:', window.getComputedStyle(container).display);
+            } else {
+                console.warn('Progress indicator elements not found');
+            }
+        }
+
+        function updateUploadProgress(current, total) {
+            console.log('updateUploadProgress called:', current, total);
+            const progressCount = document.getElementById('progressCount');
+            const progressTotal = document.getElementById('progressTotal');
+            const progressCircle = document.querySelector('.progress-ring-circle');
+            
+            if (progressCount && progressTotal && progressCircle) {
+                progressCount.textContent = current;
+                progressTotal.textContent = total;
+                updateProgressRing(progressCircle, current, total);
+                console.log('Progress updated:', current, '/', total);
+            } else {
+                console.warn('Progress elements not found for update:', {
+                    progressCount: !!progressCount,
+                    progressTotal: !!progressTotal,
+                    progressCircle: !!progressCircle
+                });
+            }
+        }
+
+        function hideUploadProgress() {
+            const container = document.getElementById('uploadProgressContainer');
+            if (container) {
+                container.classList.add('hidden');
+            }
+        }
+
+        function updateProgressRing(circle, current, total) {
+            if (!circle || total === 0) return;
+            
+            const circumference = 2 * Math.PI * 36; // radius is 36
+            const progress = current / total;
+            const offset = circumference - (progress * circumference);
+            
+            console.log('Updating progress ring:', { current, total, progress: (progress * 100).toFixed(1) + '%', offset });
+            circle.style.strokeDashoffset = offset;
+            
+            // Force a reflow to ensure the style is applied
+            circle.offsetHeight;
+        }
+
+        async function deleteImage(fileId) {
             const fileToDelete = mediaFiles.find(file => file.id === fileId);
             console.log('Deleting image:', fileToDelete ? fileToDelete.name : 'unknown', 'ID:', fileId);
             console.log('Media files before deletion:', mediaFiles.length);
             
+            // Delete from database if user is logged in
+            if (currentUser && supabaseClient && fileId && fileId.startsWith && !fileId.startsWith('media_')) {
+                // Only delete from database if it's a UUID (database ID), not a temporary localStorage ID
+                try {
+                    const { error } = await supabaseClient
+                        .from('user_media')
+                        .delete()
+                        .eq('id', fileId)
+                        .eq('user_id', currentUser.id);
+                    
+                    if (error) {
+                        console.error('Error deleting from database:', error);
+                        // Continue with local deletion anyway
+                    } else {
+                        console.log('Deleted from database');
+                    }
+                } catch (error) {
+                    console.error('Error deleting from database:', error);
+                    // Continue with local deletion anyway
+                }
+            }
+            
             mediaFiles = mediaFiles.filter(file => file.id !== fileId);
             console.log('Media files after deletion:', mediaFiles.length);
             
-            saveMediaFiles();
+            // Save updated array (will sync to database)
+            await saveMediaFiles();
             renderMediaGrid();
             showMessage('Image deleted', 'success');
         }
