@@ -1416,84 +1416,6 @@
                     imagePreview.appendChild(removeBtn);
                     imagePreview.appendChild(editBtn);
                     imageColumn.appendChild(imagePreview);
-                    
-                    // Add inline image position controls (hidden by default, like appearance tab)
-                    const imagePositioning = document.createElement('div');
-                    imagePositioning.className = 'image-positioning link-image-positioning';
-                    imagePositioning.id = `link-image-positioning-${index}`;
-                    imagePositioning.style.display = 'none';
-                    
-                    const optionGroup = document.createElement('div');
-                    optionGroup.className = 'option-group';
-                    
-                    const label = document.createElement('label');
-                    label.textContent = 'Image Position';
-                    
-                    const positionControls = document.createElement('div');
-                    positionControls.className = 'position-controls';
-                    
-                    // Horizontal slider
-                    const xSliderGroup = document.createElement('div');
-                    xSliderGroup.className = 'position-slider';
-                    const xLabel = document.createElement('label');
-                    xLabel.innerHTML = 'Horizontal: <span id="link-position-x-value-' + index + '">' + (link.imagePosition?.x || 50) + '</span>%';
-                    const xSlider = document.createElement('input');
-                    xSlider.type = 'range';
-                    xSlider.id = 'link-position-x-' + index;
-                    xSlider.min = '0';
-                    xSlider.max = '100';
-                    xSlider.value = link.imagePosition?.x || 50;
-                    xSlider.className = 'slider';
-                    xSlider.oninput = function() {
-                        updateLinkImagePositionFromSlider(index, 'x', this.value);
-                    };
-                    xSliderGroup.appendChild(xLabel);
-                    xSliderGroup.appendChild(xSlider);
-                    
-                    // Vertical slider
-                    const ySliderGroup = document.createElement('div');
-                    ySliderGroup.className = 'position-slider';
-                    const yLabel = document.createElement('label');
-                    yLabel.innerHTML = 'Vertical: <span id="link-position-y-value-' + index + '">' + (link.imagePosition?.y || 50) + '</span>%';
-                    const ySlider = document.createElement('input');
-                    ySlider.type = 'range';
-                    ySlider.id = 'link-position-y-' + index;
-                    ySlider.min = '0';
-                    ySlider.max = '100';
-                    ySlider.value = link.imagePosition?.y || 50;
-                    ySlider.className = 'slider';
-                    ySlider.oninput = function() {
-                        updateLinkImagePositionFromSlider(index, 'y', this.value);
-                    };
-                    ySliderGroup.appendChild(yLabel);
-                    ySliderGroup.appendChild(ySlider);
-                    
-                    // Scale slider
-                    const scaleSliderGroup = document.createElement('div');
-                    scaleSliderGroup.className = 'position-slider';
-                    const scaleLabel = document.createElement('label');
-                    scaleLabel.innerHTML = 'Scale: <span id="link-position-scale-value-' + index + '">' + (link.imageScale || 100) + '</span>%';
-                    const scaleSlider = document.createElement('input');
-                    scaleSlider.type = 'range';
-                    scaleSlider.id = 'link-position-scale-' + index;
-                    scaleSlider.min = '50';
-                    scaleSlider.max = '200';
-                    scaleSlider.value = link.imageScale || 100;
-                    scaleSlider.className = 'slider';
-                    scaleSlider.oninput = function() {
-                        updateLinkImagePositionFromSlider(index, 'scale', this.value);
-                    };
-                    scaleSliderGroup.appendChild(scaleLabel);
-                    scaleSliderGroup.appendChild(scaleSlider);
-                    
-                    positionControls.appendChild(xSliderGroup);
-                    positionControls.appendChild(ySliderGroup);
-                    positionControls.appendChild(scaleSliderGroup);
-                    
-                    optionGroup.appendChild(label);
-                    optionGroup.appendChild(positionControls);
-                    imagePositioning.appendChild(optionGroup);
-                    imageColumn.appendChild(imagePositioning);
                 }
                 
                 const imageButtons = document.createElement('div');
@@ -6769,76 +6691,256 @@
         }
 
         function toggleLinkImageEditor(linkIndex) {
-            // Toggle visibility of inline position controls (same as appearance tab)
-            const imagePositioning = document.getElementById(`link-image-positioning-${linkIndex}`);
-            if (!imagePositioning) return;
+            // Remove any existing editor
+            const existingEditor = document.getElementById('link-image-editor-modal');
+            if (existingEditor) {
+                existingEditor.remove();
+            }
             
-            const isVisible = imagePositioning.style.display !== 'none';
+            const existingBackdrop = document.getElementById('link-image-editor-backdrop');
+            if (existingBackdrop) {
+                existingBackdrop.remove();
+            }
             
-            if (isVisible) {
-                // Hide the editor
-                imagePositioning.style.display = 'none';
-            } else {
-                // Show the editor and load current position values
-                imagePositioning.style.display = 'block';
-                
-                const link = links[linkIndex];
-                if (link) {
-                    const positionX = document.getElementById(`link-position-x-${linkIndex}`);
-                    const positionY = document.getElementById(`link-position-y-${linkIndex}`);
-                    const positionScale = document.getElementById(`link-position-scale-${linkIndex}`);
-                    const positionXValue = document.getElementById(`link-position-x-value-${linkIndex}`);
-                    const positionYValue = document.getElementById(`link-position-y-value-${linkIndex}`);
-                    const positionScaleValue = document.getElementById(`link-position-scale-value-${linkIndex}`);
+            // Create backdrop
+            const backdrop = document.createElement('div');
+            backdrop.id = 'link-image-editor-backdrop';
+            backdrop.className = 'link-image-editor-backdrop';
+            backdrop.onclick = closeLinkImageEditor;
+            
+            // Create modal
+            const editor = document.createElement('div');
+            editor.id = 'link-image-editor-modal';
+            editor.className = 'link-image-editor';
+            
+            const link = links[linkIndex];
+            const imagePosition = link.imagePosition || { x: 50, y: 50 };
+            const imageScale = link.imageScale || 100;
+            
+            console.log(`Opening modal for link ${linkIndex}:`, {
+                imagePosition: imagePosition,
+                imageScale: imageScale,
+                linkData: link
+            });
+            
+            // Calculate current transform for modal preview
+            const scale = imageScale / 100;
+            const panX = ((imagePosition.x - 50) / 50) * 30;
+            const panY = ((imagePosition.y - 50) / 50) * 30;
+            const currentTransform = `translate(${panX}%, ${panY}%) scale(${scale})`;
+            
+            console.log(`Modal preview transform:`, {
+                scale: scale,
+                panX: panX,
+                panY: panY,
+                transform: currentTransform
+            });
+            
+            // Create the modal content using DOM methods
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'image-position-controls';
+            
+            const headerDiv = document.createElement('div');
+            headerDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;';
+            
+            const h3 = document.createElement('h3');
+            h3.textContent = 'Edit Image Position';
+            h3.style.cssText = 'margin: 0; font-size: 16px; color: #374151;';
+            
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.onclick = closeLinkImageEditor;
+            closeBtn.textContent = '×';
+            closeBtn.style.cssText = 'background: none; border: none; font-size: 20px; cursor: pointer; color: #6b7280;';
+            
+            headerDiv.appendChild(h3);
+            headerDiv.appendChild(closeBtn);
+            
+            // Image Preview
+            const previewDiv = document.createElement('div');
+            previewDiv.style.cssText = 'margin-bottom: 20px; text-align: center;';
+            
+            const previewLabel = document.createElement('div');
+            previewLabel.textContent = 'Preview';
+            previewLabel.style.cssText = 'font-size: 12px; color: #6b7280; margin-bottom: 8px;';
+            
+            const previewContainer = document.createElement('div');
+            previewContainer.id = 'modal-image-preview-' + linkIndex;
+            previewContainer.style.cssText = 'width: 120px; height: 120px; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden; margin: 0 auto; background: #f9fafb; display: flex; align-items: center; justify-content: center; position: relative;';
+            
+            const previewImg = document.createElement('img');
+            previewImg.id = 'modal-preview-img-' + linkIndex;
+            previewImg.src = link.image || '';
+            previewImg.alt = 'Preview';
+            previewImg.style.cssText = 'width: 100%; height: 100%; object-fit: contain; transform-origin: center center; max-width: 100%; max-height: 100%; transform: ' + currentTransform + ';';
+            
+            previewContainer.appendChild(previewImg);
+            previewDiv.appendChild(previewLabel);
+            previewDiv.appendChild(previewContainer);
+            
+            controlsDiv.appendChild(headerDiv);
+            controlsDiv.appendChild(previewDiv);
                     
-                    const imagePosition = link.imagePosition || { x: 50, y: 50 };
-                    const imageScale = link.imageScale || 100;
-                    
-                    if (positionX) positionX.value = imagePosition.x;
-                    if (positionY) positionY.value = imagePosition.y;
-                    if (positionScale) positionScale.value = imageScale;
-                    if (positionXValue) positionXValue.textContent = imagePosition.x;
-                    if (positionYValue) positionYValue.textContent = imagePosition.y;
-                    if (positionScaleValue) positionScaleValue.textContent = imageScale;
-                }
-            }
+            
+            // Create position sliders
+            const slidersDiv = document.createElement('div');
+            slidersDiv.className = 'position-sliders';
+            
+            // Horizontal position slider
+            const xGroup = document.createElement('div');
+            xGroup.className = 'slider-group';
+            const xLabel = document.createElement('label');
+            xLabel.innerHTML = 'Horizontal Position: <span id="link-x-value-' + linkIndex + '">' + imagePosition.x + '</span>%';
+            const xSlider = document.createElement('input');
+            xSlider.type = 'range';
+            xSlider.id = 'link-x-slider-' + linkIndex;
+            xSlider.min = '0';
+            xSlider.max = '100';
+            xSlider.value = imagePosition.x;
+            xSlider.oninput = function() { updateLinkImagePosition(linkIndex, 'x', this.value); };
+            xGroup.appendChild(xLabel);
+            xGroup.appendChild(xSlider);
+            
+            // Vertical position slider
+            const yGroup = document.createElement('div');
+            yGroup.className = 'slider-group';
+            const yLabel = document.createElement('label');
+            yLabel.innerHTML = 'Vertical Position: <span id="link-y-value-' + linkIndex + '">' + imagePosition.y + '</span>%';
+            const ySlider = document.createElement('input');
+            ySlider.type = 'range';
+            ySlider.id = 'link-y-slider-' + linkIndex;
+            ySlider.min = '0';
+            ySlider.max = '100';
+            ySlider.value = imagePosition.y;
+            ySlider.oninput = function() { updateLinkImagePosition(linkIndex, 'y', this.value); };
+            yGroup.appendChild(yLabel);
+            yGroup.appendChild(ySlider);
+            
+            // Scale slider
+            const scaleGroup = document.createElement('div');
+            scaleGroup.className = 'slider-group';
+            const scaleLabel = document.createElement('label');
+            scaleLabel.innerHTML = 'Image Scale: <span id="link-scale-value-' + linkIndex + '">' + imageScale + '</span>%';
+            const scaleSlider = document.createElement('input');
+            scaleSlider.type = 'range';
+            scaleSlider.id = 'link-scale-slider-' + linkIndex;
+            scaleSlider.min = '50';
+            scaleSlider.max = '200';
+            scaleSlider.value = imageScale;
+            scaleSlider.oninput = function() { updateLinkImageScale(linkIndex, this.value); };
+            scaleGroup.appendChild(scaleLabel);
+            scaleGroup.appendChild(scaleSlider);
+            
+            slidersDiv.appendChild(xGroup);
+            slidersDiv.appendChild(yGroup);
+            slidersDiv.appendChild(scaleGroup);
+            
+            // Position presets
+            const positionPresets = document.createElement('div');
+            positionPresets.className = 'position-presets';
+            const positionLabel = document.createElement('div');
+            positionLabel.textContent = 'Position';
+            positionLabel.style.cssText = 'margin-bottom: 8px; font-size: 12px; color: #6b7280; font-weight: 600;';
+            
+            const centerBtn = document.createElement('button');
+            centerBtn.type = 'button';
+            centerBtn.textContent = 'Center';
+            centerBtn.onclick = function() { setLinkImagePosition(linkIndex, 50, 50); };
+            
+            const topBtn = document.createElement('button');
+            topBtn.type = 'button';
+            topBtn.textContent = 'Top';
+            topBtn.onclick = function() { setLinkImagePosition(linkIndex, 50, 0); };
+            
+            const bottomBtn = document.createElement('button');
+            bottomBtn.type = 'button';
+            bottomBtn.textContent = 'Bottom';
+            bottomBtn.onclick = function() { setLinkImagePosition(linkIndex, 50, 100); };
+            
+            const leftBtn = document.createElement('button');
+            leftBtn.type = 'button';
+            leftBtn.textContent = 'Left';
+            leftBtn.onclick = function() { setLinkImagePosition(linkIndex, 0, 50); };
+            
+            const rightBtn = document.createElement('button');
+            rightBtn.type = 'button';
+            rightBtn.textContent = 'Right';
+            rightBtn.onclick = function() { setLinkImagePosition(linkIndex, 100, 50); };
+            
+            positionPresets.appendChild(positionLabel);
+            positionPresets.appendChild(centerBtn);
+            positionPresets.appendChild(topBtn);
+            positionPresets.appendChild(bottomBtn);
+            positionPresets.appendChild(leftBtn);
+            positionPresets.appendChild(rightBtn);
+            
+            // Scale presets
+            const scalePresets = document.createElement('div');
+            scalePresets.className = 'position-presets';
+            const scaleLabel2 = document.createElement('div');
+            scaleLabel2.textContent = 'Scale';
+            scaleLabel2.style.cssText = 'margin-bottom: 8px; font-size: 12px; color: #6b7280; font-weight: 600;';
+            
+            const scale75Btn = document.createElement('button');
+            scale75Btn.type = 'button';
+            scale75Btn.textContent = '75%';
+            scale75Btn.onclick = function() { setLinkImageScale(linkIndex, 75); };
+            
+            const scale100Btn = document.createElement('button');
+            scale100Btn.type = 'button';
+            scale100Btn.textContent = '100%';
+            scale100Btn.onclick = function() { setLinkImageScale(linkIndex, 100); };
+            
+            const scale125Btn = document.createElement('button');
+            scale125Btn.type = 'button';
+            scale125Btn.textContent = '125%';
+            scale125Btn.onclick = function() { setLinkImageScale(linkIndex, 125); };
+            
+            const scale150Btn = document.createElement('button');
+            scale150Btn.type = 'button';
+            scale150Btn.textContent = '150%';
+            scale150Btn.onclick = function() { setLinkImageScale(linkIndex, 150); };
+            
+            const scale200Btn = document.createElement('button');
+            scale200Btn.type = 'button';
+            scale200Btn.textContent = '200%';
+            scale200Btn.onclick = function() { setLinkImageScale(linkIndex, 200); };
+            
+            scalePresets.appendChild(scaleLabel2);
+            scalePresets.appendChild(scale75Btn);
+            scalePresets.appendChild(scale100Btn);
+            scalePresets.appendChild(scale125Btn);
+            scalePresets.appendChild(scale150Btn);
+            scalePresets.appendChild(scale200Btn);
+            
+            // Done button
+            const doneDiv = document.createElement('div');
+            doneDiv.style.cssText = 'margin-top: 16px; text-align: right;';
+            const doneBtn = document.createElement('button');
+            doneBtn.type = 'button';
+            doneBtn.textContent = 'Done';
+            doneBtn.onclick = closeLinkImageEditor;
+            doneBtn.style.cssText = 'background: #6b7280; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;';
+            doneDiv.appendChild(doneBtn);
+            
+            controlsDiv.appendChild(slidersDiv);
+            controlsDiv.appendChild(positionPresets);
+            controlsDiv.appendChild(scalePresets);
+            controlsDiv.appendChild(doneDiv);
+            
+            editor.appendChild(controlsDiv);
+            
+            document.body.appendChild(backdrop);
+            document.body.appendChild(editor);
         }
-        
-        function updateLinkImagePositionFromSlider(linkIndex, axis, value) {
-            // Update the value display
-            const valueElement = document.getElementById(`link-position-${axis}-value-${linkIndex}`);
-            if (valueElement) {
-                valueElement.textContent = value;
-            }
-            
-            // Update the link's position/scale
-            if (!links[linkIndex]) return;
-            
-            if (axis === 'scale') {
-                links[linkIndex].imageScale = parseInt(value);
-            } else {
-                // Initialize imagePosition if it doesn't exist
-                if (!links[linkIndex].imagePosition) {
-                    links[linkIndex].imagePosition = { x: 50, y: 50 };
-                }
-                links[linkIndex].imagePosition[axis] = parseInt(value);
-            }
-            
-            // Apply the transform to the preview
-            applyLinkImgTransform(linkIndex);
-            
-            // Update the phone mockup preview
-            updatePreview();
-        }
-        
-        // Keep old function for backward compatibility but mark as deprecated
+
         function closeLinkImageEditor() {
-            // This function is no longer needed since we use inline controls
-            // But keeping it for any code that might still reference it
-            console.log('closeLinkImageEditor called but no longer needed - using inline controls');
+            const editor = document.getElementById('link-image-editor-modal');
+            const backdrop = document.getElementById('link-image-editor-backdrop');
+            
+            if (editor) editor.remove();
+            if (backdrop) backdrop.remove();
         }
-        
-        // Old modal-based code removed - now using inline controls like appearance tab
 
         function applyLinkImgTransform(linkIndex) {
             console.log(`DEBUG: Looking for img for link ${linkIndex}`);
