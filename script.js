@@ -3876,9 +3876,7 @@
                 
                 // If background type is 'image' but no image is set, hide preview and positioning
                 if (theme.backgroundType === 'image') {
-                    const hasBackgroundImage = theme.backgroundImage && 
-                                             theme.backgroundImage.trim() !== '' && 
-                                             !isDefaultOrPlaceholderImage(theme.backgroundImage);
+                    const hasBackgroundImage = theme.backgroundImage && theme.backgroundImage.trim() !== '';
                     const bgImagePreview = document.getElementById('bg-image-preview');
                     const imagePositioning = document.getElementById('image-positioning');
                     
@@ -3886,7 +3884,8 @@
                         if (bgImagePreview) bgImagePreview.style.display = 'none';
                         if (imagePositioning) imagePositioning.style.display = 'none';
                     } else {
-                        // Show preview if image exists and is not a placeholder
+                        // Show preview if image exists
+                        // Don't filter here - filtering only happens when loading from database
                         if (bgImagePreview && theme.backgroundImage) {
                             showImagePreview(theme.backgroundImage);
                         }
@@ -4112,13 +4111,13 @@
             } else if (theme.backgroundType === 'gradient') {
                 preview.style.background = sanitizeCSSValue(theme.gradientText, 'gradient') || 'linear-gradient(45deg, #ff6b6b 0%, #4ecdc4 100%)';
             } else if (theme.backgroundType === 'image') {
-                // Only apply image if it actually exists and is not a placeholder
-                if (theme.backgroundImage && 
-                    theme.backgroundImage.trim() !== '' && 
-                    !isDefaultOrPlaceholderImage(theme.backgroundImage)) {
+                // Only apply image if it actually exists
+                // Don't filter here - this is used for active theme application
+                // Filtering only happens when loading from database
+                if (theme.backgroundImage && theme.backgroundImage.trim() !== '') {
                     preview.style.background = sanitizeCSSValue(theme.backgroundImage, 'url');
                 } else {
-                    // No image set or placeholder, use solid color fallback or transparent
+                    // No image set, use solid color fallback or transparent
                     preview.style.background = theme.backgroundColor || '#ffffff';
                     preview.style.backgroundImage = 'none';
                 }
@@ -4448,9 +4447,11 @@
             });
             
             // Remove backgroundImage if it's null, empty, or just whitespace
+            // Only remove backgroundImage if it's null, undefined, or empty
+            // Don't filter data URLs here - this is when saving, and user uploads are data URLs
+            // Filtering only happens when loading from database
             if (theme.backgroundImage === null || theme.backgroundImage === undefined || 
-                (typeof theme.backgroundImage === 'string' && theme.backgroundImage.trim() === '') ||
-                isDefaultOrPlaceholderImage(theme.backgroundImage)) {
+                (typeof theme.backgroundImage === 'string' && theme.backgroundImage.trim() === '')) {
                 delete theme.backgroundImage;
             }
             
@@ -9589,9 +9590,7 @@
                 const imagePositioning = document.getElementById('image-positioning');
                 // Check both currentTheme and currentList theme for background image
                 const themeBackgroundImage = currentTheme.backgroundImage || (currentList && currentList.theme && currentList.theme.backgroundImage);
-                const hasBackgroundImage = themeBackgroundImage && 
-                                         themeBackgroundImage.trim() !== '' && 
-                                         !isDefaultOrPlaceholderImage(themeBackgroundImage);
+                const hasBackgroundImage = themeBackgroundImage && themeBackgroundImage.trim() !== '';
                 
                 if (!hasBackgroundImage) {
                     if (bgImagePreview) bgImagePreview.style.display = 'none';
@@ -12872,8 +12871,7 @@
                 console.log('Gradient text length:', themeToApply.gradientText.length);
                 console.log('Gradient text type:', typeof themeToApply.gradientText);
             } else if (themeToApply.backgroundType === 'image' && themeToApply.backgroundImage && 
-                       themeToApply.backgroundImage.trim() !== '' &&
-                       !isDefaultOrPlaceholderImage(themeToApply.backgroundImage)) {
+                       themeToApply.backgroundImage.trim() !== '') {
                 preview.style.background = 'none';
                 preview.style.backgroundImage = `url(${themeToApply.backgroundImage})`;
                 
@@ -13390,8 +13388,8 @@
 
         // Helper function to check if a backgroundImage looks like a default/placeholder
         // Returns true if the image should be treated as "no image"
-        // Since we can't track whether an image was explicitly saved, we're more aggressive:
-        // We treat ALL data URL images as potentially unwanted defaults unless they're from Supabase storage
+        // This function is used when LOADING from database to filter out unwanted defaults
+        // It should NOT be used when actively setting images (user uploads)
         function isDefaultOrPlaceholderImage(imageUrl) {
             if (!imageUrl || typeof imageUrl !== 'string') {
                 return true;
@@ -13403,11 +13401,24 @@
             }
             
             // Check if it's a data URL (base64 encoded image)
-            // Data URLs are typically used for temporary/preview images or defaults
-            // User-saved images should be stored in Supabase storage and have a proper URL
+            // When loading from database, data URLs are likely unwanted defaults
+            // However, we need to be careful - some legitimate images might be stored as data URLs
+            // So we only filter out very small data URLs (likely placeholders) or check for patterns
             if (trimmed.startsWith('data:image/')) {
-                console.log('Detected data URL image, treating as potentially unwanted default:', trimmed.substring(0, 100) + '...');
-                return true;
+                // Extract the base64 part (after the comma)
+                const base64Part = trimmed.split(',')[1];
+                if (base64Part) {
+                    // Very small data URLs (less than 10000 characters) are likely placeholders
+                    // Real images would typically be much larger
+                    // But we need to be careful - some compressed images might be smaller
+                    // So we use a conservative threshold
+                    if (base64Part.length < 10000) {
+                        console.log('Detected small data URL image, treating as placeholder:', base64Part.length, 'characters');
+                        return true;
+                    }
+                    // For larger data URLs, we allow them (they might be legitimate user uploads)
+                    // The user can always remove them if they're unwanted
+                }
             }
             
             // Check if it's a URL that looks like a placeholder
@@ -13416,7 +13427,6 @@
             }
             
             // If it's a Supabase storage URL or external URL, it's likely a user-saved image
-            // (These would have proper URLs, not data URLs)
             return false;
         }
 
