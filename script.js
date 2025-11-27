@@ -458,6 +458,9 @@
         }
         
         async function loadUserData() {
+            // Load gradients when user data is loaded
+            await loadSavedGradients('main');
+            await loadSavedGradients('border');
             try {
                 
                 // Ensure user has a profile record
@@ -11322,7 +11325,7 @@
         }
 
         // User Favorites System
-        function saveGradient(type) {
+        async function saveGradient(type) {
             const gradientText = type === 'main' ? 
                 document.getElementById('gradient-text').value : 
                 document.getElementById('border-gradient-input').value;
@@ -11335,26 +11338,58 @@
             const name = prompt('Enter a name for this gradient:');
             if (!name) return;
             
-            const savedGradients = getSavedGradients();
-            const newGradient = {
-                id: Date.now().toString(),
-                name: name,
-                gradient: gradientText,
-                timestamp: new Date().toISOString()
-            };
-            
-            savedGradients.push(newGradient);
-            localStorage.setItem('academiq-gradients', JSON.stringify(savedGradients));
-            
-            showMessage(`Gradient "${name}" saved!`, 'success');
-            // Reload both containers so the gradient appears everywhere
-            loadSavedGradients('main');
-            loadSavedGradients('border');
+            // If user is logged in, save to database
+            if (currentUser && supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('user_gradients')
+                        .insert({
+                            user_id: currentUser.id,
+                            name: name,
+                            gradient: gradientText
+                        })
+                        .select()
+                        .single();
+                    
+                    if (error) {
+                        console.error('Error saving gradient to database:', error);
+                        showMessage('Error saving gradient. Please try again.', 'error');
+                        return;
+                    }
+                    
+                    console.log('✅ Successfully saved gradient to database:', data);
+                    showMessage(`Gradient "${name}" saved!`, 'success');
+                    
+                    // Reload both containers so the gradient appears everywhere
+                    await loadSavedGradients('main');
+                    await loadSavedGradients('border');
+                } catch (error) {
+                    console.error('Error saving gradient:', error);
+                    showMessage('Error saving gradient. Please try again.', 'error');
+                }
+            } else {
+                // User not logged in, save to localStorage
+                const savedGradients = getSavedGradientsFromLocalStorage();
+                const newGradient = {
+                    id: Date.now().toString(),
+                    name: name,
+                    gradient: gradientText,
+                    timestamp: new Date().toISOString()
+                };
+                
+                savedGradients.push(newGradient);
+                localStorage.setItem('academiq-gradients', JSON.stringify(savedGradients));
+                
+                showMessage(`Gradient "${name}" saved!`, 'success');
+                // Reload both containers so the gradient appears everywhere
+                await loadSavedGradients('main');
+                await loadSavedGradients('border');
+            }
         }
         
-        function loadGradient(type) {
-            const savedGradients = getSavedGradients(type);
-            if (savedGradients.length === 0) {
+        async function loadGradient(type) {
+            const gradients = await getSavedGradients(type);
+            if (gradients.length === 0) {
                 showMessage('No saved gradients found!', 'error');
                 return;
             }
@@ -11368,7 +11403,7 @@
             }
             
             // Load the gradients first
-            loadSavedGradients(type);
+            await loadSavedGradients(type);
             
             // Toggle visibility
             if (container.style.display === 'none' || container.style.display === '') {
@@ -11378,16 +11413,141 @@
             }
         }
         
-        function getSavedGradients(type) {
-            // Return all gradients regardless of type - unified storage
+        // Store gradients in memory
+        let savedGradients = [];
+        
+        async function getSavedGradients(type) {
+            // If user is logged in, load from database
+            if (currentUser && supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('user_gradients')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .order('created_at', { ascending: false });
+                    
+                    if (error) {
+                        console.error('Error loading gradients from database:', error);
+                        // Fall back to localStorage
+                        return getSavedGradientsFromLocalStorage();
+                    } else if (data && data.length > 0) {
+                        // Convert database records to gradient format
+                        savedGradients = data.map(record => ({
+                            id: record.id,
+                            name: record.name,
+                            gradient: record.gradient,
+                            timestamp: record.created_at
+                        }));
+                        return savedGradients;
+                    } else {
+                        // No gradients in database, check localStorage for migration
+                        await migrateGradientsToDatabase();
+                        return savedGradients;
+                    }
+                } catch (error) {
+                    console.error('Error loading gradients:', error);
+                    return getSavedGradientsFromLocalStorage();
+                }
+            } else {
+                // User not logged in, load from localStorage
+                return getSavedGradientsFromLocalStorage();
+            }
+        }
+        
+        function getSavedGradientsFromLocalStorage() {
             const key = 'academiq-gradients';
             const saved = localStorage.getItem(key);
             return saved ? JSON.parse(saved) : [];
         }
         
-        function loadSavedGradients(type) {
+        async function migrateGradientsToDatabase() {
+            // One-time migration: move localStorage gradients to database
+            if (!currentUser || !supabaseClient) {
+                return;
+            }
+            
+            try {
+                const stored = localStorage.getItem('academiq-gradients');
+                if (!stored) {
+                    return; // Nothing to migrate
+                }
+                
+                const parsedGradients = JSON.parse(stored);
+                if (!Array.isArray(parsedGradients) || parsedGradients.length === 0) {
+                    return; // Nothing to migrate
+                }
+                
+                console.log('Migrating', parsedGradients.length, 'gradients from localStorage to database...');
+                
+                // Check if we already have these gradients in the database
+                const { data: existingData } = await supabaseClient
+                    .from('user_gradients')
+                    .select('id, name')
+                    .eq('user_id', currentUser.id);
+                
+                const existingNames = new Set(existingData?.map(g => g.name) || []);
+                
+                // Only migrate gradients that don't already exist
+                const gradientsToMigrate = parsedGradients.filter(gradient => !existingNames.has(gradient.name));
+                
+                if (gradientsToMigrate.length > 0) {
+                    const gradientRecords = gradientsToMigrate.map(gradient => ({
+                        user_id: currentUser.id,
+                        name: gradient.name,
+                        gradient: gradient.gradient
+                    }));
+                    
+                    const { error } = await supabaseClient
+                        .from('user_gradients')
+                        .insert(gradientRecords);
+                    
+                    if (error) {
+                        console.error('Error migrating gradients:', error);
+                    } else {
+                        console.log('✅ Successfully migrated', gradientsToMigrate.length, 'gradients to database');
+                        
+                        // Reload gradients from database
+                        const { data } = await supabaseClient
+                            .from('user_gradients')
+                            .select('*')
+                            .eq('user_id', currentUser.id)
+                            .order('created_at', { ascending: false });
+                        
+                        if (data) {
+                            savedGradients = data.map(record => ({
+                                id: record.id,
+                                name: record.name,
+                                gradient: record.gradient,
+                                timestamp: record.created_at
+                            }));
+                        }
+                    }
+                } else {
+                    console.log('All gradients already in database');
+                    // Still load from database
+                    const { data } = await supabaseClient
+                        .from('user_gradients')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .order('created_at', { ascending: false });
+                    
+                    if (data) {
+                        savedGradients = data.map(record => ({
+                            id: record.id,
+                            name: record.name,
+                            gradient: record.gradient,
+                            timestamp: record.created_at
+                        }));
+                    }
+                }
+            } catch (error) {
+                console.error('Error migrating gradients:', error);
+            }
+        }
+        
+        async function loadSavedGradients(type) {
             // Load all gradients into both containers
-            const savedGradients = getSavedGradients();
+            savedGradients = await getSavedGradients();
             
             // Load into main container
             const mainContainer = document.getElementById('saved-gradients');
@@ -11440,14 +11600,42 @@
             }
         }
         
-        function deleteSavedGradient(gradientId) {
-            const savedGradients = getSavedGradients();
-            const filtered = savedGradients.filter(g => g.id !== gradientId);
-            localStorage.setItem('academiq-gradients', JSON.stringify(filtered));
-            // Reload both containers
-            loadSavedGradients('main');
-            loadSavedGradients('border');
-            showMessage('Gradient deleted!', 'success');
+        async function deleteSavedGradient(gradientId) {
+            // If user is logged in, delete from database
+            if (currentUser && supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('user_gradients')
+                        .delete()
+                        .eq('id', gradientId)
+                        .eq('user_id', currentUser.id);
+                    
+                    if (error) {
+                        console.error('Error deleting gradient from database:', error);
+                        showMessage('Error deleting gradient. Please try again.', 'error');
+                        return;
+                    }
+                    
+                    console.log('✅ Successfully deleted gradient from database');
+                    showMessage('Gradient deleted!', 'success');
+                    
+                    // Reload both containers
+                    await loadSavedGradients('main');
+                    await loadSavedGradients('border');
+                } catch (error) {
+                    console.error('Error deleting gradient:', error);
+                    showMessage('Error deleting gradient. Please try again.', 'error');
+                }
+            } else {
+                // User not logged in, delete from localStorage
+                const savedGradients = getSavedGradientsFromLocalStorage();
+                const filtered = savedGradients.filter(g => g.id !== gradientId);
+                localStorage.setItem('academiq-gradients', JSON.stringify(filtered));
+                // Reload both containers
+                await loadSavedGradients('main');
+                await loadSavedGradients('border');
+                showMessage('Gradient deleted!', 'success');
+            }
         }
         
         function applySavedGradient(type, gradientText) {
