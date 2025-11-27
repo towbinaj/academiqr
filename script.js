@@ -645,6 +645,22 @@
                 
                 collection.links = data || [];
                 
+                // Map database fields to camelCase and ensure imagePosition/imageScale are properly set
+                collection.links.forEach(link => {
+                    // Map image_position to imagePosition
+                    if (link.image_position && !link.imagePosition) {
+                        link.imagePosition = link.image_position;
+                    }
+                    // Map image_scale to imageScale
+                    if (link.image_scale !== undefined && link.image_scale !== null && link.imageScale === undefined) {
+                        link.imageScale = link.image_scale;
+                    }
+                    // Map image_url to image if image doesn't exist
+                    if (link.image_url && !link.image) {
+                        link.image = link.image_url;
+                    }
+                });
+                
                 // Sort links by order_index, then by created_at
                 if (collection.links && collection.links.length > 0) {
                     collection.links.sort((a, b) => {
@@ -2759,20 +2775,31 @@
             }
             
             try {
+                // Prepare update object
+                const updateData = {
+                    title: link.title, // Save HTML as-is
+                    url: link.url,
+                    image_url: link.image_url || link.image,
+                    order_index: link.order_index
+                };
+                
+                // Add image position and scale if they exist
+                if (link.imagePosition) {
+                    updateData.image_position = link.imagePosition;
+                }
+                if (link.imageScale !== undefined && link.imageScale !== null) {
+                    updateData.image_scale = link.imageScale;
+                }
+                
                 const { error } = await supabaseClient
                     .from('link_items')
-                    .update({
-                        title: link.title, // Save HTML as-is
-                        url: link.url,
-                        image_url: link.image_url || link.image,
-                        order_index: link.order_index
-                    })
+                    .update(updateData)
                     .eq('id', link.id);
                 
                 if (error) {
                     console.error('Error saving link to database:', error);
                 } else {
-                    console.log('Link saved to database:', link.id, 'Title:', link.title);
+                    console.log('Link saved to database:', link.id, 'Title:', link.title, 'Image position:', link.imagePosition, 'Image scale:', link.imageScale);
                 }
             } catch (error) {
                 console.error('Exception saving link to database:', error);
@@ -6855,10 +6882,25 @@
         }
 
         function closeLinkImageEditor() {
+            // Save any pending changes before closing
             const editor = document.getElementById('link-image-editor-modal');
-            const backdrop = document.getElementById('link-image-editor-backdrop');
+            if (editor) {
+                // Extract linkIndex from the modal (it's in the slider IDs)
+                const xSlider = editor.querySelector('input[type="range"][id^="link-x-slider-"]');
+                if (xSlider) {
+                    const linkIndexMatch = xSlider.id.match(/link-x-slider-(\d+)/);
+                    if (linkIndexMatch) {
+                        const linkIndex = parseInt(linkIndexMatch[1]);
+                        if (linkIndex >= 0 && linkIndex < links.length) {
+                            // Ensure we save the current state
+                            saveLinkToDatabase(links[linkIndex]);
+                        }
+                    }
+                }
+            }
             
             if (editor) editor.remove();
+            const backdrop = document.getElementById('link-image-editor-backdrop');
             if (backdrop) backdrop.remove();
         }
 
@@ -6995,6 +7037,9 @@
                     imageScale: links[linkIndex].imageScale
                 });
                 
+                // Save to database
+                saveLinkToDatabase(links[linkIndex]);
+                
                 // Update the phone mockup preview
                 updatePreview();
                 
@@ -7093,6 +7138,9 @@
                     imagePosition: links[linkIndex].imagePosition,
                     imageScale: links[linkIndex].imageScale
                 });
+                
+                // Save to database
+                saveLinkToDatabase(links[linkIndex]);
                 
                 // Update the phone mockup preview
                 updatePreview();
