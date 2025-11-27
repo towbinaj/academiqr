@@ -458,9 +458,11 @@
         }
         
         async function loadUserData() {
-            // Load gradients when user data is loaded
+            // Load gradients and themes when user data is loaded
             await loadSavedGradients('main');
             await loadSavedGradients('border');
+            await loadSavedThemes();
+            await loadSavedQRThemes();
             try {
                 
                 // Ensure user has a profile record
@@ -2775,9 +2777,9 @@
         let currentQRCode = null;
         let currentQRLogo = null; // Store the logo image data
         
-        function initQRCodeTab() {
+        async function initQRCodeTab() {
             // Load saved QR themes
-            loadSavedQRThemes();
+            await loadSavedQRThemes();
             
             if (!currentList || !currentUser) {
                 document.getElementById('qr-url').value = 'Please select a collection first';
@@ -11460,6 +11462,152 @@
             return saved ? JSON.parse(saved) : [];
         }
         
+        // Track if migration has been attempted to prevent duplicate calls
+        let themesMigrationAttempted = false;
+        
+        async function migrateThemesToDatabase() {
+            // One-time migration: move localStorage themes to database
+            if (!currentUser || !supabaseClient) {
+                return;
+            }
+            
+            // Prevent multiple migration attempts
+            if (themesMigrationAttempted) {
+                return;
+            }
+            themesMigrationAttempted = true;
+            
+            try {
+                // Migrate appearance themes
+                const storedThemes = localStorage.getItem('academiq_saved_themes');
+                if (storedThemes) {
+                    const parsedThemes = JSON.parse(storedThemes);
+                    if (Array.isArray(parsedThemes) && parsedThemes.length > 0) {
+                        console.log('Migrating', parsedThemes.length, 'appearance themes from localStorage to database...');
+                        
+                        // Check existing themes in database
+                        const { data: existingData, error: checkError } = await supabaseClient
+                            .from('user_themes')
+                            .select('name')
+                            .eq('user_id', currentUser.id)
+                            .eq('theme_type', 'appearance');
+                        
+                        if (checkError) {
+                            console.error('Error checking existing appearance themes:', checkError);
+                            themesMigrationAttempted = false; // Reset flag on error
+                            return;
+                        }
+                        
+                        const existingNames = new Set(existingData?.map(t => t.name) || []);
+                        
+                        // Only migrate themes that don't already exist
+                        const themesToMigrate = parsedThemes.filter(theme => !existingNames.has(theme.name));
+                        
+                        if (themesToMigrate.length > 0) {
+                            // Insert themes one by one to handle duplicates gracefully
+                            let successCount = 0;
+                            for (const theme of themesToMigrate) {
+                                try {
+                                    const { error } = await supabaseClient
+                                        .from('user_themes')
+                                        .insert({
+                                            user_id: currentUser.id,
+                                            name: theme.name,
+                                            theme_type: 'appearance',
+                                            theme_data: theme
+                                        });
+                                    
+                                    if (error) {
+                                        // If it's a duplicate key error, that's okay - theme already exists
+                                        if (error.code === '23505') {
+                                            console.log(`Theme "${theme.name}" already exists in database, skipping`);
+                                        } else {
+                                            console.error(`Error migrating theme "${theme.name}":`, error);
+                                        }
+                                    } else {
+                                        successCount++;
+                                    }
+                                } catch (err) {
+                                    console.error(`Error migrating theme "${theme.name}":`, err);
+                                }
+                            }
+                            
+                            if (successCount > 0) {
+                                console.log('✅ Successfully migrated', successCount, 'appearance themes to database');
+                            }
+                        } else {
+                            console.log('All appearance themes already in database');
+                        }
+                    }
+                }
+                
+                // Migrate QR themes
+                const storedQRThemes = localStorage.getItem('academiq_saved_qr_themes');
+                if (storedQRThemes) {
+                    const parsedQRThemes = JSON.parse(storedQRThemes);
+                    if (Array.isArray(parsedQRThemes) && parsedQRThemes.length > 0) {
+                        console.log('Migrating', parsedQRThemes.length, 'QR themes from localStorage to database...');
+                        
+                        // Check existing QR themes in database
+                        const { data: existingQRData, error: checkQRError } = await supabaseClient
+                            .from('user_themes')
+                            .select('name')
+                            .eq('user_id', currentUser.id)
+                            .eq('theme_type', 'qr');
+                        
+                        if (checkQRError) {
+                            console.error('Error checking existing QR themes:', checkQRError);
+                            return;
+                        }
+                        
+                        const existingQRNames = new Set(existingQRData?.map(t => t.name) || []);
+                        
+                        // Only migrate themes that don't already exist
+                        const qrThemesToMigrate = parsedQRThemes.filter(theme => !existingQRNames.has(theme.name));
+                        
+                        if (qrThemesToMigrate.length > 0) {
+                            // Insert themes one by one to handle duplicates gracefully
+                            let successCount = 0;
+                            for (const theme of qrThemesToMigrate) {
+                                try {
+                                    const { error } = await supabaseClient
+                                        .from('user_themes')
+                                        .insert({
+                                            user_id: currentUser.id,
+                                            name: theme.name,
+                                            theme_type: 'qr',
+                                            theme_data: theme
+                                        });
+                                    
+                                    if (error) {
+                                        // If it's a duplicate key error, that's okay - theme already exists
+                                        if (error.code === '23505') {
+                                            console.log(`QR Theme "${theme.name}" already exists in database, skipping`);
+                                        } else {
+                                            console.error(`Error migrating QR theme "${theme.name}":`, error);
+                                        }
+                                    } else {
+                                        successCount++;
+                                    }
+                                } catch (err) {
+                                    console.error(`Error migrating QR theme "${theme.name}":`, err);
+                                }
+                            }
+                            
+                            if (successCount > 0) {
+                                console.log('✅ Successfully migrated', successCount, 'QR themes to database');
+                            }
+                        } else {
+                            console.log('All QR themes already in database');
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error migrating themes:', error);
+                themesMigrationAttempted = false; // Reset flag on error so it can retry
+            }
+        }
+        
         async function migrateGradientsToDatabase() {
             // One-time migration: move localStorage gradients to database
             if (!currentUser || !supabaseClient) {
@@ -13039,7 +13187,7 @@
         }
 
         // Theme Management Functions
-        function saveCurrentTheme() {
+        async function saveCurrentTheme() {
             const themeName = document.getElementById('theme-name').value.trim();
             if (!themeName) {
                 showMessage('Please enter a theme name', 'error');
@@ -13051,35 +13199,149 @@
             themeToSave.name = themeName;
             themeToSave.savedAt = new Date().toISOString();
 
-            // Get existing themes from localStorage
-            let savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
-            
-            // Check if theme name already exists
-            const existingIndex = savedThemes.findIndex(theme => theme.name === themeName);
-            if (existingIndex !== -1) {
-                if (confirm(`Theme "${themeName}" already exists. Do you want to overwrite it?`)) {
-                    savedThemes[existingIndex] = themeToSave;
-                } else {
-                    return;
+            // If user is logged in, save to database
+            if (currentUser && supabaseClient) {
+                try {
+                    // Check if theme already exists
+                    const { data: existing } = await supabaseClient
+                        .from('user_themes')
+                        .select('id')
+                        .eq('user_id', currentUser.id)
+                        .eq('name', themeName)
+                        .eq('theme_type', 'appearance')
+                        .single();
+                    
+                    if (existing) {
+                        if (!confirm(`Theme "${themeName}" already exists. Do you want to overwrite it?`)) {
+                            return;
+                        }
+                        // Update existing theme
+                        const { error } = await supabaseClient
+                            .from('user_themes')
+                            .update({
+                                theme_data: themeToSave,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', existing.id)
+                            .eq('user_id', currentUser.id);
+                        
+                        if (error) {
+                            console.error('Error updating theme in database:', error);
+                            showMessage('Error saving theme. Please try again.', 'error');
+                            return;
+                        }
+                    } else {
+                        // Insert new theme
+                        const { error } = await supabaseClient
+                            .from('user_themes')
+                            .insert({
+                                user_id: currentUser.id,
+                                name: themeName,
+                                theme_type: 'appearance',
+                                theme_data: themeToSave
+                            });
+                        
+                        if (error) {
+                            console.error('Error saving theme to database:', error);
+                            showMessage('Error saving theme. Please try again.', 'error');
+                            return;
+                        }
+                    }
+                    
+                    console.log('✅ Successfully saved theme to database');
+                    showMessage(`Theme "${themeName}" saved successfully!`, 'success');
+                    
+                    // Clear the input
+                    document.getElementById('theme-name').value = '';
+                    
+                    // Refresh the saved themes list
+                    await loadSavedThemes();
+                } catch (error) {
+                    console.error('Error saving theme:', error);
+                    showMessage('Error saving theme. Please try again.', 'error');
                 }
             } else {
-                savedThemes.push(themeToSave);
-            }
+                // User not logged in, save to localStorage
+                let savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+                
+                // Check if theme name already exists
+                const existingIndex = savedThemes.findIndex(theme => theme.name === themeName);
+                if (existingIndex !== -1) {
+                    if (confirm(`Theme "${themeName}" already exists. Do you want to overwrite it?`)) {
+                        savedThemes[existingIndex] = themeToSave;
+                    } else {
+                        return;
+                    }
+                } else {
+                    savedThemes.push(themeToSave);
+                }
 
-            // Save to localStorage
-            localStorage.setItem('academiq_saved_themes', JSON.stringify(savedThemes));
-            
-            // Clear the input
-            document.getElementById('theme-name').value = '';
-            
-            // Refresh the saved themes list
-            loadSavedThemes();
-            
-            showMessage(`Theme "${themeName}" saved successfully!`, 'success');
+                // Save to localStorage
+                localStorage.setItem('academiq_saved_themes', JSON.stringify(savedThemes));
+                
+                // Clear the input
+                document.getElementById('theme-name').value = '';
+                
+                // Refresh the saved themes list
+                await loadSavedThemes();
+                
+                showMessage(`Theme "${themeName}" saved successfully!`, 'success');
+            }
         }
-        function loadSavedThemes() {
-            const savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+        async function loadSavedThemes() {
+            let savedThemes = [];
+            
+            // If user is logged in, load from database
+            if (currentUser && supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('user_themes')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .eq('theme_type', 'appearance')
+                        .order('created_at', { ascending: false });
+                    
+                    if (error) {
+                        console.error('Error loading themes from database:', error);
+                        // Fall back to localStorage
+                        savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+                    } else if (data && data.length > 0) {
+                        // Convert database records to theme format
+                        savedThemes = data.map(record => ({
+                            ...record.theme_data,
+                            name: record.name,
+                            savedAt: record.created_at
+                        }));
+                    } else {
+                        // No themes in database, check localStorage for migration
+                        await migrateThemesToDatabase();
+                        // Reload from database after migration
+                        const { data: migratedData } = await supabaseClient
+                            .from('user_themes')
+                            .select('*')
+                            .eq('user_id', currentUser.id)
+                            .eq('theme_type', 'appearance')
+                            .order('created_at', { ascending: false });
+                        
+                        if (migratedData && migratedData.length > 0) {
+                            savedThemes = migratedData.map(record => ({
+                                ...record.theme_data,
+                                name: record.name,
+                                savedAt: record.created_at
+                            }));
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading themes:', error);
+                    savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+                }
+            } else {
+                // User not logged in, load from localStorage
+                savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+            }
+            
             const themesList = document.getElementById('saved-themes-list');
+            if (!themesList) return;
             
             if (savedThemes.length === 0) {
                 themesList.innerHTML = '<p style="color: #6b7280; font-style: italic; text-align: center; padding: 20px;">No saved themes yet</p>';
@@ -13119,14 +13381,60 @@
             return '#3b82f6';
         }
 
-        function loadTheme(themeName) {
-            const savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+        async function loadTheme(themeName) {
+            let savedThemes = [];
+            
+            // If user is logged in, load from database
+            if (currentUser && supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('user_themes')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .eq('name', themeName)
+                        .eq('theme_type', 'appearance')
+                        .single();
+                    
+                    if (error || !data) {
+                        // Fall back to localStorage
+                        savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+                        const theme = savedThemes.find(t => t.name === themeName);
+                        if (!theme) {
+                            showMessage('Theme not found', 'error');
+                            return;
+                        }
+                        applyLoadedTheme(theme);
+                        return;
+                    }
+                    
+                    // Convert database record to theme format
+                    const theme = {
+                        ...data.theme_data,
+                        name: data.name,
+                        savedAt: data.created_at
+                    };
+                    applyLoadedTheme(theme);
+                    return;
+                } catch (error) {
+                    console.error('Error loading theme:', error);
+                    savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+                }
+            } else {
+                // User not logged in, load from localStorage
+                savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+            }
+            
             const theme = savedThemes.find(t => t.name === themeName);
             
             if (!theme) {
                 showMessage('Theme not found', 'error');
                 return;
             }
+            
+            applyLoadedTheme(theme);
+        }
+        
+        function applyLoadedTheme(theme) {
 
             // Load theme into currentTheme (excluding name and savedAt)
             const { name, savedAt, ...themeData } = theme;
@@ -13162,7 +13470,7 @@
         }
 
         // QR Theme Management Functions
-        function saveCurrentQRTheme() {
+        async function saveCurrentQRTheme() {
             const themeName = document.getElementById('qr-theme-name').value.trim();
             if (!themeName) {
                 showMessage('Please enter a QR theme name', 'error');
@@ -13182,37 +13490,149 @@
                 logo: currentQRLogo || null
             };
 
-            // Get existing QR themes from localStorage
-            let savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
-            
-            // Check if theme name already exists
-            const existingIndex = savedQRThemes.findIndex(theme => theme.name === themeName);
-            if (existingIndex !== -1) {
-                if (confirm(`QR Theme "${themeName}" already exists. Do you want to overwrite it?`)) {
-                    savedQRThemes[existingIndex] = qrThemeToSave;
-                } else {
-                    return;
+            // If user is logged in, save to database
+            if (currentUser && supabaseClient) {
+                try {
+                    // Check if theme already exists
+                    const { data: existing } = await supabaseClient
+                        .from('user_themes')
+                        .select('id')
+                        .eq('user_id', currentUser.id)
+                        .eq('name', themeName)
+                        .eq('theme_type', 'qr')
+                        .single();
+                    
+                    if (existing) {
+                        if (!confirm(`QR Theme "${themeName}" already exists. Do you want to overwrite it?`)) {
+                            return;
+                        }
+                        // Update existing theme
+                        const { error } = await supabaseClient
+                            .from('user_themes')
+                            .update({
+                                theme_data: qrThemeToSave,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', existing.id)
+                            .eq('user_id', currentUser.id);
+                        
+                        if (error) {
+                            console.error('Error updating QR theme in database:', error);
+                            showMessage('Error saving QR theme. Please try again.', 'error');
+                            return;
+                        }
+                    } else {
+                        // Insert new theme
+                        const { error } = await supabaseClient
+                            .from('user_themes')
+                            .insert({
+                                user_id: currentUser.id,
+                                name: themeName,
+                                theme_type: 'qr',
+                                theme_data: qrThemeToSave
+                            });
+                        
+                        if (error) {
+                            console.error('Error saving QR theme to database:', error);
+                            showMessage('Error saving QR theme. Please try again.', 'error');
+                            return;
+                        }
+                    }
+                    
+                    console.log('✅ Successfully saved QR theme to database');
+                    showMessage(`QR Theme "${themeName}" saved successfully!`, 'success');
+                    
+                    // Clear the input
+                    document.getElementById('qr-theme-name').value = '';
+                    
+                    // Refresh the saved QR themes list
+                    await loadSavedQRThemes();
+                } catch (error) {
+                    console.error('Error saving QR theme:', error);
+                    showMessage('Error saving QR theme. Please try again.', 'error');
                 }
             } else {
-                savedQRThemes.push(qrThemeToSave);
-            }
+                // User not logged in, save to localStorage
+                let savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+                
+                // Check if theme name already exists
+                const existingIndex = savedQRThemes.findIndex(theme => theme.name === themeName);
+                if (existingIndex !== -1) {
+                    if (confirm(`QR Theme "${themeName}" already exists. Do you want to overwrite it?`)) {
+                        savedQRThemes[existingIndex] = qrThemeToSave;
+                    } else {
+                        return;
+                    }
+                } else {
+                    savedQRThemes.push(qrThemeToSave);
+                }
 
-            // Save to localStorage
-            localStorage.setItem('academiq_saved_qr_themes', JSON.stringify(savedQRThemes));
-            
-            // Clear the input
-            document.getElementById('qr-theme-name').value = '';
-            
-            // Refresh the saved QR themes list
-            loadSavedQRThemes();
-            
-            showMessage(`QR Theme "${themeName}" saved successfully!`, 'success');
+                // Save to localStorage
+                localStorage.setItem('academiq_saved_qr_themes', JSON.stringify(savedQRThemes));
+                
+                // Clear the input
+                document.getElementById('qr-theme-name').value = '';
+                
+                // Refresh the saved QR themes list
+                await loadSavedQRThemes();
+                
+                showMessage(`QR Theme "${themeName}" saved successfully!`, 'success');
+            }
         }
 
-        function loadSavedQRThemes() {
-            const savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
-            const themesList = document.getElementById('saved-qr-themes-list');
+        async function loadSavedQRThemes() {
+            let savedQRThemes = [];
             
+            // If user is logged in, load from database
+            if (currentUser && supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('user_themes')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .eq('theme_type', 'qr')
+                        .order('created_at', { ascending: false });
+                    
+                    if (error) {
+                        console.error('Error loading QR themes from database:', error);
+                        // Fall back to localStorage
+                        savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+                    } else if (data && data.length > 0) {
+                        // Convert database records to theme format
+                        savedQRThemes = data.map(record => ({
+                            ...record.theme_data,
+                            name: record.name,
+                            savedAt: record.created_at
+                        }));
+                    } else {
+                        // No themes in database, check localStorage for migration
+                        await migrateThemesToDatabase();
+                        // Reload from database after migration
+                        const { data: migratedData } = await supabaseClient
+                            .from('user_themes')
+                            .select('*')
+                            .eq('user_id', currentUser.id)
+                            .eq('theme_type', 'qr')
+                            .order('created_at', { ascending: false });
+                        
+                        if (migratedData && migratedData.length > 0) {
+                            savedQRThemes = migratedData.map(record => ({
+                                ...record.theme_data,
+                                name: record.name,
+                                savedAt: record.created_at
+                            }));
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading QR themes:', error);
+                    savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+                }
+            } else {
+                // User not logged in, load from localStorage
+                savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+            }
+            
+            const themesList = document.getElementById('saved-qr-themes-list');
             if (!themesList) return;
             
             if (savedQRThemes.length === 0) {
@@ -13237,15 +13657,60 @@
             }).join('');
         }
 
-        function loadQRTheme(themeName) {
-            const savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+        async function loadQRTheme(themeName) {
+            let savedQRThemes = [];
+            
+            // If user is logged in, load from database
+            if (currentUser && supabaseClient) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from('user_themes')
+                        .select('*')
+                        .eq('user_id', currentUser.id)
+                        .eq('name', themeName)
+                        .eq('theme_type', 'qr')
+                        .single();
+                    
+                    if (error || !data) {
+                        // Fall back to localStorage
+                        savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+                        const theme = savedQRThemes.find(t => t.name === themeName);
+                        if (!theme) {
+                            showMessage('QR Theme not found', 'error');
+                            return;
+                        }
+                        applyQRTheme(theme);
+                        return;
+                    }
+                    
+                    // Convert database record to theme format
+                    const theme = {
+                        ...data.theme_data,
+                        name: data.name,
+                        savedAt: data.created_at
+                    };
+                    applyQRTheme(theme);
+                    return;
+                } catch (error) {
+                    console.error('Error loading QR theme:', error);
+                    savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+                }
+            } else {
+                // User not logged in, load from localStorage
+                savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+            }
+            
             const theme = savedQRThemes.find(t => t.name === themeName);
             
             if (!theme) {
                 showMessage('QR Theme not found', 'error');
                 return;
             }
-
+            
+            applyQRTheme(theme);
+        }
+        
+        function applyQRTheme(theme) {
             // Load QR theme settings into form
             if (theme.color) {
                 document.getElementById('qr-color').value = theme.color;
@@ -13291,19 +13756,47 @@
             showMessage(`QR Theme "${themeName}" loaded and applied!`, 'success');
         }
 
-        function deleteQRTheme(themeName) {
+        async function deleteQRTheme(themeName) {
             if (!confirm(`Are you sure you want to delete QR Theme "${themeName}"?`)) {
                 return;
             }
 
-            let savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
-            savedQRThemes = savedQRThemes.filter(theme => theme.name !== themeName);
-            localStorage.setItem('academiq_saved_qr_themes', JSON.stringify(savedQRThemes));
-            
-            // Refresh the list
-            loadSavedQRThemes();
-            
-            showMessage(`QR Theme "${themeName}" deleted successfully!`, 'success');
+            // If user is logged in, delete from database
+            if (currentUser && supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('user_themes')
+                        .delete()
+                        .eq('user_id', currentUser.id)
+                        .eq('name', themeName)
+                        .eq('theme_type', 'qr');
+                    
+                    if (error) {
+                        console.error('Error deleting QR theme from database:', error);
+                        showMessage('Error deleting QR theme. Please try again.', 'error');
+                        return;
+                    }
+                    
+                    console.log('✅ Successfully deleted QR theme from database');
+                    showMessage(`QR Theme "${themeName}" deleted successfully!`, 'success');
+                    
+                    // Refresh the list
+                    await loadSavedQRThemes();
+                } catch (error) {
+                    console.error('Error deleting QR theme:', error);
+                    showMessage('Error deleting QR theme. Please try again.', 'error');
+                }
+            } else {
+                // User not logged in, delete from localStorage
+                let savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+                savedQRThemes = savedQRThemes.filter(theme => theme.name !== themeName);
+                localStorage.setItem('academiq_saved_qr_themes', JSON.stringify(savedQRThemes));
+                
+                // Refresh the list
+                await loadSavedQRThemes();
+                
+                showMessage(`QR Theme "${themeName}" deleted successfully!`, 'success');
+            }
         }
 
         function updateFormFromTheme() {
@@ -13485,18 +13978,46 @@
             }
         }
 
-        function deleteTheme(themeName) {
+        async function deleteTheme(themeName) {
             if (!confirm(`Are you sure you want to delete the theme "${themeName}"?`)) {
                 return;
             }
 
-            const savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
-            const filteredThemes = savedThemes.filter(theme => theme.name !== themeName);
-            
-            localStorage.setItem('academiq_saved_themes', JSON.stringify(filteredThemes));
-            loadSavedThemes();
-            
-            showMessage(`Theme "${themeName}" deleted successfully!`, 'success');
+            // If user is logged in, delete from database
+            if (currentUser && supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('user_themes')
+                        .delete()
+                        .eq('user_id', currentUser.id)
+                        .eq('name', themeName)
+                        .eq('theme_type', 'appearance');
+                    
+                    if (error) {
+                        console.error('Error deleting theme from database:', error);
+                        showMessage('Error deleting theme. Please try again.', 'error');
+                        return;
+                    }
+                    
+                    console.log('✅ Successfully deleted theme from database');
+                    showMessage(`Theme "${themeName}" deleted successfully!`, 'success');
+                    
+                    // Refresh the saved themes list
+                    await loadSavedThemes();
+                } catch (error) {
+                    console.error('Error deleting theme:', error);
+                    showMessage('Error deleting theme. Please try again.', 'error');
+                }
+            } else {
+                // User not logged in, delete from localStorage
+                const savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+                const filteredThemes = savedThemes.filter(theme => theme.name !== themeName);
+                
+                localStorage.setItem('academiq_saved_themes', JSON.stringify(filteredThemes));
+                await loadSavedThemes();
+                
+                showMessage(`Theme "${themeName}" deleted successfully!`, 'success');
+            }
         }
 
         // Visual debug overlay for font sizes (visible on mobile)
