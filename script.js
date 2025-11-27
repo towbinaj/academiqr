@@ -2821,25 +2821,37 @@
                 };
                 
                 // Add image position and scale if they exist
+                // imagePosition is an object {x, y}, save it as JSON
                 if (link.imagePosition) {
                     updateData.image_position = link.imagePosition;
+                    console.log('💾 Saving imagePosition to database:', link.imagePosition);
                 }
                 if (link.imageScale !== undefined && link.imageScale !== null) {
                     updateData.image_scale = link.imageScale;
+                    console.log('💾 Saving imageScale to database:', link.imageScale);
                 }
                 
-                const { error } = await supabaseClient
+                console.log('💾 Saving link to database:', link.id, 'Update data:', updateData);
+                
+                const { error, data } = await supabaseClient
                     .from('link_items')
                     .update(updateData)
-                    .eq('id', link.id);
+                    .eq('id', link.id)
+                    .select();
                 
                 if (error) {
-                    console.error('Error saving link to database:', error);
+                    console.error('❌ Error saving link to database:', error);
+                    console.error('❌ Error details:', JSON.stringify(error, null, 2));
                 } else {
-                    console.log('Link saved to database:', link.id, 'Title:', link.title, 'Image position:', link.imagePosition, 'Image scale:', link.imageScale);
+                    console.log('✅ Link saved to database:', link.id, 'Title:', link.title);
+                    console.log('✅ Saved image position:', link.imagePosition, 'Saved image scale:', link.imageScale);
+                    if (data && data.length > 0) {
+                        console.log('✅ Database returned:', data[0]);
+                    }
                 }
             } catch (error) {
-                console.error('Exception saving link to database:', error);
+                console.error('❌ Exception saving link to database:', error);
+                console.error('❌ Exception stack:', error.stack);
             }
         }
         
@@ -3094,6 +3106,19 @@
                 const collectionIndex = collections.findIndex(c => c.id === currentList.id);
                 if (collectionIndex !== -1) {
                     collections[collectionIndex] = { ...currentList };
+                }
+                
+                // Save all links to ensure image positions are persisted
+                console.log('💾 Saving all links to ensure image positions are persisted...');
+                if (links && links.length > 0) {
+                    const savePromises = links.map(link => {
+                        if (link.id && !link.id.startsWith('local-')) {
+                            return saveLinkToDatabase(link);
+                        }
+                        return Promise.resolve();
+                    });
+                    await Promise.all(savePromises);
+                    console.log('✅ All links saved');
                 }
                 
                 // Update the UI
