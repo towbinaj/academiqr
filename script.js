@@ -1244,12 +1244,43 @@
                 console.log('Theme type:', typeof collection.theme);
                 console.log('Theme keys:', Object.keys(collection.theme));
                 console.log('Theme stringified:', JSON.stringify(collection.theme, null, 2));
+                
+                // Clean up theme: remove empty/null backgroundImage if backgroundType is 'image'
+                // Also remove default/placeholder images that the user never explicitly saved
+                const cleanedTheme = { ...collection.theme };
+                if (cleanedTheme.backgroundType === 'image') {
+                    console.log('🔍 Checking backgroundImage for collection:', cleanedTheme.backgroundImage ? 'has value' : 'empty');
+                    if (cleanedTheme.backgroundImage) {
+                        const isPlaceholder = isDefaultOrPlaceholderImage(cleanedTheme.backgroundImage);
+                        console.log('🔍 isDefaultOrPlaceholderImage result:', isPlaceholder);
+                    }
+                    if (!cleanedTheme.backgroundImage || 
+                        (typeof cleanedTheme.backgroundImage === 'string' && cleanedTheme.backgroundImage.trim() === '') ||
+                        isDefaultOrPlaceholderImage(cleanedTheme.backgroundImage)) {
+                        console.log('✅ Removing backgroundImage from theme (empty or placeholder)');
+                        delete cleanedTheme.backgroundImage;
+                        // Also clear it from currentTheme to prevent it from being used
+                        if (currentTheme) {
+                            delete currentTheme.backgroundImage;
+                        }
+                    } else {
+                        console.log('✅ Keeping backgroundImage (appears to be user-saved)');
+                    }
+                }
+                
                 // Apply theme to the preview
-                applyThemeToPreview(collection.theme);
-                // Update currentTheme to match collection theme
-                currentTheme = { ...currentTheme, ...collection.theme };
+                applyThemeToPreview(cleanedTheme);
+                // Update currentTheme to match collection theme (with cleaned values)
+                currentTheme = { ...currentTheme, ...cleanedTheme };
+                // Ensure backgroundImage is removed if it's empty or a placeholder
+                if (currentTheme.backgroundType === 'image' && 
+                    (!currentTheme.backgroundImage || 
+                     (typeof currentTheme.backgroundImage === 'string' && currentTheme.backgroundImage.trim() === '') ||
+                     isDefaultOrPlaceholderImage(currentTheme.backgroundImage))) {
+                    delete currentTheme.backgroundImage;
+                }
                 // Load theme into UI controls
-                loadThemeIntoUI(collection.theme);
+                loadThemeIntoUI(cleanedTheme);
                 // Also update form from theme to ensure all settings are loaded
                 updateFormFromTheme();
             } else {
@@ -3842,6 +3873,25 @@
                         radio.dispatchEvent(new Event('change'));
                     }
                 });
+                
+                // If background type is 'image' but no image is set, hide preview and positioning
+                if (theme.backgroundType === 'image') {
+                    const hasBackgroundImage = theme.backgroundImage && 
+                                             theme.backgroundImage.trim() !== '' && 
+                                             !isDefaultOrPlaceholderImage(theme.backgroundImage);
+                    const bgImagePreview = document.getElementById('bg-image-preview');
+                    const imagePositioning = document.getElementById('image-positioning');
+                    
+                    if (!hasBackgroundImage) {
+                        if (bgImagePreview) bgImagePreview.style.display = 'none';
+                        if (imagePositioning) imagePositioning.style.display = 'none';
+                    } else {
+                        // Show preview if image exists and is not a placeholder
+                        if (bgImagePreview && theme.backgroundImage) {
+                            showImagePreview(theme.backgroundImage);
+                        }
+                    }
+                }
             }
             
             if (theme.backgroundColor) {
@@ -4062,7 +4112,16 @@
             } else if (theme.backgroundType === 'gradient') {
                 preview.style.background = sanitizeCSSValue(theme.gradientText, 'gradient') || 'linear-gradient(45deg, #ff6b6b 0%, #4ecdc4 100%)';
             } else if (theme.backgroundType === 'image') {
-                preview.style.background = sanitizeCSSValue(theme.backgroundImage, 'url') || 'url()';
+                // Only apply image if it actually exists and is not a placeholder
+                if (theme.backgroundImage && 
+                    theme.backgroundImage.trim() !== '' && 
+                    !isDefaultOrPlaceholderImage(theme.backgroundImage)) {
+                    preview.style.background = sanitizeCSSValue(theme.backgroundImage, 'url');
+                } else {
+                    // No image set or placeholder, use solid color fallback or transparent
+                    preview.style.background = theme.backgroundColor || '#ffffff';
+                    preview.style.backgroundImage = 'none';
+                }
             }
             
             // Apply border effects
@@ -4387,6 +4446,13 @@
                 borderStyle: theme.borderStyle,
                 borderColor: theme.borderColor
             });
+            
+            // Remove backgroundImage if it's null, empty, or just whitespace
+            if (theme.backgroundImage === null || theme.backgroundImage === undefined || 
+                (typeof theme.backgroundImage === 'string' && theme.backgroundImage.trim() === '') ||
+                isDefaultOrPlaceholderImage(theme.backgroundImage)) {
+                delete theme.backgroundImage;
+            }
             
             console.log('🎨 Final theme object being returned:', theme);
             console.log('🎨 Theme object keys:', Object.keys(theme));
@@ -9517,6 +9583,22 @@
             document.getElementById('gradient-options').style.display = selectedType === 'gradient' ? 'block' : 'none';
             document.getElementById('image-options').style.display = selectedType === 'image' ? 'block' : 'none';
             
+            // If switching to image type, hide preview and positioning if no image is set
+            if (selectedType === 'image') {
+                const bgImagePreview = document.getElementById('bg-image-preview');
+                const imagePositioning = document.getElementById('image-positioning');
+                // Check both currentTheme and currentList theme for background image
+                const themeBackgroundImage = currentTheme.backgroundImage || (currentList && currentList.theme && currentList.theme.backgroundImage);
+                const hasBackgroundImage = themeBackgroundImage && 
+                                         themeBackgroundImage.trim() !== '' && 
+                                         !isDefaultOrPlaceholderImage(themeBackgroundImage);
+                
+                if (!hasBackgroundImage) {
+                    if (bgImagePreview) bgImagePreview.style.display = 'none';
+                    if (imagePositioning) imagePositioning.style.display = 'none';
+                }
+            }
+            
             applyTheme();
             updatePreview(); // Update preview with new background
         }
@@ -12789,7 +12871,9 @@
                 console.log('Element style background:', preview.style.background);
                 console.log('Gradient text length:', themeToApply.gradientText.length);
                 console.log('Gradient text type:', typeof themeToApply.gradientText);
-            } else if (themeToApply.backgroundType === 'image' && themeToApply.backgroundImage) {
+            } else if (themeToApply.backgroundType === 'image' && themeToApply.backgroundImage && 
+                       themeToApply.backgroundImage.trim() !== '' &&
+                       !isDefaultOrPlaceholderImage(themeToApply.backgroundImage)) {
                 preview.style.background = 'none';
                 preview.style.backgroundImage = `url(${themeToApply.backgroundImage})`;
                 
@@ -12895,6 +12979,10 @@
                         }
                     }
                 }
+            } else if (themeToApply.backgroundType === 'image') {
+                // Image type selected but no image set or image is a placeholder - fall back to solid color
+                preview.style.background = themeToApply.backgroundColor || '#ffffff';
+                preview.style.backgroundImage = 'none';
             }
 
             // Apply text color and formatting to specific text elements
@@ -13298,6 +13386,38 @@
                 };
                 reader.readAsDataURL(file);
             }
+        }
+
+        // Helper function to check if a backgroundImage looks like a default/placeholder
+        // Returns true if the image should be treated as "no image"
+        // Since we can't track whether an image was explicitly saved, we're more aggressive:
+        // We treat ALL data URL images as potentially unwanted defaults unless they're from Supabase storage
+        function isDefaultOrPlaceholderImage(imageUrl) {
+            if (!imageUrl || typeof imageUrl !== 'string') {
+                return true;
+            }
+            
+            const trimmed = imageUrl.trim();
+            if (trimmed === '') {
+                return true;
+            }
+            
+            // Check if it's a data URL (base64 encoded image)
+            // Data URLs are typically used for temporary/preview images or defaults
+            // User-saved images should be stored in Supabase storage and have a proper URL
+            if (trimmed.startsWith('data:image/')) {
+                console.log('Detected data URL image, treating as potentially unwanted default:', trimmed.substring(0, 100) + '...');
+                return true;
+            }
+            
+            // Check if it's a URL that looks like a placeholder
+            if (trimmed.includes('placeholder') || trimmed.includes('default')) {
+                return true;
+            }
+            
+            // If it's a Supabase storage URL or external URL, it's likely a user-saved image
+            // (These would have proper URLs, not data URLs)
+            return false;
         }
 
         function showImagePreview(imageUrl) {
