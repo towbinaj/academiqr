@@ -443,12 +443,15 @@
         .collection-drag-handle {
             cursor: grab;
             color: #94a3b8;
-            margin-right: 8px;
-            padding: 2px 4px;
+            margin-right: 2px;
+            padding: 0;
             display: flex;
             align-items: center;
             opacity: 0;
             transition: opacity 0.2s;
+            font-size: 0.65rem;
+            flex-shrink: 0;
+            width: 12px;
         }
 
         .collection-drag-handle:active {
