@@ -6835,84 +6835,6 @@
             slidersDiv.appendChild(yGroup);
             slidersDiv.appendChild(scaleGroup);
             
-            // Position presets
-            const positionPresets = document.createElement('div');
-            positionPresets.className = 'position-presets';
-            const positionLabel = document.createElement('div');
-            positionLabel.textContent = 'Position';
-            positionLabel.style.cssText = 'margin-bottom: 8px; font-size: 12px; color: #6b7280; font-weight: 600;';
-            
-            const centerBtn = document.createElement('button');
-            centerBtn.type = 'button';
-            centerBtn.textContent = 'Center';
-            centerBtn.onclick = function() { setLinkImagePosition(linkIndex, 50, 50); };
-            
-            const topBtn = document.createElement('button');
-            topBtn.type = 'button';
-            topBtn.textContent = 'Top';
-            topBtn.onclick = function() { setLinkImagePosition(linkIndex, 50, 0); };
-            
-            const bottomBtn = document.createElement('button');
-            bottomBtn.type = 'button';
-            bottomBtn.textContent = 'Bottom';
-            bottomBtn.onclick = function() { setLinkImagePosition(linkIndex, 50, 100); };
-            
-            const leftBtn = document.createElement('button');
-            leftBtn.type = 'button';
-            leftBtn.textContent = 'Left';
-            leftBtn.onclick = function() { setLinkImagePosition(linkIndex, 0, 50); };
-            
-            const rightBtn = document.createElement('button');
-            rightBtn.type = 'button';
-            rightBtn.textContent = 'Right';
-            rightBtn.onclick = function() { setLinkImagePosition(linkIndex, 100, 50); };
-            
-            positionPresets.appendChild(positionLabel);
-            positionPresets.appendChild(centerBtn);
-            positionPresets.appendChild(topBtn);
-            positionPresets.appendChild(bottomBtn);
-            positionPresets.appendChild(leftBtn);
-            positionPresets.appendChild(rightBtn);
-            
-            // Scale presets
-            const scalePresets = document.createElement('div');
-            scalePresets.className = 'position-presets';
-            const scaleLabel2 = document.createElement('div');
-            scaleLabel2.textContent = 'Scale';
-            scaleLabel2.style.cssText = 'margin-bottom: 8px; font-size: 12px; color: #6b7280; font-weight: 600;';
-            
-            const scale75Btn = document.createElement('button');
-            scale75Btn.type = 'button';
-            scale75Btn.textContent = '75%';
-            scale75Btn.onclick = function() { setLinkImageScale(linkIndex, 75); };
-            
-            const scale100Btn = document.createElement('button');
-            scale100Btn.type = 'button';
-            scale100Btn.textContent = '100%';
-            scale100Btn.onclick = function() { setLinkImageScale(linkIndex, 100); };
-            
-            const scale125Btn = document.createElement('button');
-            scale125Btn.type = 'button';
-            scale125Btn.textContent = '125%';
-            scale125Btn.onclick = function() { setLinkImageScale(linkIndex, 125); };
-            
-            const scale150Btn = document.createElement('button');
-            scale150Btn.type = 'button';
-            scale150Btn.textContent = '150%';
-            scale150Btn.onclick = function() { setLinkImageScale(linkIndex, 150); };
-            
-            const scale200Btn = document.createElement('button');
-            scale200Btn.type = 'button';
-            scale200Btn.textContent = '200%';
-            scale200Btn.onclick = function() { setLinkImageScale(linkIndex, 200); };
-            
-            scalePresets.appendChild(scaleLabel2);
-            scalePresets.appendChild(scale75Btn);
-            scalePresets.appendChild(scale100Btn);
-            scalePresets.appendChild(scale125Btn);
-            scalePresets.appendChild(scale150Btn);
-            scalePresets.appendChild(scale200Btn);
-            
             // Done button
             const doneDiv = document.createElement('div');
             doneDiv.style.cssText = 'margin-top: 16px; text-align: right;';
@@ -6924,8 +6846,6 @@
             doneDiv.appendChild(doneBtn);
             
             controlsDiv.appendChild(slidersDiv);
-            controlsDiv.appendChild(positionPresets);
-            controlsDiv.appendChild(scalePresets);
             controlsDiv.appendChild(doneDiv);
             
             editor.appendChild(controlsDiv);
