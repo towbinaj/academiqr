@@ -3883,6 +3883,30 @@
             background: #152547;
         }
 
+        .btn-edit-image {
+            position: absolute;
+            top: -8px;
+            left: -8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #1A2F5B;
+            color: white;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        .btn-edit-image:hover {
+            background: #152547;
+        }
+
         #qr-logo-preview {
             text-align: left;
             max-width: fit-content;

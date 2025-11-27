@@ -3912,11 +3912,13 @@
                         if (bgImagePreview) bgImagePreview.style.display = 'none';
                         if (imagePositioning) imagePositioning.style.display = 'none';
                     } else {
-                        // Show preview if image exists
+                        // Show preview if image exists, but hide positioning (user can click edit button to show it)
                         // Don't filter here - filtering only happens when loading from database
                         if (bgImagePreview && theme.backgroundImage) {
                             showImagePreview(theme.backgroundImage);
                         }
+                        // Hide image-positioning by default - user can click edit button to show it
+                        if (imagePositioning) imagePositioning.style.display = 'none';
                     }
                 }
             }
@@ -9639,6 +9641,9 @@
                 if (!hasBackgroundImage) {
                     if (bgImagePreview) bgImagePreview.style.display = 'none';
                     if (imagePositioning) imagePositioning.style.display = 'none';
+                } else {
+                    // Even if image exists, hide positioning - user can click edit button to show it
+                    if (imagePositioning) imagePositioning.style.display = 'none';
                 }
             }
             
@@ -13415,7 +13420,8 @@
                     updateThemeProperty('backgroundImage', e.target.result);
                     updateThemeProperty('imagePosition', { x: 50, y: 50, scale: 100 }); // Default position
                     showImagePreview(e.target.result);
-                    document.getElementById('image-positioning').style.display = 'block';
+                    // Don't show image-positioning by default - user can click edit button to show it
+                    document.getElementById('image-positioning').style.display = 'none';
                     
                     // Switch to image background type if not already
                     const imageRadio = document.querySelector('input[name="bg-type"][value="image"]');
@@ -13507,6 +13513,39 @@
             document.getElementById('bg-image-upload').value = '';
             applyTheme();
         }
+
+        function toggleBackgroundImageEditor() {
+            const imagePositioning = document.getElementById('image-positioning');
+            if (!imagePositioning) return;
+            
+            const isVisible = imagePositioning.style.display !== 'none';
+            
+            if (isVisible) {
+                // Hide the editor
+                imagePositioning.style.display = 'none';
+            } else {
+                // Show the editor and load current position values
+                imagePositioning.style.display = 'block';
+                
+                // Load current theme position values if they exist
+                const currentTheme = getCurrentThemeFromUI();
+                if (currentTheme && currentTheme.imagePosition) {
+                    const positionX = document.getElementById('position-x');
+                    const positionY = document.getElementById('position-y');
+                    const positionScale = document.getElementById('position-scale');
+                    const positionXValue = document.getElementById('position-x-value');
+                    const positionYValue = document.getElementById('position-y-value');
+                    const positionScaleValue = document.getElementById('position-scale-value');
+                    
+                    if (positionX) positionX.value = currentTheme.imagePosition.x || 50;
+                    if (positionY) positionY.value = currentTheme.imagePosition.y || 50;
+                    if (positionScale) positionScale.value = currentTheme.imagePosition.scale || 100;
+                    if (positionXValue) positionXValue.textContent = currentTheme.imagePosition.x || 50;
+                    if (positionYValue) positionYValue.textContent = currentTheme.imagePosition.y || 50;
+                    if (positionScaleValue) positionScaleValue.textContent = currentTheme.imagePosition.scale || 100;
+                }
+            }
+        }
         
         // Image positioning functions
         function updateImagePosition() {
@@ -13536,7 +13575,8 @@
             updateThemeProperty('backgroundImage', imageUrl);
             updateThemeProperty('imagePosition', { x: 50, y: 50, scale: 100 }); // Default position
             showImagePreview(imageUrl);
-            document.getElementById('image-positioning').style.display = 'block';
+            // Don't show image-positioning by default - user can click edit button to show it
+            document.getElementById('image-positioning').style.display = 'none';
             applyTheme();
         }
         
