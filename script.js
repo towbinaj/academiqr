@@ -1414,6 +1414,25 @@
                     // Escape HTML in alt attribute to prevent XSS (though alt is generally safe)
                     img.alt = escapeHtml(link.title || 'Link image');
                     
+                    // Apply image position and scale
+                    let imgStyle = 'width: 100%; height: 100%; object-fit: contain;';
+                    
+                    const imagePosition = link.imagePosition || { x: 50, y: 50 };
+                    const imageScale = link.imageScale !== undefined ? link.imageScale : 100;
+                    
+                    const scale = imageScale / 100;
+                    const x = imagePosition.x ?? 50;
+                    const y = imagePosition.y ?? 50;
+                    
+                    // Map x/y (0–100) to pan values
+                    const panX = ((x - 50) / 50) * 30;
+                    const panY = ((y - 50) / 50) * 30;
+                    
+                    const transform = `translate(${panX}%, ${panY}%) scale(${scale})`;
+                    imgStyle += ` transform: ${transform}; transform-origin: center center;`;
+                    
+                    img.style.cssText = imgStyle;
+                    
                     const removeBtn = document.createElement('button');
                     removeBtn.type = 'button';
                     removeBtn.className = 'btn-remove-link-image';
@@ -2253,7 +2272,25 @@
                     const img = document.createElement('img');
                     img.src = link.image;
                     img.alt = 'Link Icon';
-                    img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                    
+                    // Apply image position and scale
+                    let imgStyle = 'width: 100%; height: 100%; object-fit: contain;';
+                    
+                    const imagePosition = link.imagePosition || { x: 50, y: 50 };
+                    const imageScale = link.imageScale !== undefined ? link.imageScale : 100;
+                    
+                    const scale = imageScale / 100;
+                    const x = imagePosition.x ?? 50;
+                    const y = imagePosition.y ?? 50;
+                    
+                    // Map x/y (0–100) to pan values
+                    const panX = ((x - 50) / 50) * 30;
+                    const panY = ((y - 50) / 50) * 30;
+                    
+                    const transform = `translate(${panX}%, ${panY}%) scale(${scale})`;
+                    imgStyle += ` transform: ${transform}; transform-origin: center center;`;
+                    
+                    img.style.cssText = imgStyle;
                     imageDiv.appendChild(img);
                 } else {
                     const icon = document.createElement('i');
