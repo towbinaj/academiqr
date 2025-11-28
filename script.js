@@ -3718,22 +3718,45 @@
                         compositeCanvas.height = containerSize;
                         const ctx = compositeCanvas.getContext('2d');
                         
-                        // Fill with background color
+                        // Get border settings to determine padding corner radius
+                        const borderEnabled = document.getElementById('qr-border-enabled').checked;
+                        const borderRadius = borderEnabled ? parseInt(document.getElementById('qr-border-radius').value) : 16; // Default 16px if no border
+                        
+                        // Fill with background color - use rounded rectangle for padding area
                         const bgColor = document.getElementById('qr-bg-color').value;
                         ctx.fillStyle = bgColor;
-                        ctx.fillRect(0, 0, compositeCanvas.width, compositeCanvas.height);
                         
-                        // Calculate positions: border is outermost, then padding, then QR code
-                        // Border stroke is centered on the path, so draw at borderWidth/2
-                        // QR code position: borderWidth (to be inside border) + qrPadding
+                        // Draw rounded rectangle for padding area (always rounded, even without border)
+                        const paddingX = borderWidth;
+                        const paddingY = borderWidth;
+                        const paddingW = canvas.width + (qrPadding * 2);
+                        const paddingH = canvas.height + (qrPadding * 2);
+                        
+                        ctx.beginPath();
+                        ctx.moveTo(paddingX + borderRadius, paddingY);
+                        ctx.lineTo(paddingX + paddingW - borderRadius, paddingY);
+                        ctx.arcTo(paddingX + paddingW, paddingY, paddingX + paddingW, paddingY + borderRadius, borderRadius);
+                        ctx.lineTo(paddingX + paddingW, paddingY + paddingH - borderRadius);
+                        ctx.arcTo(paddingX + paddingW, paddingY + paddingH, paddingX + paddingW - borderRadius, paddingY + paddingH, borderRadius);
+                        ctx.lineTo(paddingX + borderRadius, paddingY + paddingH);
+                        ctx.arcTo(paddingX, paddingY + paddingH, paddingX, paddingY + paddingH - borderRadius, borderRadius);
+                        ctx.lineTo(paddingX, paddingY + borderRadius);
+                        ctx.arcTo(paddingX, paddingY, paddingX + borderRadius, paddingY, borderRadius);
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        // Calculate positions: border is at the very edge, padding is inside border, then QR code
+                        // Border stroke is centered on the path, so path at borderWidth/2 means:
+                        // - Outer edge of stroke is at 0 (canvas edge) ✓
+                        // - Inner edge of stroke is at borderWidth
+                        // Padding starts at borderWidth (inside the border), then QR code
                         const qrX = borderWidth + qrPadding;
                         const qrY = borderWidth + qrPadding;
                         
-                        // Draw border if enabled (around the padding area)
+                        // Draw border if enabled (at the very edge, surrounding the padding area)
                         if (borderEnabled) {
                             const borderColor = document.getElementById('qr-border-color').value;
                             const borderStyle = document.getElementById('qr-border-style').value;
-                            const borderRadius = parseInt(document.getElementById('qr-border-radius').value);
                             
                             ctx.strokeStyle = borderColor;
                             ctx.lineWidth = borderWidth;
@@ -3744,7 +3767,7 @@
                                 ctx.setLineDash([borderWidth, borderWidth]);
                             } else if (borderStyle === 'double') {
                                 ctx.lineWidth = borderWidth / 3;
-                                // Border path at borderWidth/2, width includes borderWidth to reach container edge
+                                // Border path at borderWidth/2, width = padding area + borderWidth to reach edge
                                 const borderX = borderWidth / 2;
                                 const borderY = borderWidth / 2;
                                 const borderW = canvas.width + (qrPadding * 2) + borderWidth;
@@ -3756,7 +3779,7 @@
                             if (borderStyle !== 'double') {
                                 if (borderRadius > 0) {
                                     ctx.beginPath();
-                                    // Border path at borderWidth/2, width includes borderWidth to reach container edge
+                                    // Border path at borderWidth/2, width = padding area + borderWidth to reach edge
                                     const x = borderWidth / 2;
                                     const y = borderWidth / 2;
                                     const width = canvas.width + (qrPadding * 2) + borderWidth;
@@ -3773,7 +3796,7 @@
                                     ctx.closePath();
                                     ctx.stroke();
                                 } else {
-                                    // Border path at borderWidth/2, width includes borderWidth to reach container edge
+                                    // Border path at borderWidth/2, width = padding area + borderWidth to reach edge
                                     const borderX = borderWidth / 2;
                                     const borderY = borderWidth / 2;
                                     const borderW = canvas.width + (qrPadding * 2) + borderWidth;
@@ -5350,22 +5373,44 @@
                 tempCanvas.height = containerSize;
                 const ctx = tempCanvas.getContext('2d');
                 
-                // Fill with background color
+                // Get border settings to determine padding corner radius
+                const borderRadius = borderEnabled ? parseInt(document.getElementById('qr-border-radius').value) : 16; // Default 16px if no border
+                
+                // Fill with background color - use rounded rectangle for padding area
                 const bgColor = document.getElementById('qr-bg-color').value;
                 ctx.fillStyle = bgColor;
-                ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
                 
-                // Calculate positions: border is outermost, then padding, then QR code
-                // Border stroke is centered on the path, so draw at borderWidth/2
-                // QR code position: borderWidth (to be inside border) + qrPadding
+                // Draw rounded rectangle for padding area (always rounded, even without border)
+                const paddingX = borderWidth;
+                const paddingY = borderWidth;
+                const paddingW = canvas.width + (qrPadding * 2);
+                const paddingH = canvas.height + (qrPadding * 2);
+                
+                ctx.beginPath();
+                ctx.moveTo(paddingX + borderRadius, paddingY);
+                ctx.lineTo(paddingX + paddingW - borderRadius, paddingY);
+                ctx.arcTo(paddingX + paddingW, paddingY, paddingX + paddingW, paddingY + borderRadius, borderRadius);
+                ctx.lineTo(paddingX + paddingW, paddingY + paddingH - borderRadius);
+                ctx.arcTo(paddingX + paddingW, paddingY + paddingH, paddingX + paddingW - borderRadius, paddingY + paddingH, borderRadius);
+                ctx.lineTo(paddingX + borderRadius, paddingY + paddingH);
+                ctx.arcTo(paddingX, paddingY + paddingH, paddingX, paddingY + paddingH - borderRadius, borderRadius);
+                ctx.lineTo(paddingX, paddingY + borderRadius);
+                ctx.arcTo(paddingX, paddingY, paddingX + borderRadius, paddingY, borderRadius);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Calculate positions: border is at the very edge, padding is inside border, then QR code
+                // Border stroke is centered on the path, so path at borderWidth/2 means:
+                // - Outer edge of stroke is at 0 (canvas edge) ✓
+                // - Inner edge of stroke is at borderWidth
+                // Padding starts at borderWidth (inside the border), then QR code
                 const qrX = borderWidth + qrPadding;
                 const qrY = borderWidth + qrPadding;
                 
-                // Draw border if enabled (around the padding area, same as composite canvas)
+                // Draw border if enabled (at the very edge, surrounding the padding area)
                 if (borderEnabled) {
                     const borderColor = document.getElementById('qr-border-color').value;
                     const borderStyle = document.getElementById('qr-border-style').value;
-                    const borderRadius = parseInt(document.getElementById('qr-border-radius').value);
                     
                     ctx.strokeStyle = borderColor;
                     ctx.lineWidth = borderWidth;
@@ -5376,11 +5421,12 @@
                         ctx.setLineDash([borderWidth, borderWidth]);
                     } else if (borderStyle === 'double') {
                         ctx.lineWidth = borderWidth / 3;
-                        // Border path at borderWidth/2, width includes borderWidth to reach container edge
+                        // Border drawn at edge: outer edge at 0, inner edge at borderWidth
                         const borderX = borderWidth / 2;
                         const borderY = borderWidth / 2;
-                        const borderW = canvas.width + (qrPadding * 2) + borderWidth;
-                        const borderH = canvas.height + (qrPadding * 2) + borderWidth;
+                        // Border surrounds padding area: QR code + padding on all sides
+                        const borderW = canvas.width + (qrPadding * 2);
+                        const borderH = canvas.height + (qrPadding * 2);
                         ctx.strokeRect(borderX, borderY, borderW, borderH);
                         ctx.strokeRect(borderX + borderWidth, borderY + borderWidth, borderW - borderWidth * 2, borderH - borderWidth * 2);
                     }
@@ -5388,11 +5434,12 @@
                     if (borderStyle !== 'double') {
                         if (borderRadius > 0) {
                             ctx.beginPath();
-                            // Border path at borderWidth/2, width includes borderWidth to reach container edge
+                            // Border drawn at edge: path at borderWidth/2, surrounds padding area
                             const x = borderWidth / 2;
                             const y = borderWidth / 2;
-                            const width = canvas.width + (qrPadding * 2) + borderWidth;
-                            const height = canvas.height + (qrPadding * 2) + borderWidth;
+                            // Border surrounds padding area: QR code + padding on all sides
+                            const width = canvas.width + (qrPadding * 2);
+                            const height = canvas.height + (qrPadding * 2);
                             ctx.moveTo(x + borderRadius, y);
                             ctx.lineTo(x + width - borderRadius, y);
                             ctx.arcTo(x + width, y, x + width, y + borderRadius, borderRadius);
@@ -5408,6 +5455,7 @@
                             // Border path at borderWidth/2, width includes borderWidth to reach container edge
                             const borderX = borderWidth / 2;
                             const borderY = borderWidth / 2;
+                            // Border path at borderWidth/2, width = padding area + borderWidth to reach edge
                             const borderW = canvas.width + (qrPadding * 2) + borderWidth;
                             const borderH = canvas.height + (qrPadding * 2) + borderWidth;
                             ctx.strokeRect(borderX, borderY, borderW, borderH);
@@ -5492,20 +5540,43 @@
                 tempCanvas.height = containerSize;
                 const ctx = tempCanvas.getContext('2d');
                 
-                // Fill with background color
+                // Get border settings to determine padding corner radius
+                const borderRadius = borderEnabled ? parseInt(document.getElementById('qr-border-radius').value) : 16; // Default 16px if no border
+                
+                // Fill entire canvas with background color first (JPEG doesn't support transparency)
                 const bgColor = document.getElementById('qr-bg-color').value;
                 ctx.fillStyle = bgColor;
                 ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
                 
-                // Calculate positions: border is outermost, then padding, then QR code
+                // Draw rounded rectangle for padding area (always rounded, even without border)
+                const paddingX = borderWidth;
+                const paddingY = borderWidth;
+                const paddingW = canvas.width + (qrPadding * 2);
+                const paddingH = canvas.height + (qrPadding * 2);
+                
+                // Draw rounded rectangle for padding area
+                ctx.beginPath();
+                ctx.moveTo(paddingX + borderRadius, paddingY);
+                ctx.lineTo(paddingX + paddingW - borderRadius, paddingY);
+                ctx.arcTo(paddingX + paddingW, paddingY, paddingX + paddingW, paddingY + borderRadius, borderRadius);
+                ctx.lineTo(paddingX + paddingW, paddingY + paddingH - borderRadius);
+                ctx.arcTo(paddingX + paddingW, paddingY + paddingH, paddingX + paddingW - borderRadius, paddingY + paddingH, borderRadius);
+                ctx.lineTo(paddingX + borderRadius, paddingY + paddingH);
+                ctx.arcTo(paddingX, paddingY + paddingH, paddingX, paddingY + paddingH - borderRadius, borderRadius);
+                ctx.lineTo(paddingX, paddingY + borderRadius);
+                ctx.arcTo(paddingX, paddingY, paddingX + borderRadius, paddingY, borderRadius);
+                ctx.closePath();
+                ctx.fillStyle = bgColor;
+                ctx.fill();
+                
+                // Calculate positions: border is at the very edge, padding is inside border, then QR code
                 const qrX = borderWidth + qrPadding;
                 const qrY = borderWidth + qrPadding;
                 
-                // Draw border if enabled (around the padding area, same as composite canvas)
+                // Draw border if enabled (at the very edge, surrounding the padding area)
                 if (borderEnabled) {
                     const borderColor = document.getElementById('qr-border-color').value;
                     const borderStyle = document.getElementById('qr-border-style').value;
-                    const borderRadius = parseInt(document.getElementById('qr-border-radius').value);
                     
                     ctx.strokeStyle = borderColor;
                     ctx.lineWidth = borderWidth;
@@ -5545,6 +5616,7 @@
                         } else {
                             const borderX = borderWidth / 2;
                             const borderY = borderWidth / 2;
+                            // Border path at borderWidth/2, width = padding area + borderWidth to reach edge
                             const borderW = canvas.width + (qrPadding * 2) + borderWidth;
                             const borderH = canvas.height + (qrPadding * 2) + borderWidth;
                             ctx.strokeRect(borderX, borderY, borderW, borderH);
@@ -5695,6 +5767,7 @@
                             ctx.lineWidth = borderWidth / 3;
                             const borderX = borderWidth / 2;
                             const borderY = borderWidth / 2;
+                            // Border path at borderWidth/2, width = padding area + borderWidth to reach edge
                             const borderW = canvas.width + (qrPadding * 2) + borderWidth;
                             const borderH = canvas.height + (qrPadding * 2) + borderWidth;
                             ctx.strokeRect(borderX, borderY, borderW, borderH);
