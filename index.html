@@ -159,7 +159,10 @@
                                     </select>
                                 </div>
                                 <div id="header-passkey-group" class="passkey-controls-compact" style="display: none;">
-                                    <input type="password" id="header-passkey" class="passkey-input-compact" placeholder="Passkey" maxlength="100">
+                                    <input type="text" id="header-passkey" class="passkey-input-compact" placeholder="Enter passkey to share" maxlength="100">
+                                    <button type="button" id="header-passkey-copy" class="btn-icon" title="Copy passkey" style="display: none; padding: 4px 8px; font-size: 0.875rem;">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
                                 </div>
                                 <button onclick="saveChanges()" class="btn btn-primary btn-save-compact">
                                     Save Changes

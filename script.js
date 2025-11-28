@@ -61,16 +61,67 @@
             
             // Handle header passkey input changes
             if (headerPasskeyInput) {
+                headerPasskeyInput.addEventListener('focus', function() {
+                    // When user focuses on passkey field, clear placeholder if it's the "passkey is set" placeholder
+                    if (this.value === '•••••••• (passkey is set)') {
+                        this.value = '';
+                        this.readOnly = false;
+                        this.style.color = '';
+                        this.style.fontStyle = '';
+                    }
+                });
+                
                 headerPasskeyInput.addEventListener('input', function() {
                     // Sync with settings passkey field
                     const settingsPasskeyInput = document.getElementById('passkey');
                     if (settingsPasskeyInput) {
-                        settingsPasskeyInput.value = this.value;
+                        // Clear placeholder in settings field too
+                        if (settingsPasskeyInput.value === '•••••••• (passkey is set)') {
+                            settingsPasskeyInput.value = '';
+                        } else {
+                            settingsPasskeyInput.value = this.value;
+                        }
                     }
                     
                     // Update current list
                     if (currentList) {
-                        currentList.passkey = this.value;
+                        // If user cleared the field, clear the passkey
+                        currentList.passkey = this.value.trim() || null;
+                    }
+                    
+                    // Show/hide copy button based on whether there's a value
+                    const copyBtn = document.getElementById('header-passkey-copy');
+                    if (copyBtn) {
+                        if (this.value && this.value !== '•••••••• (passkey is set)') {
+                            copyBtn.style.display = 'inline-block';
+                        } else {
+                            copyBtn.style.display = 'none';
+                        }
+                    }
+                });
+            }
+            
+            // Handle passkey copy button
+            const passkeyCopyBtn = document.getElementById('header-passkey-copy');
+            if (passkeyCopyBtn) {
+                passkeyCopyBtn.addEventListener('click', function() {
+                    const passkeyValue = headerPasskeyInput ? headerPasskeyInput.value : '';
+                    if (passkeyValue) {
+                        // Copy to clipboard
+                        navigator.clipboard.writeText(passkeyValue).then(() => {
+                            // Show temporary feedback
+                            const originalHTML = this.innerHTML;
+                            this.innerHTML = '<i class="fas fa-check"></i>';
+                            this.style.color = '#10b981';
+                            setTimeout(() => {
+                                this.innerHTML = originalHTML;
+                                this.style.color = '';
+                            }, 2000);
+                            showMessage('Passkey copied to clipboard!', 'success');
+                        }).catch(err => {
+                            console.error('Failed to copy passkey:', err);
+                            showMessage('Failed to copy passkey. Please copy manually.', 'error');
+                        });
                     }
                 });
             }
@@ -1243,12 +1294,43 @@
             if (headerVisibilitySelect) headerVisibilitySelect.value = visibilityValue;
             
             // Update passkey fields
-            const passkeyValue = collection.passkey || '';
+            // Note: We can't display existing passkeys (they're hashed in DB)
+            // But we show a placeholder to indicate a passkey is set
             const passkeyElement = document.getElementById('passkey');
             const headerPasskeyInput = document.getElementById('header-passkey');
+            const passkeyCopyBtn = document.getElementById('header-passkey-copy');
             
-            if (passkeyElement) passkeyElement.value = passkeyValue;
-            if (headerPasskeyInput) headerPasskeyInput.value = passkeyValue;
+            // Check if collection has a passkey (hashed in DB, we can't retrieve original)
+            const hasPasskey = collection.passkey && collection.passkey.trim() !== '';
+            
+            if (hasPasskey) {
+                // Passkey exists but we can't show the original (it's hashed)
+                // Show placeholder to indicate passkey is set
+                if (passkeyElement) passkeyElement.value = '•••••••• (passkey is set)';
+                if (headerPasskeyInput) {
+                    headerPasskeyInput.value = '•••••••• (passkey is set)';
+                    headerPasskeyInput.type = 'text';
+                    headerPasskeyInput.readOnly = true;
+                    headerPasskeyInput.style.color = '#6b7280';
+                    headerPasskeyInput.style.fontStyle = 'italic';
+                }
+                // Hide copy button (can't copy placeholder)
+                if (passkeyCopyBtn) passkeyCopyBtn.style.display = 'none';
+            } else {
+                // No passkey set - clear fields
+                if (passkeyElement) passkeyElement.value = '';
+                if (headerPasskeyInput) {
+                    headerPasskeyInput.value = '';
+                    headerPasskeyInput.type = 'text';
+                    headerPasskeyInput.readOnly = false;
+                    headerPasskeyInput.style.color = '';
+                    headerPasskeyInput.style.fontStyle = '';
+                }
+                if (passkeyCopyBtn) passkeyCopyBtn.style.display = 'none';
+            }
+            
+            // Store that a passkey exists (for UI state) but don't store the actual value
+            // The database has the passkey (hashed), and we'll preserve it if user doesn't change it
             
             // Load presentation data
             if (collection.presentation_data) {
@@ -2975,7 +3057,19 @@
                     const headerVisibilitySelect = document.getElementById('header-visibility-select');
                     const headerPasskeyInput = document.getElementById('header-passkey');
                     const visibility = headerVisibilitySelect ? headerVisibilitySelect.value : 'public';
-                    const passkey = visibility === 'passkey' ? (headerPasskeyInput ? headerPasskeyInput.value : '') : null;
+                    const rawPasskey = visibility === 'passkey' ? (headerPasskeyInput ? headerPasskeyInput.value.trim() : '') : null;
+                    
+                    // Hash passkey before storing (security: never store plaintext passkeys)
+                    let hashedPasskey = null;
+                    if (rawPasskey && rawPasskey.length > 0) {
+                        try {
+                            hashedPasskey = await hashPasskey(rawPasskey);
+                        } catch (error) {
+                            console.error('Error hashing passkey:', error);
+                            showMessage('Failed to secure passkey. Please try again.', 'error');
+                            return;
+                        }
+                    }
                     
                     // Create new collection
                     // Get slug from currentList or generate a new one (collection name input removed from header)
@@ -3009,7 +3103,7 @@
                             owner_id: currentUser.id,
                             slug: cleanSlug,
                             visibility: visibility === 'passkey' ? 'public' : visibility,
-                            passkey: passkey,
+                            passkey: hashedPasskey,
                             theme: getCurrentThemeFromUI()
                         })
                         .select()
@@ -3041,8 +3135,30 @@
                     } else {
                         // Update current list with new ID
                         currentList.id = data.id;
+                        // Store raw passkey in memory for UI, but hashed version is in DB
+                        currentList.passkey = rawPasskey;
                         collections[0] = currentList;
                         console.log('New collection created:', data);
+                        
+                        // If a passkey was set, show it to the user so they can copy/share it
+                        if (visibility === 'passkey' && rawPasskey && rawPasskey.length > 0) {
+                            // Update the input field to show the passkey (so user can copy it)
+                            const headerPasskeyInput = document.getElementById('header-passkey');
+                            if (headerPasskeyInput) {
+                                headerPasskeyInput.value = rawPasskey;
+                                headerPasskeyInput.type = 'text'; // Make it visible
+                                headerPasskeyInput.readOnly = false;
+                                headerPasskeyInput.style.color = '';
+                                headerPasskeyInput.style.fontStyle = '';
+                            }
+                            // Show copy button
+                            const copyBtn = document.getElementById('header-passkey-copy');
+                            if (copyBtn) {
+                                copyBtn.style.display = 'inline-block';
+                            }
+                            // Show success message with passkey info
+                            showMessage(`Collection created! Your passkey is: "${rawPasskey}" - Share this with others to grant access.`, 'success');
+                        }
                     }
                 } else {
                     // Update existing collection
@@ -3052,7 +3168,47 @@
                     const headerVisibilitySelect = document.getElementById('header-visibility-select');
                     const headerPasskeyInput = document.getElementById('header-passkey');
                     const visibility = headerVisibilitySelect ? headerVisibilitySelect.value : 'public';
-                    const passkey = visibility === 'passkey' ? (headerPasskeyInput ? headerPasskeyInput.value : '') : null;
+                    const rawPasskey = visibility === 'passkey' ? (headerPasskeyInput ? headerPasskeyInput.value.trim() : '') : null;
+                    
+                    // For existing collections, preserve existing passkey if user didn't enter a new one
+                    // Hash new passkey if provided, otherwise keep existing passkey from database
+                    let hashedPasskey = null;
+                    if (visibility === 'passkey') {
+                        if (rawPasskey && rawPasskey.length > 0) {
+                            // User entered a new passkey - hash it
+                            try {
+                                hashedPasskey = await hashPasskey(rawPasskey);
+                            } catch (error) {
+                                console.error('Error hashing passkey:', error);
+                                showMessage('Failed to secure passkey. Please try again.', 'error');
+                                return;
+                            }
+                        } else {
+                            // User didn't enter a new passkey - preserve existing one from database
+                            const existingPasskey = currentList.passkey;
+                            if (existingPasskey) {
+                                // Check if existing passkey is already a hash (64 hex chars) or plaintext (old format)
+                                const isAlreadyHashed = /^[0-9a-f]{64}$/i.test(existingPasskey.trim());
+                                if (isAlreadyHashed) {
+                                    // Already hashed, use as-is
+                                    hashedPasskey = existingPasskey.trim();
+                                } else {
+                                    // Old plaintext format - hash it now for security
+                                    try {
+                                        hashedPasskey = await hashPasskey(existingPasskey);
+                                        console.log('Migrated plaintext passkey to hash format');
+                                    } catch (error) {
+                                        console.error('Error hashing existing plaintext passkey:', error);
+                                        // Fallback: use existing value (will be hashed on next save)
+                                        hashedPasskey = existingPasskey;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        // Visibility is not 'passkey', so clear passkey
+                        hashedPasskey = null;
+                    }
                     
                     // For existing collections, use the current slug (collection name input removed from header)
                     // Users can rename collections through the collection list if needed
@@ -3063,14 +3219,24 @@
                     console.log('🎯 Theme type:', typeof themeToSave);
                     console.log('🎯 Theme stringified:', JSON.stringify(themeToSave, null, 2));
                     
+                    // Build update object - only include passkey if it changed or visibility changed
+                    const updateData = {
+                        slug: cleanSlug,
+                        visibility: visibility === 'passkey' ? 'public' : visibility,
+                        theme: themeToSave
+                    };
+                    
+                    // Only update passkey if visibility is 'passkey' (hashedPasskey will be set above)
+                    if (visibility === 'passkey') {
+                        updateData.passkey = hashedPasskey;
+                    } else {
+                        // Clearing passkey when visibility changes away from 'passkey'
+                        updateData.passkey = null;
+                    }
+                    
                     const { error: listError } = await supabaseClient
                         .from('link_lists')
-                        .update({
-                            slug: cleanSlug,
-                            visibility: visibility === 'passkey' ? 'public' : visibility,
-                            passkey: passkey,
-                            theme: themeToSave
-                        })
+                        .update(updateData)
                         .eq('id', currentList.id);
                     
                     if (listError) {
@@ -3095,15 +3261,46 @@
                     
                     // Update currentList with the new data
                     // Use the slug as-is (stored as plain text)
+                    // Note: Store raw passkey in memory for UI, but hashed version is saved to DB
                     currentList.slug = cleanSlug;
                     currentList.visibility = visibility === 'passkey' ? 'public' : visibility;
-                    currentList.passkey = passkey;
+                    currentList.passkey = rawPasskey; // Store raw passkey in memory for UI display
                     currentList.theme = themeToSave; // Use the saved theme instead of reloading from UI
                     
                     // Update the collections array
                     const collectionIndex = collections.findIndex(c => c.id === currentList.id);
                     if (collectionIndex !== -1) {
                         collections[collectionIndex] = { ...currentList };
+                    }
+                    
+                    // If a new passkey was set, show it to the user so they can copy/share it
+                    if (visibility === 'passkey' && rawPasskey && rawPasskey.length > 0) {
+                        // Update the input field to show the passkey (so user can copy it)
+                        if (headerPasskeyInput) {
+                            headerPasskeyInput.value = rawPasskey;
+                            headerPasskeyInput.type = 'text'; // Make it visible
+                            headerPasskeyInput.readOnly = false;
+                            headerPasskeyInput.style.color = '';
+                            headerPasskeyInput.style.fontStyle = '';
+                        }
+                        // Show copy button
+                        const copyBtn = document.getElementById('header-passkey-copy');
+                        if (copyBtn) {
+                            copyBtn.style.display = 'inline-block';
+                        }
+                        // Show success message with passkey info
+                        showMessage(`Collection saved! Your passkey is: "${rawPasskey}" - Share this with others to grant access.`, 'success');
+                    } else if (visibility === 'passkey') {
+                        // Passkey exists but wasn't changed - show placeholder
+                        if (headerPasskeyInput) {
+                            headerPasskeyInput.value = '•••••••• (passkey is set)';
+                            headerPasskeyInput.type = 'text';
+                            headerPasskeyInput.readOnly = true;
+                            headerPasskeyInput.style.color = '#6b7280';
+                            headerPasskeyInput.style.fontStyle = 'italic';
+                        }
+                        const copyBtn = document.getElementById('header-passkey-copy');
+                        if (copyBtn) copyBtn.style.display = 'none';
                     }
                 }
                 
@@ -5310,14 +5507,12 @@
             const file = event.target.files[0];
             if (!file) return;
             
-            // Validate file
-            if (!file.type.startsWith('image/')) {
-                showMessage('Please select an image file', 'error');
-                return;
-            }
-            
-            if (file.size > 5 * 1024 * 1024) {
-                showMessage('Image file is too large (max 5MB)', 'error');
+            // Validate file before processing
+            const validation = validateImageFile(file, 5);
+            if (!validation.valid) {
+                showMessage(validation.error, 'error');
+                // Clear the input so user can try again
+                event.target.value = '';
                 return;
             }
             
@@ -5844,43 +6039,183 @@
             y: 50
         };
 
+        /**
+         * Validate file before upload
+         * Returns { valid: boolean, error?: string }
+         */
+        function validateImageFile(file, maxSizeMB = 5) {
+            const maxSizeBytes = maxSizeMB * 1024 * 1024;
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+            const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+            
+            // Check if file exists
+            if (!file) {
+                return { valid: false, error: 'No file selected' };
+            }
+            
+            // Check file type
+            if (!file.type || !file.type.startsWith('image/')) {
+                return { 
+                    valid: false, 
+                    error: `Unsupported file type. Please select an image file (${allowedExtensions.join(', ').toUpperCase()})` 
+                };
+            }
+            
+            // Check file extension first (more reliable than MIME type)
+            const fileExt = '.' + (file.name.split('.').pop()?.toLowerCase() || '');
+            if (!allowedExtensions.includes(fileExt)) {
+                return { 
+                    valid: false, 
+                    error: `File extension "${fileExt}" is not supported. Please use: ${allowedExtensions.join(', ').toUpperCase()}` 
+                };
+            }
+            
+            // Check specific MIME type (case-insensitive, but be flexible)
+            const normalizedMimeType = file.type.toLowerCase();
+            // Allow if MIME type matches OR if extension is valid (some browsers report generic types)
+            const isAllowedMimeType = allowedTypes.includes(normalizedMimeType) || 
+                                     normalizedMimeType === 'image/jpeg' || // Common variation
+                                     normalizedMimeType.startsWith('image/'); // Generic image type is OK if extension is valid
+            
+            if (!isAllowedMimeType) {
+                // If extension is valid but MIME type isn't, still allow it (extension is more reliable)
+                // But warn if it's clearly wrong
+                if (normalizedMimeType && !normalizedMimeType.startsWith('image/')) {
+                    return { 
+                        valid: false, 
+                        error: `File type "${file.type}" is not supported. Please use: ${allowedExtensions.join(', ').toUpperCase()}` 
+                    };
+                }
+            }
+            
+            // Check file size
+            if (file.size > maxSizeBytes) {
+                const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+                return { 
+                    valid: false, 
+                    error: `File size is too large (${fileSizeMB}MB). Maximum size is ${maxSizeMB}MB. Please compress or resize the image.` 
+                };
+            }
+            
+            // Check if file is empty
+            if (file.size === 0) {
+                return { valid: false, error: 'File is empty. Please select a valid image file.' };
+            }
+            
+            return { valid: true };
+        }
+        
+        /**
+         * Parse Supabase storage error and return user-friendly message
+         */
+        function parseStorageError(error) {
+            if (!error) return 'Upload failed. Please try again.';
+            
+            const errorMessage = error.message || error.toString() || '';
+            const errorCode = error.code || error.statusCode || '';
+            
+            // RLS policy violations
+            if (errorMessage.includes('new row violates row-level security policy') || 
+                errorMessage.includes('RLS') ||
+                errorCode === '42501') {
+                return 'Upload denied: File does not meet security requirements. Please check file type and size.';
+            }
+            
+            // File size errors
+            if (errorMessage.includes('too large') || 
+                errorMessage.includes('size') ||
+                errorMessage.includes('exceeds') ||
+                errorCode === '413') {
+                return 'File size is too large. Maximum size is 5MB. Please compress or resize the image.';
+            }
+            
+            // File type errors
+            if (errorMessage.includes('file type') || 
+                errorMessage.includes('not allowed') ||
+                errorMessage.includes('extension') ||
+                errorMessage.includes('MIME')) {
+                return 'Unsupported file type. Please use JPG, PNG, GIF, or WebP images only.';
+            }
+            
+            // Authentication errors
+            if (errorMessage.includes('unauthorized') || 
+                errorMessage.includes('authentication') ||
+                errorCode === '401') {
+                return 'Upload failed: Please sign in and try again.';
+            }
+            
+            // Permission errors
+            if (errorMessage.includes('permission') || 
+                errorMessage.includes('forbidden') ||
+                errorCode === '403') {
+                return 'Upload denied: You do not have permission to upload files.';
+            }
+            
+            // Network errors
+            if (errorMessage.includes('network') || 
+                errorMessage.includes('fetch') ||
+                errorMessage.includes('timeout')) {
+                return 'Upload failed: Network error. Please check your connection and try again.';
+            }
+            
+            // Generic error - return original message if it's user-friendly, otherwise generic
+            if (errorMessage.length < 100 && !errorMessage.includes('Error') && !errorMessage.includes('error')) {
+                return errorMessage;
+            }
+            
+            return 'Upload failed. Please check the file type and size, then try again.';
+        }
+        
         function handleProfilePhotoUpload(event) {
             const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentProfilePhoto.src = e.target.result;
-                    currentProfilePhoto.scale = 100;
-                    currentProfilePhoto.x = 50;
-                    currentProfilePhoto.y = 50;
-                    
-                    const profilePhotoImg = document.getElementById('profilePhotoImg');
-                    const profilePhotoContainer = document.getElementById('profilePhotoContainer');
-                    const removePhotoBtn = document.getElementById('removePhotoBtn');
-                    const editProfilePhotoBtn = document.getElementById('editProfilePhotoBtn');
-                    
-                    if (profilePhotoImg) {
-                        profilePhotoImg.src = e.target.result;
-                        applyProfilePhotoTransform();
-                    }
-                    
-                    if (profilePhotoContainer) {
-                        profilePhotoContainer.style.display = 'block';
-                    }
-                    
-                    if (removePhotoBtn) {
-                        removePhotoBtn.style.display = 'inline-block';
-                    }
-                    
-                    if (editProfilePhotoBtn) {
-                        editProfilePhotoBtn.style.display = 'inline-block';
-                    }
-                    
-                    // Update live preview immediately
-                    updateProfilePhotoPreview();
-                };
-                reader.readAsDataURL(file);
+            if (!file) return;
+            
+            // Validate file before processing
+            const validation = validateImageFile(file, 5);
+            if (!validation.valid) {
+                showMessage(validation.error, 'error');
+                // Clear the input so user can try again
+                event.target.value = '';
+                return;
             }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentProfilePhoto.src = e.target.result;
+                currentProfilePhoto.scale = 100;
+                currentProfilePhoto.x = 50;
+                currentProfilePhoto.y = 50;
+                
+                const profilePhotoImg = document.getElementById('profilePhotoImg');
+                const profilePhotoContainer = document.getElementById('profilePhotoContainer');
+                const removePhotoBtn = document.getElementById('removePhotoBtn');
+                const editProfilePhotoBtn = document.getElementById('editProfilePhotoBtn');
+                
+                if (profilePhotoImg) {
+                    profilePhotoImg.src = e.target.result;
+                    applyProfilePhotoTransform();
+                }
+                
+                if (profilePhotoContainer) {
+                    profilePhotoContainer.style.display = 'block';
+                }
+                
+                if (removePhotoBtn) {
+                    removePhotoBtn.style.display = 'inline-block';
+                }
+                
+                if (editProfilePhotoBtn) {
+                    editProfilePhotoBtn.style.display = 'inline-block';
+                }
+                
+                // Update live preview immediately
+                updateProfilePhotoPreview();
+            };
+            reader.onerror = function() {
+                showMessage('Error reading file. Please try selecting the image again.', 'error');
+                event.target.value = '';
+            };
+            reader.readAsDataURL(file);
         }
         
         function applyProfilePhotoTransform() {
@@ -6563,6 +6898,56 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        /**
+         * Hash a passkey using Web Crypto API (SHA-256)
+         * This provides security by storing hashed passkeys instead of plaintext
+         * @param {string} passkey - The plaintext passkey to hash
+         * @returns {Promise<string>} - The hashed passkey as a hex string
+         */
+        async function hashPasskey(passkey) {
+            if (!passkey || typeof passkey !== 'string') {
+                throw new Error('Passkey must be a non-empty string');
+            }
+            
+            try {
+                // Convert passkey to ArrayBuffer
+                const encoder = new TextEncoder();
+                const data = encoder.encode(passkey);
+                
+                // Hash using SHA-256
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                
+                // Convert ArrayBuffer to hex string
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                
+                return hashHex;
+            } catch (error) {
+                console.error('Error hashing passkey:', error);
+                throw new Error('Failed to hash passkey');
+            }
+        }
+        
+        /**
+         * Timing-safe comparison of two strings
+         * Prevents timing attacks by always comparing all characters
+         * @param {string} a - First string to compare
+         * @param {string} b - Second string to compare
+         * @returns {boolean} - True if strings are equal
+         */
+        function timingSafeEqual(a, b) {
+            if (a.length !== b.length) {
+                return false;
+            }
+            
+            let result = 0;
+            for (let i = 0; i < a.length; i++) {
+                result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+            }
+            
+            return result === 0;
         }
         
         function togglePreviewTheme() {
@@ -8957,24 +9342,34 @@
             
             // First pass: validate all files
             files.forEach((file) => {
-                if (!file.type.startsWith('image/')) {
-                    invalidFiles.push({ name: file.name, reason: 'not an image' });
-                } else if (file.size > 5 * 1024 * 1024) {
-                    invalidFiles.push({ name: file.name, reason: 'too large (max 5MB)' });
+                const validation = validateImageFile(file, 5);
+                if (!validation.valid) {
+                    // Extract reason from error message
+                    let reason = validation.error || 'invalid file';
+                    // Make reason more concise for display
+                    if (reason.includes('too large')) {
+                        reason = 'file size too large (max 5MB)';
+                    } else if (reason.includes('not supported') || reason.includes('Unsupported')) {
+                        reason = 'unsupported file type (use JPG, PNG, GIF, or WebP)';
+                    } else if (reason.includes('extension')) {
+                        reason = 'unsupported file extension';
+                    }
+                    invalidFiles.push({ name: file.name, reason: reason });
                 } else {
                     validFiles.push(file);
                 }
             });
             
-            // Show warnings for invalid files
+            // Show warnings for invalid files with detailed messages
             if (invalidFiles.length > 0) {
                 invalidFiles.forEach(({ name, reason }) => {
-                    showMessage(`Skipping "${name}" - ${reason}.`, 'warning');
+                    showMessage(`Skipping "${name}" - ${reason}.`, 'error');
                 });
             }
             
             if (validFiles.length === 0) {
                 showMessage('No valid image files to upload.', 'error');
+                uploadInProgress = false; // Reset flag so user can try again
                 return;
             }
             
@@ -13716,26 +14111,42 @@
 
         function handleBackgroundImageUpload(event) {
             const file = event.target.files[0];
-            if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    updateThemeProperty('backgroundImage', e.target.result);
-                    updateThemeProperty('imagePosition', { x: 50, y: 50, scale: 100 }); // Default position
-                    showImagePreview(e.target.result);
-                    // Don't show image-positioning by default - user can click edit button to show it
-                    document.getElementById('image-positioning').style.display = 'none';
-                    
-                    // Switch to image background type if not already
-                    const imageRadio = document.querySelector('input[name="bg-type"][value="image"]');
-                    if (imageRadio && !imageRadio.checked) {
-                        imageRadio.checked = true;
-                        updateBackgroundType();
-                    }
-                    
-                    applyTheme();
-                };
-                reader.readAsDataURL(file);
+            if (!file) return;
+            
+            // Validate file before processing
+            const validation = validateImageFile(file, 5);
+            if (!validation.valid) {
+                showMessage(validation.error, 'error');
+                // Clear the input so user can try again
+                event.target.value = '';
+                return;
             }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                updateThemeProperty('backgroundImage', e.target.result);
+                updateThemeProperty('imagePosition', { x: 50, y: 50, scale: 100 }); // Default position
+                showImagePreview(e.target.result);
+                // Don't show image-positioning by default - user can click edit button to show it
+                const imagePositioning = document.getElementById('image-positioning');
+                if (imagePositioning) {
+                    imagePositioning.style.display = 'none';
+                }
+                
+                // Switch to image background type if not already
+                const imageRadio = document.querySelector('input[name="bg-type"][value="image"]');
+                if (imageRadio && !imageRadio.checked) {
+                    imageRadio.checked = true;
+                    updateBackgroundType();
+                }
+                
+                applyTheme();
+            };
+            reader.onerror = function() {
+                showMessage('Error reading file. Please try selecting the image again.', 'error');
+                event.target.value = '';
+            };
+            reader.readAsDataURL(file);
         }
 
         // Helper function to check if a backgroundImage looks like a default/placeholder

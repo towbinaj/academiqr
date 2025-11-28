@@ -699,27 +699,79 @@
         const userId = urlValidation.userId;
         const collectionId = urlValidation.collectionId;
 
-        // Check if passkey is valid for this collection
-        function getStoredPasskey(collectionId) {
+        /**
+         * Hash a passkey using Web Crypto API (SHA-256)
+         * This matches the hashing used in script.js for security
+         * @param {string} passkey - The plaintext passkey to hash
+         * @returns {Promise<string>} - The hashed passkey as a hex string
+         */
+        async function hashPasskey(passkey) {
+            if (!passkey || typeof passkey !== 'string') {
+                throw new Error('Passkey must be a non-empty string');
+            }
+            
             try {
-                const stored = sessionStorage.getItem(`passkey_${collectionId}`);
+                // Convert passkey to ArrayBuffer
+                const encoder = new TextEncoder();
+                const data = encoder.encode(passkey);
+                
+                // Hash using SHA-256
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                
+                // Convert ArrayBuffer to hex string
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                
+                return hashHex;
+            } catch (error) {
+                console.error('Error hashing passkey:', error);
+                throw new Error('Failed to hash passkey');
+            }
+        }
+        
+        /**
+         * Timing-safe comparison of two strings
+         * Prevents timing attacks by always comparing all characters
+         * @param {string} a - First string to compare
+         * @param {string} b - Second string to compare
+         * @returns {boolean} - True if strings are equal
+         */
+        function timingSafeEqual(a, b) {
+            if (a.length !== b.length) {
+                return false;
+            }
+            
+            let result = 0;
+            for (let i = 0; i < a.length; i++) {
+                result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+            }
+            
+            return result === 0;
+        }
+
+        // Check if passkey hash is valid for this collection (stored in sessionStorage)
+        function getStoredPasskeyHash(collectionId) {
+            try {
+                const stored = sessionStorage.getItem(`passkey_hash_${collectionId}`);
                 return stored || null;
             } catch (e) {
                 return null;
             }
         }
 
-        // Store passkey in sessionStorage
-        function storePasskey(collectionId, passkey) {
+        // Store passkey hash in sessionStorage (security: never store plaintext)
+        function storePasskeyHash(collectionId, passkeyHash) {
             try {
-                sessionStorage.setItem(`passkey_${collectionId}`, passkey);
+                sessionStorage.setItem(`passkey_hash_${collectionId}`, passkeyHash);
             } catch (e) {
-                console.warn('Failed to store passkey:', e);
+                console.warn('Failed to store passkey hash:', e);
             }
         }
 
         // Show passkey modal
-        function showPasskeyModal(collectionId, correctPasskey, onSuccess) {
+        // correctPasskey: The stored passkey (hash if isHashed=true, plaintext if isHashed=false)
+        // isHashed: Whether the stored passkey is a hash (new format) or plaintext (old format for backward compatibility)
+        function showPasskeyModal(collectionId, correctPasskey, isHashed, onSuccess) {
             const modal = document.getElementById('passkey-modal');
             const input = document.getElementById('passkey-input');
             const error = document.getElementById('passkey-error');
@@ -743,7 +795,7 @@
             input.focus();
             
             // Handle submit
-            const handleSubmit = () => {
+            const handleSubmit = async () => {
                 const enteredPasskey = input.value.trim();
                 
                 if (!enteredPasskey) {
@@ -752,30 +804,55 @@
                     return;
                 }
                 
-                // Validate passkey (case-sensitive comparison)
-                if (enteredPasskey === correctPasskey) {
-                    // Store passkey for this session
-                    storePasskey(collectionId, enteredPasskey);
+                try {
+                    let isValid = false;
                     
-                    // Hide modal
-                    modal.style.display = 'none';
-                    
-                    // Show content after passkey is validated
-                    const phoneScreenElement = document.querySelector('.phone-screen');
-                    if (phoneScreenElement) {
-                        phoneScreenElement.style.display = '';
+                    if (isHashed) {
+                        // New format: stored passkey is a hash, so hash the entered passkey and compare
+                        const enteredHash = await hashPasskey(enteredPasskey);
+                        isValid = timingSafeEqual(enteredHash, correctPasskey);
+                        
+                        if (isValid) {
+                            // Store passkey hash for this session (security: never store plaintext)
+                            storePasskeyHash(collectionId, enteredHash);
+                        }
+                    } else {
+                        // Old format: stored passkey is plaintext (backward compatibility during migration)
+                        // Use timing-safe comparison for security
+                        isValid = timingSafeEqual(enteredPasskey, correctPasskey);
+                        
+                        if (isValid) {
+                            // For old plaintext passkeys, hash and store the hash for consistency
+                            const enteredHash = await hashPasskey(enteredPasskey);
+                            storePasskeyHash(collectionId, enteredHash);
+                        }
                     }
                     
-                    // Call success callback
-                    if (onSuccess) {
-                        onSuccess();
+                    if (isValid) {
+                        // Hide modal
+                        modal.style.display = 'none';
+                        
+                        // Show content after passkey is validated
+                        const phoneScreenElement = document.querySelector('.phone-screen');
+                        if (phoneScreenElement) {
+                            phoneScreenElement.style.display = '';
+                        }
+                        
+                        // Call success callback
+                        if (onSuccess) {
+                            onSuccess();
+                        }
+                    } else {
+                        // Incorrect passkey
+                        error.textContent = 'Incorrect passkey. Please try again.';
+                        error.style.display = 'block';
+                        input.value = '';
+                        input.focus();
                     }
-                } else {
-                    // Incorrect passkey
-                    error.textContent = 'Incorrect passkey. Please try again.';
+                } catch (hashError) {
+                    console.error('Error validating passkey:', hashError);
+                    error.textContent = 'Error validating passkey. Please try again.';
                     error.style.display = 'block';
-                    input.value = '';
-                    input.focus();
                 }
             };
             
@@ -868,14 +945,17 @@
                 // Check if collection requires passkey authentication
                 if (collection.passkey && collection.passkey.trim() !== '') {
                     // Collection is passkey-protected
-                    const storedPasskey = getStoredPasskey(collectionId);
+                    // Check if stored passkey is a hash (64 hex characters) or plaintext (backward compatibility)
+                    const isHashed = /^[0-9a-f]{64}$/i.test(collection.passkey.trim());
+                    const storedPasskeyHash = getStoredPasskeyHash(collectionId);
+                    const storedValue = collection.passkey.trim(); // This could be hash or plaintext
 
-                    if (storedPasskey === collection.passkey) {
-                        // Passkey already validated in this session, proceed to load content
+                    if (isHashed && storedPasskeyHash && timingSafeEqual(storedPasskeyHash, storedValue)) {
+                        // Passkey hash already validated in this session, proceed to load content
                         await loadCollectionContent(collection);
-                } else {
-                        // Show passkey prompt
-                        showPasskeyModal(collectionId, collection.passkey, async () => {
+                    } else {
+                        // Show passkey prompt (will hash and compare if stored is hash, or compare plaintext if old format)
+                        showPasskeyModal(collectionId, storedValue, isHashed, async () => {
                             // Passkey validated, now load content
                             await loadCollectionContent(collection);
                         });
