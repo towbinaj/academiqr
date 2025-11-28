@@ -1,5 +1,5 @@
 ﻿
-        // Cache bust: v0.6.4 - Security fixes: RLS policy optimizations, duplicate policy consolidation, mutable search_path fixes
+        // Cache bust: v0.6.5 - QR code improvements: size update (250x250), rounded padding corners, border fixes, download button layout
         // Supabase configuration
         const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';

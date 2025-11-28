@@ -5,6 +5,19 @@ All notable changes to AcademiQR will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5] - 2025-01-XX
+
+### Changed
+- Updated QR code size from 200x200 to 250x250 pixels
+- Moved download buttons (PNG, JPEG, SVG) to right side of QR code in single column
+- Centered download buttons vertically relative to QR code
+
+### Fixed
+- Fixed QR code border to surround padding area (not just QR code) in all download formats
+- Fixed rounded padding corners to match border radius (eliminates white square corners)
+- Fixed JPEG download to use rounded padding corners (was showing square black corners)
+- Implemented SVG download functionality (was previously disabled)
+
 ## [0.6.4] - 2025-01-XX
 
 ### Security
