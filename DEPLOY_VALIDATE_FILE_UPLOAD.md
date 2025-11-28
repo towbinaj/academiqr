@@ -4,21 +4,22 @@ This guide shows you how to deploy the `validate-file-upload` Edge Function to S
 
 ---
 
-## Option 1: Using Supabase Dashboard (Easiest)
+## Option 1: Using Supabase Dashboard Editor (Easiest)
 
 ### Step 1: Open Supabase Dashboard
 1. Go to [https://supabase.com/dashboard](https://supabase.com/dashboard)
 2. Select your project
 3. Navigate to **Edge Functions** in the left sidebar
 
-### Step 2: Create New Function
-1. Click **"Create a new function"** or **"New Function"**
-2. Name it: `validate-file-upload`
-3. Click **"Create function"**
+### Step 2: Deploy via Editor
+1. You'll see options: **"via editor"**, **"via CLI"**, or **"via AI assistant"**
+2. Click **"via editor"** (or **"Deploy via editor"**)
+3. Create a new function named: `validate-file-upload`
+   - If prompted, enter the function name: `validate-file-upload`
 
 ### Step 3: Copy Function Code
 1. Open the file: `supabase/functions/validate-file-upload/index.ts`
-2. Copy **ALL** the code
+2. Copy **ALL** the code (Ctrl+A, Ctrl+C)
 3. Paste it into the Supabase Dashboard code editor
 4. Click **"Deploy"** or **"Save"**
 

@@ -902,6 +902,9 @@
                 <button onclick="closeMediaLibrary()" class="media-modal-close" aria-label="Close">×</button>
             </div>
             <div class="modal-body">
+                <!-- Message Display Area (for upload errors/success) -->
+                <div id="mediaModalMessage" class="media-modal-message" style="display: none; margin-bottom: 15px; padding: 12px; border-radius: 6px; font-size: 0.875rem;"></div>
+                
                 <!-- Upload Progress Indicator -->
                 <div id="uploadProgressContainer" class="upload-progress-container hidden">
                     <div class="upload-progress-ring">
@@ -1108,6 +1111,68 @@
                         <div class="form-group" style="margin-top: 20px; text-align: center;">
                             <button onclick="saveProfile()" class="btn btn-primary btn-lg">Save Profile</button>
                         </div>
+                        
+                        <!-- Account Deletion Section -->
+                        <div class="form-group" style="margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
+                            <h3 style="color: #dc2626; margin-bottom: 10px; font-size: 1.1rem;">Delete Account</h3>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 15px; line-height: 1.5;">
+                                Deleting your account will permanently remove all your data including collections, links, analytics, and media files. This action cannot be undone.
+                            </p>
+                            <button onclick="confirmDeleteAccount()" class="btn" style="background-color: #dc2626; color: white; border: none; font-family: inherit; font-size: 16px; font-weight: 600;">
+                                Delete Account
+                            </button>
+                        </div>
+        </div>
+    </div>
+    
+    <!-- Account Deletion Confirmation Modal -->
+    <div id="deleteAccountModal" class="modal hidden" style="z-index: 10002;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 style="color: #dc2626; margin: 0;">⚠️ Delete Account</h3>
+                <button onclick="closeDeleteAccountModal()" class="btn btn-ghost btn-sm" style="position: absolute; top: 10px; right: 10px;">✕</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px;">
+                    <p style="color: #1f2937; margin-bottom: 15px; line-height: 1.6;">
+                        <strong>Are you sure you want to delete your account?</strong>
+                    </p>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 15px; line-height: 1.6;">
+                        This will permanently delete:
+                    </p>
+                    <ul style="color: #6b7280; font-size: 0.875rem; margin-left: 20px; margin-bottom: 20px; line-height: 1.8;">
+                        <li>Your profile and all personal information</li>
+                        <li>All your collections and links</li>
+                        <li>All analytics data</li>
+                        <li>All uploaded media files</li>
+                        <li>Your account credentials</li>
+                    </ul>
+                    <p style="color: #dc2626; font-weight: 600; margin-bottom: 20px;">
+                        This action cannot be undone.
+                    </p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="deleteConfirmText" style="color: #1f2937; font-weight: 500; margin-bottom: 8px; display: block;">
+                        Type <strong style="color: #dc2626;">DELETE</strong> to confirm:
+                    </label>
+                    <input 
+                        type="text" 
+                        id="deleteConfirmText" 
+                        class="form-input" 
+                        placeholder="Type DELETE to confirm"
+                        style="margin-bottom: 20px;"
+                        onkeypress="if(event.key === 'Enter') handleDeleteAccount()"
+                    >
+                </div>
+                
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button onclick="closeDeleteAccountModal()" class="btn btn-ghost">Cancel</button>
+                    <button onclick="handleDeleteAccount()" class="btn" style="background-color: #dc2626; color: white; border: none; font-family: inherit; font-size: 16px; font-weight: 600;" id="deleteAccountConfirmBtn" disabled>
+                        Delete My Account
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
     <!-- Load Supabase from unpkg CDN (alternative to jsdelivr) -->
