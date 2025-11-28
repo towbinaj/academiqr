@@ -1,25 +1,12 @@
--- Create rate_limit_attempts table for server-side rate limiting
--- This table tracks authentication attempts to prevent brute-force attacks
+-- Fix mutable search_path warnings for rate limit functions
+-- This addresses security warnings about mutable search_path
+--
+-- Run this in Supabase SQL Editor to fix the existing functions
 
-CREATE TABLE IF NOT EXISTS rate_limit_attempts (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    email TEXT,
-    ip_address TEXT NOT NULL,
-    attempt_type TEXT NOT NULL, -- 'login', 'signup', etc.
-    success BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
-    -- Indexes for efficient queries
-    CONSTRAINT rate_limit_attempts_email_ip_type_idx UNIQUE (email, ip_address, attempt_type, created_at)
-);
+-- ============================================================================
+-- 1. Fix cleanup_old_rate_limit_attempts function
+-- ============================================================================
 
--- Create indexes for efficient rate limit checks
-CREATE INDEX IF NOT EXISTS idx_rate_limit_email_created ON rate_limit_attempts(email, created_at);
-CREATE INDEX IF NOT EXISTS idx_rate_limit_ip_created ON rate_limit_attempts(ip_address, created_at);
-CREATE INDEX IF NOT EXISTS idx_rate_limit_email_type_created ON rate_limit_attempts(email, attempt_type, created_at);
-CREATE INDEX IF NOT EXISTS idx_rate_limit_ip_type_created ON rate_limit_attempts(ip_address, attempt_type, created_at);
-
--- Create a function to clean up old rate limit records (older than 24 hours)
 CREATE OR REPLACE FUNCTION cleanup_old_rate_limit_attempts()
 RETURNS void
 LANGUAGE plpgsql
@@ -32,7 +19,10 @@ BEGIN
 END;
 $$;
 
--- Create a function to check if an IP/email is rate limited
+-- ============================================================================
+-- 2. Fix is_rate_limited function
+-- ============================================================================
+
 CREATE OR REPLACE FUNCTION is_rate_limited(
     p_email TEXT,
     p_ip_address TEXT,
@@ -106,33 +96,22 @@ BEGIN
 END;
 $$;
 
--- Grant necessary permissions
-GRANT SELECT, INSERT ON rate_limit_attempts TO authenticated;
-GRANT EXECUTE ON FUNCTION is_rate_limited TO authenticated;
-GRANT EXECUTE ON FUNCTION cleanup_old_rate_limit_attempts TO authenticated;
+-- ============================================================================
+-- 3. Verify the fixes
+-- ============================================================================
 
--- Enable RLS (Row Level Security)
-ALTER TABLE rate_limit_attempts ENABLE ROW LEVEL SECURITY;
+-- Check that both functions now have fixed search_path
+SELECT 
+    p.proname as function_name,
+    CASE 
+        WHEN pg_get_functiondef(p.oid) LIKE '%SET search_path%' THEN '✅ Fixed'
+        ELSE '⚠️ Still has mutable search_path'
+    END as status
+FROM pg_proc p
+JOIN pg_namespace n ON p.pronamespace = n.oid
+WHERE n.nspname = 'public' 
+    AND p.proname IN ('cleanup_old_rate_limit_attempts', 'is_rate_limited')
+ORDER BY p.proname;
 
--- Create policy to allow authenticated users to read their own attempts
-CREATE POLICY "Users can view their own rate limit attempts"
-    ON rate_limit_attempts
-    FOR SELECT
-    TO authenticated
-    USING (auth.uid()::text = (SELECT id::text FROM auth.users WHERE email = rate_limit_attempts.email LIMIT 1));
-
--- Create policy to allow service role to insert attempts (for edge function)
--- Note: Edge functions use service role, so this allows the function to insert records
-CREATE POLICY "Service role can insert rate limit attempts"
-    ON rate_limit_attempts
-    FOR INSERT
-    TO service_role
-    WITH CHECK (true);
-
--- Create policy to allow service role to read all attempts (for rate limit checks)
-CREATE POLICY "Service role can read all rate limit attempts"
-    ON rate_limit_attempts
-    FOR SELECT
-    TO service_role
-    USING (true);
+-- Note: Both functions should now show "✅ Fixed" status
 

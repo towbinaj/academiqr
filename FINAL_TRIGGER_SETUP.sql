@@ -43,7 +43,11 @@ FOR UPDATE USING (true);
 
 -- Step 5: Create or replace the function with handle field
 CREATE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
     INSERT INTO public.profiles (id, display_name, handle, created_at, updated_at)
     VALUES (
@@ -63,7 +67,7 @@ BEGIN
     ON CONFLICT (id) DO NOTHING;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- Step 6: Create the trigger
 CREATE TRIGGER on_auth_user_created

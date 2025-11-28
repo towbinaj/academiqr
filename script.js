@@ -5899,6 +5899,109 @@
             document.getElementById('profileModal').classList.add('hidden');
         }
         
+        // Account Deletion Functions
+        function confirmDeleteAccount() {
+            // Show confirmation modal
+            const modal = document.getElementById('deleteAccountModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                // Clear confirmation input
+                const confirmInput = document.getElementById('deleteConfirmText');
+                if (confirmInput) {
+                    confirmInput.value = '';
+                    confirmInput.focus();
+                }
+                // Disable delete button initially
+                const deleteBtn = document.getElementById('deleteAccountConfirmBtn');
+                if (deleteBtn) {
+                    deleteBtn.disabled = true;
+                }
+                // Enable/disable button based on input
+                if (confirmInput) {
+                    confirmInput.addEventListener('input', function() {
+                        if (deleteBtn) {
+                            deleteBtn.disabled = this.value.trim() !== 'DELETE';
+                        }
+                    });
+                }
+            }
+        }
+        
+        function closeDeleteAccountModal() {
+            const modal = document.getElementById('deleteAccountModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            // Clear confirmation input
+            const confirmInput = document.getElementById('deleteConfirmText');
+            if (confirmInput) {
+                confirmInput.value = '';
+            }
+        }
+        
+        async function handleDeleteAccount() {
+            const confirmInput = document.getElementById('deleteConfirmText');
+            const confirmText = confirmInput ? confirmInput.value.trim() : '';
+            
+            // Verify confirmation text
+            if (confirmText !== 'DELETE') {
+                showMessage('Please type "DELETE" to confirm account deletion.', 'error');
+                return;
+            }
+            
+            // Double confirmation
+            const reallySure = confirm(
+                'Are you absolutely sure? This will permanently delete your account and all data. This cannot be undone.\n\nClick OK to proceed with deletion.'
+            );
+            
+            if (!reallySure) {
+                return;
+            }
+            
+            try {
+                // Show loading state
+                const deleteBtn = document.getElementById('deleteAccountConfirmBtn');
+                if (deleteBtn) {
+                    deleteBtn.disabled = true;
+                    deleteBtn.textContent = 'Deleting...';
+                }
+                
+                // Call Edge Function to delete account
+                const { data, error } = await supabaseClient.functions.invoke('delete-account', {
+                    body: { confirmText: 'DELETE' }
+                });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                if (data && data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Success - account deleted
+                showMessage('Your account has been deleted successfully. You will be signed out.', 'success');
+                
+                // Sign out and redirect to login
+                setTimeout(async () => {
+                    await supabaseClient.auth.signOut();
+                    window.location.href = window.location.origin;
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error deleting account:', error);
+                const errorMessage = error.message || 'Failed to delete account. Please try again or contact support.';
+                showMessage(errorMessage, 'error');
+                
+                // Re-enable button
+                const deleteBtn = document.getElementById('deleteAccountConfirmBtn');
+                if (deleteBtn) {
+                    deleteBtn.disabled = false;
+                    deleteBtn.textContent = 'Delete My Account';
+                }
+            }
+        }
+        
         function isValidEmail(email) {
             // Basic email validation
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -7070,6 +7173,51 @@
         
         function showMessage(message, type = 'error') {
             console.log('showMessage called:', message, type);
+            
+            // Check if media modal is open - show message there if it is
+            const mediaModal = document.getElementById('mediaModal');
+            const isMediaModalOpen = mediaModal && !mediaModal.classList.contains('hidden');
+            
+            if (isMediaModalOpen) {
+                // Show message inside media modal
+                const mediaModalMessage = document.getElementById('mediaModalMessage');
+                if (mediaModalMessage) {
+                    const escapedMessage = escapeHtml(message);
+                    // Set background color based on type
+                    let bgColor = '#fee2e2'; // error - red
+                    let textColor = '#991b1b';
+                    let borderColor = '#fca5a5';
+                    
+                    if (type === 'success') {
+                        bgColor = '#d1fae5'; // success - green
+                        textColor = '#065f46';
+                        borderColor = '#6ee7b7';
+                    } else if (type === 'warning') {
+                        bgColor = '#fef3c7'; // warning - yellow
+                        textColor = '#92400e';
+                        borderColor = '#fcd34d';
+                    }
+                    
+                    mediaModalMessage.style.display = 'block';
+                    mediaModalMessage.style.backgroundColor = bgColor;
+                    mediaModalMessage.style.color = textColor;
+                    mediaModalMessage.style.border = `1px solid ${borderColor}`;
+                    mediaModalMessage.textContent = message;
+                    
+                    // Scroll message into view
+                    mediaModalMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    
+                    // Auto-hide after 7 seconds (longer for modal context)
+                    setTimeout(() => {
+                        mediaModalMessage.style.display = 'none';
+                        mediaModalMessage.textContent = '';
+                    }, 7000);
+                    
+                    return; // Don't also show in main message area
+                }
+            }
+            
+            // Show in main message area (outside modal)
             const messageDiv = document.getElementById('message');
             if (messageDiv) {
                 console.log('Message div found, displaying message');
@@ -9340,35 +9488,51 @@
             const validFiles = [];
             const invalidFiles = [];
             
-            // First pass: validate all files
+            // First pass: validate all files and show specific errors
             files.forEach((file) => {
                 const validation = validateImageFile(file, 5);
                 if (!validation.valid) {
-                    // Extract reason from error message
+                    // Get specific error reason from validation
                     let reason = validation.error || 'invalid file';
-                    // Make reason more concise for display
+                    
+                    // Show specific error for each invalid file immediately
                     if (reason.includes('too large')) {
-                        reason = 'file size too large (max 5MB)';
-                    } else if (reason.includes('not supported') || reason.includes('Unsupported')) {
-                        reason = 'unsupported file type (use JPG, PNG, GIF, or WebP)';
-                    } else if (reason.includes('extension')) {
-                        reason = 'unsupported file extension';
+                        const fileSizeMB = (file.size / 1024 / 1024).toFixed(2);
+                        showMessage(`"${file.name}" is too large (${fileSizeMB}MB). Maximum size is 5MB. Please compress or resize the image.`, 'error');
+                    } else if (reason.includes('extension') || reason.includes('not supported') || reason.includes('Unsupported')) {
+                        const fileExt = '.' + (file.name.split('.').pop()?.toLowerCase() || 'unknown');
+                        showMessage(`"${file.name}" has unsupported format (${fileExt.toUpperCase()}). Please use JPG, PNG, GIF, or WebP images only.`, 'error');
+                    } else if (reason.includes('empty')) {
+                        showMessage(`"${file.name}" is empty. Please select a valid image file.`, 'error');
+                    } else if (reason.includes('No file selected')) {
+                        showMessage(`No file selected. Please choose an image file.`, 'error');
+                    } else {
+                        // Generic error with the specific reason
+                        showMessage(`"${file.name}" - ${reason}`, 'error');
                     }
+                    
                     invalidFiles.push({ name: file.name, reason: reason });
                 } else {
                     validFiles.push(file);
                 }
             });
             
-            // Show warnings for invalid files with detailed messages
-            if (invalidFiles.length > 0) {
-                invalidFiles.forEach(({ name, reason }) => {
-                    showMessage(`Skipping "${name}" - ${reason}.`, 'error');
-                });
+            // If all files are invalid, show a summary
+            if (validFiles.length === 0 && invalidFiles.length > 0) {
+                // Don't show generic message - we already showed specific errors for each file
+                // Just show a summary with correct grammar
+                if (invalidFiles.length === 1) {
+                    showMessage(`1 file was invalid. Try again with a valid image file (JPG, PNG, GIF, or WebP, max 5MB).`, 'error');
+                } else {
+                    showMessage(`${invalidFiles.length} files were invalid. Try again with valid image files (JPG, PNG, GIF, or WebP, max 5MB each).`, 'error');
+                }
+                uploadInProgress = false; // Reset flag so user can try again
+                return;
             }
             
-            if (validFiles.length === 0) {
-                showMessage('No valid image files to upload.', 'error');
+            // If no files were selected at all
+            if (validFiles.length === 0 && invalidFiles.length === 0) {
+                showMessage('No files selected. Please choose image files to upload.', 'error');
                 uploadInProgress = false; // Reset flag so user can try again
                 return;
             }

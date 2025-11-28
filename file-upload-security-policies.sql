@@ -137,7 +137,11 @@ CREATE OR REPLACE FUNCTION validate_image_file(
     file_name text,
     file_size bigint,
     file_metadata jsonb
-) RETURNS boolean AS $$
+) RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 DECLARE
     file_ext text;
     mime_type text;
@@ -173,7 +177,7 @@ BEGIN
     
     RETURN true;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 -- ============================================================================
 -- 5. Create Trigger to Validate Files on Insert

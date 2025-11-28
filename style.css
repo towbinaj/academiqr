@@ -2593,6 +2593,24 @@
             padding: 20px;
         }
 
+        /* Media Library Modal Message Display */
+        #mediaModalMessage {
+            position: relative;
+            z-index: 10;
+            margin-bottom: 15px;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            font-weight: 500;
+            word-wrap: break-word;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        #mediaModalMessage:empty {
+            display: none !important;
+        }
+        
         /* Media Library Modal Styling */
         #mediaModal .modal-content {
             width: 900px !important;

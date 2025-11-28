@@ -96,15 +96,18 @@ TO anon, authenticated
 WITH CHECK (true);
 
 -- Allow users to view their own analytics
+-- Note: Using (SELECT auth.uid()) instead of auth.uid() for better performance
+-- This evaluates auth.uid() once per query instead of once per row
 CREATE POLICY "Users can view their own link clicks"
 ON link_clicks FOR SELECT
 TO authenticated
-USING (auth.uid() = owner_id);
+USING ((SELECT auth.uid()) = owner_id);
 
+-- Note: Using (SELECT auth.uid()) instead of auth.uid() for better performance
 CREATE POLICY "Users can view their own page views"
 ON page_views FOR SELECT
 TO authenticated
-USING (auth.uid() = owner_id);
+USING ((SELECT auth.uid()) = owner_id);
 
 -- 6. Add comments for documentation
 COMMENT ON TABLE link_clicks IS 'Tracks individual link clicks with visitor information';

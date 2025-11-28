@@ -26,30 +26,36 @@ ALTER TABLE user_themes ENABLE ROW LEVEL SECURITY;
 
 -- 5. Create RLS policies
 -- Drop existing policies if they exist, then create new ones
+-- Note: Using (SELECT auth.uid()) instead of auth.uid() for better performance
+-- This evaluates auth.uid() once per query instead of once per row
 DROP POLICY IF EXISTS "Users can view own themes" ON user_themes;
 CREATE POLICY "Users can view own themes" ON user_themes
-    FOR SELECT USING (auth.uid() = user_id);
+    FOR SELECT USING ((SELECT auth.uid()) = user_id);
 
 DROP POLICY IF EXISTS "Users can insert own themes" ON user_themes;
 CREATE POLICY "Users can insert own themes" ON user_themes
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+    FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
 
 DROP POLICY IF EXISTS "Users can update own themes" ON user_themes;
 CREATE POLICY "Users can update own themes" ON user_themes
-    FOR UPDATE USING (auth.uid() = user_id);
+    FOR UPDATE USING ((SELECT auth.uid()) = user_id);
 
 DROP POLICY IF EXISTS "Users can delete own themes" ON user_themes;
 CREATE POLICY "Users can delete own themes" ON user_themes
-    FOR DELETE USING (auth.uid() = user_id);
+    FOR DELETE USING ((SELECT auth.uid()) = user_id);
 
 -- 6. Create function for updated_at timestamps (if it doesn't exist)
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
 BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$;
 
 -- 7. Create trigger for updated_at
 -- Drop existing trigger if it exists, then create new one
