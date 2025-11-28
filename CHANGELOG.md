@@ -5,6 +5,25 @@ All notable changes to AcademiQR will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2025-01-XX
+
+### Fixed
+- Fixed image position and scale display consistency across editor, preview, and collection views
+- Fixed database lock issues by batching sequential updates into single upsert operations
+- Fixed default/placeholder background images displaying when no image was uploaded
+- Fixed image overflow issues when scale > 100% by using proper object-fit: contain
+- Fixed duplicate function declarations (setupDragAndDrop, applyGradient)
+
+### Changed
+- Updated image transform calculations to use container-size-relative pan values for consistency
+- Changed CSS object-fit from cover to contain for proper image scaling
+- Added debouncing to image position/scale saves to prevent database overload
+- Improved null handling for image position/scale when removing images
+
+### Performance
+- Optimized database operations by batching updates instead of sequential loops
+- Added debouncing to prevent rapid-fire database saves during slider dragging
+
 ## [0.6.2] - 2025-01-XX
 
 ### Added

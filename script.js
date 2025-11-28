@@ -1,5 +1,5 @@
 ﻿
-        // Cache bust: v0.6.2 - Database migrations: media library, gradients, themes, QR logos persistence, collection reordering
+        // Cache bust: v0.6.3 - Image position/scale fixes, database optimizations, default image filtering
         // Supabase configuration
         const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
