@@ -5,6 +5,19 @@ All notable changes to AcademiQR will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.4] - 2025-01-XX
+
+### Security
+- Fixed duplicate RLS policies on multiple tables (links, page_views, collections, link_items, link_lists, analytics_events, profiles)
+- Optimized RLS policy performance by replacing `auth.uid()` with `(SELECT auth.uid())` across all tables
+- Fixed mutable search_path warnings in database functions (cleanup_old_rate_limit_attempts, is_rate_limited, update_updated_at_column, validate_image_file, handle_new_user)
+- Consolidated duplicate permissive policies into single policies per role/action
+- Improved RLS policy verification and documentation
+
+### Performance
+- Optimized RLS policy queries for better performance at scale
+- Fixed suboptimal query performance warnings for all affected tables
+
 ## [0.6.3] - 2025-01-XX
 
 ### Fixed
