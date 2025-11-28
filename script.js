@@ -4110,10 +4110,13 @@
                         if (bgImagePreview) bgImagePreview.style.display = 'none';
                         if (imagePositioning) imagePositioning.style.display = 'none';
                     } else {
-                        // Show preview if image exists, but hide positioning (user can click edit button to show it)
-                        // Don't filter here - filtering only happens when loading from database
-                        if (bgImagePreview && theme.backgroundImage) {
+                        // Show preview if image exists and is not a placeholder, but hide positioning (user can click edit button to show it)
+                        // Filter out default/placeholder images even when loading theme
+                        if (bgImagePreview && theme.backgroundImage && !isDefaultOrPlaceholderImage(theme.backgroundImage)) {
                             showImagePreview(theme.backgroundImage);
+                        } else if (bgImagePreview) {
+                            // Hide preview if image is placeholder or doesn't exist
+                            bgImagePreview.style.display = 'none';
                         }
                         // Hide image-positioning by default - user can click edit button to show it
                         if (imagePositioning) imagePositioning.style.display = 'none';
@@ -4342,10 +4345,10 @@
             } else if (theme.backgroundType === 'gradient') {
                 preview.style.background = sanitizeCSSValue(theme.gradientText, 'gradient') || 'linear-gradient(45deg, #ff6b6b 0%, #4ecdc4 100%)';
             } else if (theme.backgroundType === 'image') {
-                // Only apply image if it actually exists
-                // Don't filter here - this is used for active theme application
-                // Filtering only happens when loading from database
-                if (theme.backgroundImage && theme.backgroundImage.trim() !== '') {
+                // Only apply image if it actually exists and is not a placeholder/default
+                // Filter out default/placeholder images even during active theme application
+                if (theme.backgroundImage && theme.backgroundImage.trim() !== '' &&
+                    !isDefaultOrPlaceholderImage(theme.backgroundImage)) {
                     preview.style.background = 'none';
                     preview.style.backgroundImage = `url(${sanitizeCSSValue(theme.backgroundImage, 'url').replace(/^url\(|\)$/g, '')})`;
                     
@@ -9934,7 +9937,7 @@
                 const imagePositioning = document.getElementById('image-positioning');
                 // Check both currentTheme and currentList theme for background image
                 const themeBackgroundImage = currentTheme.backgroundImage || (currentList && currentList.theme && currentList.theme.backgroundImage);
-                const hasBackgroundImage = themeBackgroundImage && themeBackgroundImage.trim() !== '';
+                const hasBackgroundImage = themeBackgroundImage && themeBackgroundImage.trim() !== '' && !isDefaultOrPlaceholderImage(themeBackgroundImage);
                 
                 if (!hasBackgroundImage) {
                     if (bgImagePreview) bgImagePreview.style.display = 'none';
@@ -13218,7 +13221,8 @@
                 console.log('Gradient text length:', themeToApply.gradientText.length);
                 console.log('Gradient text type:', typeof themeToApply.gradientText);
             } else if (themeToApply.backgroundType === 'image' && themeToApply.backgroundImage && 
-                       themeToApply.backgroundImage.trim() !== '') {
+                       themeToApply.backgroundImage.trim() !== '' &&
+                       !isDefaultOrPlaceholderImage(themeToApply.backgroundImage)) {
                 preview.style.background = 'none';
                 preview.style.backgroundImage = `url(${themeToApply.backgroundImage})`;
                 
@@ -13798,10 +13802,19 @@
         }
 
         function showImagePreview(imageUrl) {
+            // Don't show placeholder/default images
+            if (!imageUrl || isDefaultOrPlaceholderImage(imageUrl)) {
+                const preview = document.getElementById('bg-image-preview');
+                if (preview) preview.style.display = 'none';
+                return;
+            }
+            
             const preview = document.getElementById('bg-image-preview');
             const previewImg = document.getElementById('bg-image-preview-img');
-            previewImg.src = imageUrl;
-            preview.style.display = 'block';
+            if (preview && previewImg) {
+                previewImg.src = imageUrl;
+                preview.style.display = 'block';
+            }
         }
 
         function removeBackgroundImage() {
@@ -14837,7 +14850,14 @@
 
             // Update image positioning if there's a background image
             if (themeToApply.backgroundImage) {
-                showImagePreview(themeToApply.backgroundImage);
+                // Only show preview if image is not a placeholder/default
+                if (themeToApply.backgroundImage && !isDefaultOrPlaceholderImage(themeToApply.backgroundImage)) {
+                    showImagePreview(themeToApply.backgroundImage);
+                } else {
+                    // Hide preview if image is placeholder or doesn't exist
+                    const bgImagePreview = document.getElementById('bg-image-preview');
+                    if (bgImagePreview) bgImagePreview.style.display = 'none';
+                }
                 if (themeToApply.imagePosition) {
                     const positionX = document.getElementById('position-x');
                     const positionY = document.getElementById('position-y');
