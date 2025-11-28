@@ -3334,7 +3334,7 @@
                 
                 // Save QR code style data
                 const qrCodeData = {
-                    size: '300', // Always 300px (medium)
+                    size: '250', // Always 250px
                     pattern: 'square', // Always square pattern
                     color: document.getElementById('qr-color')?.value || '#1A2F5B',
                     bgColor: document.getElementById('qr-bg-color')?.value || '#ffffff',
@@ -3502,7 +3502,7 @@
                 const qrData = currentList.qr_code_data;
                 
                 // Update size dropdown
-                // QR size is always 300px, no need to set it
+                // QR size is always 250px, no need to set it
                 
                 
                 // Pattern is always square (no pattern selector needed)
@@ -3556,7 +3556,7 @@
                 }
             } else {
                 // Set default values if no saved settings
-                // QR size is always 300px, no element needed
+                // QR size is always 250px, no element needed
                 // Pattern is always square (no pattern selector)
                 document.getElementById('qr-color').value = '#1A2F5B';
                 document.getElementById('qr-color-text').value = '#1A2F5B';
@@ -3593,7 +3593,7 @@
             // Use normalized user ID (first 12 hex chars, no hyphens) for consistent URL format
             const userId = getNormalizedUserId(currentUser.id);
             const url = `https://academiqr.com/public.html?user=${userId}&collection=${collectionId}`;
-            const size = 300; // Always 300px (medium)
+            const size = 250; // Always 250px
             const color = document.getElementById('qr-color').value;
             const bgColor = document.getElementById('qr-bg-color').value;
             const pattern = 'square'; // Always use square pattern
@@ -3632,8 +3632,8 @@
             container.style.display = 'flex';
             container.style.alignItems = 'center';
             container.style.justifyContent = 'center';
-            container.style.width = '400px';
-            container.style.height = '400px';
+            container.style.width = '250px';
+            container.style.height = '250px';
             container.style.margin = '0 auto';
             container.style.boxSizing = 'border-box';
             
@@ -3665,7 +3665,7 @@
             // Generate new QR code
             try {
                 // Start with outer container size and work inward
-                const containerSize = 400; // Fixed container size
+                const containerSize = 250; // Fixed container size
                 const qrPadding = 16; // Always 16px
                 const borderEnabled = document.getElementById('qr-border-enabled').checked;
                 const borderWidth = borderEnabled ? 8 : 0; // Always 8px when enabled
@@ -3694,7 +3694,7 @@
                     }
                     
                     // Get padding and border settings (same as calculated above)
-                    const containerSize = 400; // Fixed container size
+                    const containerSize = 250; // Fixed container size
                     const qrPadding = 16; // Always 16px
                     const borderEnabled = document.getElementById('qr-border-enabled').checked;
                     const borderWidth = borderEnabled ? 8 : 0; // Always 8px when enabled
@@ -3839,7 +3839,7 @@
                         
                         // Set initial src (will be updated if logo is being loaded)
                         compositeImg.src = compositeCanvas.toDataURL('image/png');
-                        // Composite canvas is exactly container size (400x400), so set explicit dimensions
+                        // Composite canvas is exactly container size (250x250), so set explicit dimensions
                         compositeImg.style.width = containerSize + 'px';
                         compositeImg.style.height = containerSize + 'px';
                         compositeImg.style.display = 'block';

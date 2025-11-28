@@ -747,22 +747,24 @@
                                 </div>
                                 
                                 <div class="qr-preview">
-                                    <div id="qr-code-container" style="background: white; padding: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; width: 400px; height: 400px; margin: 0 auto; border: 2px dashed #e5e7eb; box-sizing: border-box;">
-                                        <div style="text-align: center; color: #9ca3af;">
-                                            <p>Select a collection to generate QR code</p>
+                                    <div style="display: flex; align-items: flex-start; gap: 16px; justify-content: center;">
+                                        <div id="qr-code-container" style="background: white; padding: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; width: 250px; height: 250px; border: 2px dashed #e5e7eb; box-sizing: border-box; flex-shrink: 0;">
+                                            <div style="text-align: center; color: #9ca3af;">
+                                                <p>Select a collection to generate QR code</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    
-                                    <div id="qr-actions" style="display: none; margin-top: 16px; gap: 8px; flex-wrap: nowrap; justify-content: center;">
-                                        <button onclick="downloadQRCode('png')" class="btn btn-primary" style="background: #1A2F5B;">
-                                            <i class="fas fa-download"></i> PNG
-                                        </button>
-                                        <button onclick="downloadQRCode('jpeg')" class="btn btn-primary" style="background: #1A2F5B;">
-                                            <i class="fas fa-download"></i> JPEG
-                                        </button>
-                                        <button onclick="downloadQRCode('svg')" class="btn btn-primary" style="background: #1A2F5B;">
-                                            <i class="fas fa-download"></i> SVG
-                                        </button>
+                                        
+                                        <div id="qr-actions" style="display: none; flex-direction: column; gap: 8px;">
+                                            <button onclick="downloadQRCode('png')" class="btn btn-primary" style="background: #1A2F5B;">
+                                                <i class="fas fa-download"></i> PNG
+                                            </button>
+                                            <button onclick="downloadQRCode('jpeg')" class="btn btn-primary" style="background: #1A2F5B;">
+                                                <i class="fas fa-download"></i> JPEG
+                                            </button>
+                                            <button onclick="downloadQRCode('svg')" class="btn btn-primary" style="background: #1A2F5B;">
+                                                <i class="fas fa-download"></i> SVG
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                                 
