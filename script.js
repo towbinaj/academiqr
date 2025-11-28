@@ -113,7 +113,7 @@
                 appLayout.style.setProperty('display', 'none', 'important');
             }
             
-            // Failsafe: After 12 seconds, if nothing has shown the login screen, show it
+            // Failsafe: After 5 seconds, if nothing has shown the login screen, show it
             setTimeout(() => {
                 // Don't show login if we already have a user session
                 if (currentUser) {
@@ -132,10 +132,14 @@
                     // Only show login if both dashboard and login are hidden and loading is still visible
                     if (loginIsHidden && loadingIsVisible && dashboardIsHidden) {
                         console.log('Failsafe: Showing login screen after timeout');
+                        // Force hide loading screen
+                        if (loadingElement) {
+                            loadingElement.classList.add('hidden');
+                        }
                         showLogin();
                     }
                 }
-            }, 12000);
+            }, 5000);
             
             // Wait a moment for Supabase to load, then initialize
             setTimeout(() => {
@@ -157,6 +161,11 @@
                         // Wrap initApp in try-catch to ensure loading screen is always hidden
                         initApp().catch(error => {
                             console.error('Error in initApp:', error);
+                            // Force hide loading screen
+                            const loadingElement = document.getElementById('loading');
+                            if (loadingElement) {
+                                loadingElement.classList.add('hidden');
+                            }
                             showLogin();
                         });
                         
@@ -175,6 +184,11 @@
                                 // Wrap initApp in try-catch to ensure loading screen is always hidden
                                 initApp().catch(error => {
                                     console.error('Error in initApp:', error);
+                                    // Force hide loading screen
+                                    const loadingElement = document.getElementById('loading');
+                                    if (loadingElement) {
+                                        loadingElement.classList.add('hidden');
+                                    }
                                     showLogin();
                                 });
                             } else {
@@ -185,6 +199,11 @@
                     }
                 } catch (error) {
                     console.error('Error during Supabase initialization:', error);
+                    // Force hide loading screen
+                    const loadingElement = document.getElementById('loading');
+                    if (loadingElement) {
+                        loadingElement.classList.add('hidden');
+                    }
                     showMessage('Database connection failed. Using demo mode.', 'warning');
                     showLogin();
                 }
@@ -405,7 +424,7 @@
             try {
                 const checkLoginPromise = checkSavedLogin();
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Login check timeout')), 12000)
+                    setTimeout(() => reject(new Error('Login check timeout')), 8000)
                 );
                 
                 const savedLoginResult = await Promise.race([checkLoginPromise, timeoutPromise]);
@@ -428,10 +447,10 @@
             try {
                 console.log('Checking for existing session...');
                 
-                // Add timeout to prevent hanging
+                // Add timeout to prevent hanging (reduced from 10s to 5s)
                 const sessionPromise = supabaseClient.auth.getSession();
                 const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error('Session check timeout')), 10000)
+                    setTimeout(() => reject(new Error('Session check timeout')), 5000)
                 );
                 
                 const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
@@ -458,71 +477,84 @@
         }
         
         async function loadUserData() {
-            // Load gradients and themes when user data is loaded
-            await loadSavedGradients('main');
-            await loadSavedGradients('border');
-            await loadSavedThemes();
-            await loadSavedQRThemes();
             try {
-                
-                // Ensure user has a profile record
-                await ensureUserProfile();
-                
-                // Load display name from Supabase profile
-                let displayName = currentUser.email.split('@')[0]; // Default fallback
-                
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('profiles')
-                        .select('display_name')
-                        .eq('id', currentUser.id)
-                        .single();
+                // Add overall timeout to prevent hanging
+                const loadDataPromise = (async () => {
+                    try {
+                        // Load gradients and themes when user data is loaded
+                        await loadSavedGradients('main');
+                        await loadSavedGradients('border');
+                        await loadSavedThemes();
+                        await loadSavedQRThemes();
+                        
+                        // Ensure user has a profile record
+                        await ensureUserProfile();
                     
-                    if (!error && data && data.display_name) {
-                        displayName = data.display_name;
-                    } else {
+                        // Load display name from Supabase profile
+                        let displayName = currentUser.email.split('@')[0]; // Default fallback
+                        
+                        try {
+                            const { data, error } = await supabaseClient
+                                .from('profiles')
+                                .select('display_name')
+                                .eq('id', currentUser.id)
+                                .single();
+                            
+                            if (!error && data && data.display_name) {
+                                displayName = data.display_name;
+                            }
+                        } catch (error) {
+                            console.warn('Could not load display name from Supabase:', error);
+                        }
+                        
+                        const displayNameElement = document.getElementById('profileDisplayName');
+                        const previewNameElement = document.getElementById('preview-name');
+                        
+                        if (displayNameElement) displayNameElement.value = displayName;
+                        if (previewNameElement) {
+                            previewNameElement.textContent = displayName;
+                            // Use fixed 1.75rem to match public.html - CSS handles font size
+                            previewNameElement.style.setProperty('font-size', '1.59rem');
+                        }
+                        
+                        // Reapply theme to ensure display name color is correct
+                        if (currentList && currentList.theme) {
+                            applyTheme();
+                        }
+                        
+                        // Load all user collections from database
+                        await loadUserCollections();
+                        
+                        // If no collections exist, start with empty state
+                        // Don't auto-load any collection on refresh - user must manually select
+                        currentList = null;
+                        links = [];
+                        renderCollections();
+                        renderLinks(); // This will show empty state
+                        updatePreview(); // This will show empty preview
+                        
+                        if (collections.length === 0) {
+                            showMessage('Welcome! Create a new collection to get started.', 'success');
+                        } else {
+                            showMessage('Welcome back! Select a collection from the sidebar to begin editing.', 'success');
+                        }
+                    } catch (error) {
+                        console.error('Error loading user data:', error);
+                        // Don't log error.stack to prevent information disclosure
+                        // Create local fallback
+                        createLocalFallback();
                     }
-                } catch (error) {
-                    console.warn('Could not load display name from Supabase:', error);
-                }
+                })();
                 
-                const displayNameElement = document.getElementById('profileDisplayName');
-                const previewNameElement = document.getElementById('preview-name');
+                // Add timeout to prevent hanging (reduced from 30s to 15s for faster failure)
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('User data loading timeout')), 15000)
+                );
                 
-                if (displayNameElement) displayNameElement.value = displayName;
-                if (previewNameElement) {
-                    previewNameElement.textContent = displayName;
-                    // Use fixed 1.75rem to match public.html - CSS handles font size
-                    previewNameElement.style.setProperty('font-size', '1.59rem');
-                }
-                
-                // Reapply theme to ensure display name color is correct
-                if (currentList && currentList.theme) {
-                    applyTheme();
-                }
-                
-                // Load all user collections from database
-                await loadUserCollections();
-                
-                // If no collections exist, start with empty state
-                // Don't auto-load any collection on refresh - user must manually select
-                currentList = null;
-                links = [];
-                renderCollections();
-                renderLinks(); // This will show empty state
-                updatePreview(); // This will show empty preview
-                
-                if (collections.length === 0) {
-                    showMessage('Welcome! Create a new collection to get started.', 'success');
-                } else {
-                    showMessage('Welcome back! Select a collection from the sidebar to begin editing.', 'success');
-                }
-                
-                
+                await Promise.race([loadDataPromise, timeoutPromise]);
             } catch (error) {
-                console.error('Error loading user data:', error);
-                // Don't log error.stack to prevent information disclosure
-                // Create local fallback
+                console.error('Error or timeout loading user data:', error);
+                // Ensure we still show the dashboard even if data loading fails
                 createLocalFallback();
             }
         }
@@ -611,10 +643,8 @@
                 collections = data || [];
                 console.log('Loaded collections:', collections.length);
                 
-                // Load links for each collection
-                for (let collection of collections) {
-                    await loadCollectionLinks(collection);
-                }
+                // Load links for all collections in parallel (much faster than sequential)
+                await Promise.all(collections.map(collection => loadCollectionLinks(collection)));
                 
                 // Set the first collection as current if we have collections
                 if (collections.length > 0) {
@@ -631,14 +661,26 @@
         async function loadCollectionLinks(collection) {
             try {
                 console.log(`Loading links for collection: ${collection.slug} (ID: ${collection.id})`);
-                const { data, error } = await supabaseClient
+                
+                // Add timeout to prevent hanging (reduced from 10s to 5s for faster failure)
+                const queryPromise = supabaseClient
                     .from('link_items')
                     .select('*')
                     .eq('list_id', collection.id)
                     .order('order_index', { ascending: true });
                 
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Link loading timeout')), 5000)
+                );
+                
+                const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+                
                 if (error) {
                     console.error('Error loading links for collection:', collection.slug, error);
+                    // If error is due to missing columns, continue with empty links
+                    if (error.code === 'PGRST204') {
+                        console.warn('⚠️ Schema cache issue detected. Links will be empty until migration is run.');
+                    }
                     collection.links = [];
                     return;
                 }
@@ -691,7 +733,9 @@
                 
             } catch (error) {
                 console.error('Error loading collection links:', error);
+                // Ensure we always set links to empty array on error
                 collection.links = [];
+                // Don't throw - allow other collections to load
             }
         }
         async function createDefaultCollection() {
@@ -1121,28 +1165,17 @@
                         return;
                     }
                     
-                    // Update each collection's order_index
-                    let successCount = 0;
-                    let errorCount = 0;
+                    // Batch update all collections at once to prevent database locks
+                    // Use upsert to update multiple records in a single transaction
+                    const { error } = await supabaseClient
+                        .from('link_lists')
+                        .upsert(updates, { onConflict: 'id' });
                     
-                    for (const update of updates) {
-                        const { error } = await supabaseClient
-                            .from('link_lists')
-                            .update({ order_index: update.order_index })
-                            .eq('id', update.id);
-                        
-                        if (error) {
-                            console.error('Error updating collection order:', error);
-                            errorCount++;
-                        } else {
-                            successCount++;
-                        }
-                    }
-                    
-                    if (errorCount === 0) {
-                        showMessage('Collection order saved!', 'success');
+                    if (error) {
+                        console.error('Error updating collection order:', error);
+                        showMessage('Failed to save collection order. Please try again.', 'error');
                     } else {
-                        showMessage(`Warning: Failed to save order for ${errorCount} collection(s).`, 'error');
+                        showMessage('Collection order saved!', 'success');
                     }
                 } catch (error) {
                     console.error('Error saving collection order:', error);
@@ -1386,6 +1419,13 @@
             const newContainer = document.getElementById('links-list');
             
             links.forEach((link, index) => {
+                // Always read directly from links array to ensure we have the latest data
+                const currentLink = links[index];
+                if (!currentLink) {
+                    console.warn(`Link at index ${index} is undefined`);
+                    return;
+                }
+                
                 const item = document.createElement('div');
                 item.className = 'link-item';
                 item.dataset.index = index;
@@ -1402,7 +1442,7 @@
                 const imageColumn = document.createElement('div');
                 imageColumn.className = 'link-image-column';
                 
-                if (link.image) {
+                if (currentLink.image) {
                     const imagePreview = document.createElement('div');
                     imagePreview.className = 'link-image-preview';
                     
@@ -1410,28 +1450,26 @@
                     imageContainer.className = 'link-image-container';
                     
                     const img = document.createElement('img');
-                    img.src = link.image;
+                    img.src = currentLink.image;
                     // Escape HTML in alt attribute to prevent XSS (though alt is generally safe)
-                    img.alt = escapeHtml(link.title || 'Link image');
+                    img.alt = escapeHtml(currentLink.title || 'Link image');
                     
-                    // Apply image position and scale
-                    let imgStyle = 'width: 100%; height: 100%; object-fit: contain;';
+                    // Apply image position and scale using the shared transform function
+                    // Always use currentLink directly from links array
+                    // Container is 72px, so we need to scale pan values accordingly
+                    const transform = calculateLinkImageTransform(currentLink, 72);
+                    // Use 100% size and let scale transform work with overflow: hidden clipping
+                    // Use !important to override CSS object-fit: cover
+                    img.style.cssText = `width: 100% !important; height: 100% !important; object-fit: contain !important; transform: ${transform} !important; transform-origin: center center !important;`;
                     
-                    const imagePosition = link.imagePosition || { x: 50, y: 50 };
-                    const imageScale = link.imageScale !== undefined ? link.imageScale : 100;
-                    
-                    const scale = imageScale / 100;
-                    const x = imagePosition.x ?? 50;
-                    const y = imagePosition.y ?? 50;
-                    
-                    // Map x/y (0–100) to pan values
-                    const panX = ((x - 50) / 50) * 30;
-                    const panY = ((y - 50) / 50) * 30;
-                    
-                    const transform = `translate(${panX}%, ${panY}%) scale(${scale})`;
-                    imgStyle += ` transform: ${transform}; transform-origin: center center;`;
-                    
-                    img.style.cssText = imgStyle;
+                    console.log(`renderLinks: Applied transform to link ${index}:`, {
+                        transform: transform,
+                        imagePosition: currentLink.imagePosition,
+                        imageScale: currentLink.imageScale,
+                        x: currentLink.imagePosition?.x,
+                        y: currentLink.imagePosition?.y,
+                        scale: currentLink.imageScale
+                    });
                     
                     const removeBtn = document.createElement('button');
                     removeBtn.type = 'button';
@@ -1488,7 +1526,7 @@
                 titleDiv.dataset.index = index;
                 // Use innerHTML to preserve HTML formatting (bold, italic, underline)
                 // Sanitize HTML to prevent XSS attacks
-                titleDiv.innerHTML = sanitizeHTML(link.title || 'Untitled Link');
+                titleDiv.innerHTML = sanitizeHTML(currentLink.title || 'Untitled Link');
                 
                 const rtfToolbar = document.createElement('div');
                 rtfToolbar.className = 'link-rtf-toolbar';
@@ -1526,7 +1564,7 @@
                 urlDiv.contentEditable = true;
                 urlDiv.dataset.field = 'url';
                 urlDiv.dataset.index = index;
-                urlDiv.textContent = link.url || 'No URL';
+                urlDiv.textContent = currentLink.url || 'No URL';
                 
                 textColumn.appendChild(titleContainer);
                 textColumn.appendChild(urlDiv);
@@ -1947,15 +1985,26 @@
             try {
                 if (!currentList.id.startsWith('local-')) {
                     console.log('Syncing reorder to database...');
-                    for (let i = 0; i < links.length; i++) {
-                        if (!links[i].id.startsWith('local-')) {
-                            await supabaseClient
-                                .from('link_items')
-                                .update({ position: i * 100 })
-                                .eq('id', links[i].id);
+                    // Batch update all link positions at once to prevent database locks
+                    const positionUpdates = links
+                        .filter(link => !link.id.startsWith('local-'))
+                        .map((link, i) => ({
+                            id: link.id,
+                            position: i * 100
+                        }));
+                    
+                    if (positionUpdates.length > 0) {
+                        // Use upsert to update multiple records in a single transaction
+                        const { error } = await supabaseClient
+                            .from('link_items')
+                            .upsert(positionUpdates, { onConflict: 'id' });
+                        
+                        if (error) {
+                            console.error('Error syncing reorder:', error);
+                        } else {
+                            console.log('Reorder synced to database');
                         }
                     }
-                    console.log('Reorder synced to database');
                 }
             } catch (error) {
                 console.log('Reorder sync failed:', error);
@@ -2232,8 +2281,15 @@
             previewLinks.innerHTML = '';
             
             links.forEach((link, index) => {
-                console.log(`Processing link ${index}:`, link);
-                if (link.visible === false) {
+                // Always use the current link from the links array to ensure we have the latest data
+                const currentLink = links[index];
+                if (!currentLink) {
+                    console.warn(`Link at index ${index} is undefined`);
+                    return;
+                }
+                
+                console.log(`Processing link ${index}:`, currentLink);
+                if (currentLink.visible === false) {
                     console.log(`Link ${index} is not visible, skipping`);
                     return;
                 }
@@ -2245,13 +2301,13 @@
                 
                 // Use tracking URL if link has an ID (saved to database)
                 // Format: https://academiqr.com/api/track/{link-id}
-                if (link.id && !link.id.startsWith('local-')) {
-                    linkEl.href = `https://academiqr.com/api/track/${link.id}`;
-                    console.log(`✅ Analytics tracking enabled for "${link.title}": /api/track/${link.id}`);
+                if (currentLink.id && !currentLink.id.startsWith('local-')) {
+                    linkEl.href = `https://academiqr.com/api/track/${currentLink.id}`;
+                    console.log(`✅ Analytics tracking enabled for "${currentLink.title}": /api/track/${currentLink.id}`);
                 } else {
                     // For unsaved links, use direct URL
-                    linkEl.href = link.url;
-                    console.log(`⚠️ Direct link (no tracking) for "${link.title}": ${link.url}`);
+                    linkEl.href = currentLink.url;
+                    console.log(`⚠️ Direct link (no tracking) for "${currentLink.title}": ${currentLink.url}`);
                 }
                 linkEl.target = '_blank';
                 linkEl.rel = 'noopener noreferrer';
@@ -2260,7 +2316,7 @@
                 // Start with 1.14rem (scaled from 1.25rem * 0.91), then applyButtonStyles will override if needed
                 linkEl.style.setProperty('font-size', '1.14rem', 'important');
                 linkEl.style.fontSize = '1.14rem';
-                console.log(`🔍 updatePreview: Set initial font-size to 1.14rem for link "${link.title}"`);
+                console.log(`🔍 updatePreview: Set initial font-size to 1.14rem for link "${currentLink.title}"`);
                 
                 const imageWrapper = document.createElement('div');
                 imageWrapper.className = 'preview-link-image-wrapper';
@@ -2268,29 +2324,28 @@
                 const imageDiv = document.createElement('div');
                 imageDiv.className = 'preview-link-image';
                 
-                if (link.image) {
+                if (currentLink.image) {
                     const img = document.createElement('img');
-                    img.src = link.image;
+                    img.src = currentLink.image;
                     img.alt = 'Link Icon';
                     
-                    // Apply image position and scale
-                    let imgStyle = 'width: 100%; height: 100%; object-fit: contain;';
+                    // Apply image position and scale using the shared transform function
+                    // Always use currentLink to ensure we have the latest data
+                    // Container is 48px, so we need to scale pan values accordingly
+                    const transform = calculateLinkImageTransform(currentLink, 48);
+                    // Use 100% size and let scale transform work with overflow: hidden clipping
+                    // Use !important to override CSS object-fit: cover
+                    img.style.cssText = `width: 100% !important; height: 100% !important; object-fit: contain !important; transform: ${transform} !important; transform-origin: center center !important;`;
                     
-                    const imagePosition = link.imagePosition || { x: 50, y: 50 };
-                    const imageScale = link.imageScale !== undefined ? link.imageScale : 100;
+                    console.log(`updatePreview: Applied transform to link ${index}:`, {
+                        transform: transform,
+                        imagePosition: currentLink.imagePosition,
+                        imageScale: currentLink.imageScale,
+                        x: currentLink.imagePosition?.x,
+                        y: currentLink.imagePosition?.y,
+                        scale: currentLink.imageScale
+                    });
                     
-                    const scale = imageScale / 100;
-                    const x = imagePosition.x ?? 50;
-                    const y = imagePosition.y ?? 50;
-                    
-                    // Map x/y (0–100) to pan values
-                    const panX = ((x - 50) / 50) * 30;
-                    const panY = ((y - 50) / 50) * 30;
-                    
-                    const transform = `translate(${panX}%, ${panY}%) scale(${scale})`;
-                    imgStyle += ` transform: ${transform}; transform-origin: center center;`;
-                    
-                    img.style.cssText = imgStyle;
                     imageDiv.appendChild(img);
                 } else {
                     const icon = document.createElement('i');
@@ -2308,7 +2363,7 @@
                 const textElement = document.createElement('div');
                 textElement.className = 'preview-link-text';
                 textElement.style.cssText = 'font-weight: 600; font-size: inherit !important;';
-                textElement.innerHTML = sanitizeHTML(link.title || '');
+                textElement.innerHTML = sanitizeHTML(currentLink.title || '');
                 
                 textContainer.appendChild(textElement);
                 linkEl.appendChild(textContainer);
@@ -2412,7 +2467,7 @@
             }
         }
         
-        function applyGradient(gradient) {
+        function applyGradientLegacy(gradient) {
             theme.background = gradient;
             document.getElementById('gradient-text').value = gradient;
             updatePreviewTheme();
@@ -2820,13 +2875,15 @@
                     order_index: link.order_index
                 };
                 
-                // Add image position and scale if they exist
+                // Add image position and scale - explicitly handle null to clear database fields
                 // imagePosition is an object {x, y}, save it as JSON
-                if (link.imagePosition) {
+                if (link.imagePosition !== undefined) {
+                    // Explicitly set to null if null, otherwise save the object
                     updateData.image_position = link.imagePosition;
                     console.log('💾 Saving imagePosition to database:', link.imagePosition);
                 }
-                if (link.imageScale !== undefined && link.imageScale !== null) {
+                // Always include image_scale if it's defined (including null to clear it)
+                if (link.imageScale !== undefined) {
                     updateData.image_scale = link.imageScale;
                     console.log('💾 Saving imageScale to database:', link.imageScale);
                 }
@@ -2840,8 +2897,36 @@
                     .select();
                 
                 if (error) {
-                    console.error('❌ Error saving link to database:', error);
-                    console.error('❌ Error details:', JSON.stringify(error, null, 2));
+                    // Check if error is due to missing columns (PGRST204)
+                    if (error.code === 'PGRST204' && 
+                        (error.message?.includes('image_position') || error.message?.includes('image_scale'))) {
+                        console.warn('⚠️ Database columns image_position/image_scale not found. Retrying without these fields...');
+                        console.warn('⚠️ Please run the migration: add-link-image-position-scale.sql');
+                        
+                        // Retry without image_position and image_scale
+                        const fallbackData = {
+                            title: link.title,
+                            url: link.url,
+                            image_url: link.image_url || link.image,
+                            order_index: link.order_index
+                        };
+                        
+                        const { error: fallbackError, data: fallbackResult } = await supabaseClient
+                            .from('link_items')
+                            .update(fallbackData)
+                            .eq('id', link.id)
+                            .select();
+                        
+                        if (fallbackError) {
+                            console.error('❌ Error saving link to database (fallback):', fallbackError);
+                        } else {
+                            console.log('✅ Link saved to database (without image position/scale):', link.id);
+                            console.warn('⚠️ Image position and scale were not saved. Please run the migration to enable this feature.');
+                        }
+                    } else {
+                        console.error('❌ Error saving link to database:', error);
+                        console.error('❌ Error details:', JSON.stringify(error, null, 2));
+                    }
                 } else {
                     console.log('✅ Link saved to database:', link.id, 'Title:', link.title);
                     console.log('✅ Saved image position:', link.imagePosition, 'Saved image scale:', link.imageScale);
@@ -3109,16 +3194,24 @@
                 }
                 
                 // Save all links to ensure image positions are persisted
+                // Batch updates to prevent database overload
                 console.log('💾 Saving all links to ensure image positions are persisted...');
                 if (links && links.length > 0) {
-                    const savePromises = links.map(link => {
-                        if (link.id && !link.id.startsWith('local-')) {
-                            return saveLinkToDatabase(link);
+                    const linksToSave = links.filter(link => link.id && !link.id.startsWith('local-'));
+                    
+                    if (linksToSave.length > 0) {
+                        // Process in batches of 10 to prevent database overload
+                        const BATCH_SIZE = 10;
+                        for (let i = 0; i < linksToSave.length; i += BATCH_SIZE) {
+                            const batch = linksToSave.slice(i, i + BATCH_SIZE);
+                            await Promise.all(batch.map(link => saveLinkToDatabase(link)));
+                            // Small delay between batches to prevent overwhelming the database
+                            if (i + BATCH_SIZE < linksToSave.length) {
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                            }
                         }
-                        return Promise.resolve();
-                    });
-                    await Promise.all(savePromises);
-                    console.log('✅ All links saved');
+                        console.log('✅ All links saved');
+                    }
                 }
                 
                 // Update the UI
@@ -6765,6 +6858,12 @@
             console.log('Removing image from link:', linkIndex);
             
             if (links[linkIndex]) {
+                // Cancel any pending debounced saves for this link
+                if (linkSaveDebounceTimers.has(linkIndex)) {
+                    clearTimeout(linkSaveDebounceTimers.get(linkIndex));
+                    linkSaveDebounceTimers.delete(linkIndex);
+                }
+                
                 // Remove the image from the link
                 links[linkIndex].image = null;
                 links[linkIndex].imagePosition = null;
@@ -6774,56 +6873,77 @@
                 renderLinks();
                 updatePreview();
                 
+                // Save to database immediately to clear image position/scale
+                if (links[linkIndex].id && !links[linkIndex].id.startsWith('local-')) {
+                    saveLinkToDatabase(links[linkIndex]);
+                }
+                
                 // Show success message
                 showMessage('Link image removed!', 'success');
             }
         }
 
         function toggleLinkImageEditor(linkIndex) {
-            // Remove any existing editor
-            const existingEditor = document.getElementById('link-image-editor-modal');
-            if (existingEditor) {
-                existingEditor.remove();
-            }
-            
-            const existingBackdrop = document.getElementById('link-image-editor-backdrop');
-            if (existingBackdrop) {
-                existingBackdrop.remove();
-            }
-            
-            // Create backdrop
-            const backdrop = document.createElement('div');
-            backdrop.id = 'link-image-editor-backdrop';
-            backdrop.className = 'link-image-editor-backdrop';
-            backdrop.onclick = closeLinkImageEditor;
-            
-            // Create modal
-            const editor = document.createElement('div');
-            editor.id = 'link-image-editor-modal';
-            editor.className = 'link-image-editor';
-            
-            const link = links[linkIndex];
-            const imagePosition = link.imagePosition || { x: 50, y: 50 };
-            const imageScale = link.imageScale || 100;
-            
-            console.log(`Opening modal for link ${linkIndex}:`, {
-                imagePosition: imagePosition,
-                imageScale: imageScale,
-                linkData: link
-            });
-            
-            // Calculate current transform for modal preview
-            const scale = imageScale / 100;
-            const panX = ((imagePosition.x - 50) / 50) * 30;
-            const panY = ((imagePosition.y - 50) / 50) * 30;
-            const currentTransform = `translate(${panX}%, ${panY}%) scale(${scale})`;
-            
-            console.log(`Modal preview transform:`, {
-                scale: scale,
-                panX: panX,
-                panY: panY,
-                transform: currentTransform
-            });
+            try {
+                console.log(`toggleLinkImageEditor called with linkIndex: ${linkIndex}`);
+                
+                // Validate linkIndex
+                if (linkIndex < 0 || linkIndex >= links.length) {
+                    console.error(`Invalid linkIndex: ${linkIndex}, links.length: ${links.length}`);
+                    return;
+                }
+                
+                // Remove any existing editor
+                const existingEditor = document.getElementById('link-image-editor-modal');
+                if (existingEditor) {
+                    existingEditor.remove();
+                }
+                
+                const existingBackdrop = document.getElementById('link-image-editor-backdrop');
+                if (existingBackdrop) {
+                    existingBackdrop.remove();
+                }
+                
+                // Create backdrop
+                const backdrop = document.createElement('div');
+                backdrop.id = 'link-image-editor-backdrop';
+                backdrop.className = 'link-image-editor-backdrop';
+                backdrop.onclick = closeLinkImageEditor;
+                
+                // Create modal
+                const editor = document.createElement('div');
+                editor.id = 'link-image-editor-modal';
+                editor.className = 'link-image-editor';
+                
+                const link = links[linkIndex];
+                if (!link) {
+                    console.error(`Link not found at index ${linkIndex}`);
+                    return;
+                }
+                
+                // Always read directly from links array to ensure we have the latest data
+                const currentLink = links[linkIndex];
+                const imagePosition = currentLink.imagePosition || { x: 50, y: 50 };
+                const imageScale = currentLink.imageScale !== undefined ? currentLink.imageScale : 100;
+                
+                console.log(`📋 Opening modal for link ${linkIndex}:`, {
+                    imagePosition: imagePosition,
+                    imageScale: imageScale,
+                    x: imagePosition.x,
+                    y: imagePosition.y,
+                    linkData: currentLink
+                });
+                
+                // Calculate current transform for modal preview using shared function
+                // Modal preview container is 120px
+                const currentTransform = calculateLinkImageTransform(currentLink, 120);
+                
+                console.log(`📋 Modal preview transform:`, {
+                    imagePosition: imagePosition,
+                    imageScale: imageScale,
+                    transform: currentTransform,
+                    calculatedFrom: 'calculateLinkImageTransform(currentLink)'
+                });
             
             // Create the modal content using DOM methods
             const controlsDiv = document.createElement('div');
@@ -6859,9 +6979,11 @@
             
             const previewImg = document.createElement('img');
             previewImg.id = 'modal-preview-img-' + linkIndex;
-            previewImg.src = link.image || '';
+            previewImg.src = currentLink.image || '';
             previewImg.alt = 'Preview';
-            previewImg.style.cssText = 'width: 100%; height: 100%; object-fit: contain; transform-origin: center center; max-width: 100%; max-height: 100%; transform: ' + currentTransform + ';';
+            // Modal preview container is 120px, scale pan values accordingly
+            const modalTransform = calculateLinkImageTransform(currentLink, 120);
+            previewImg.style.cssText = `width: 100% !important; height: 100% !important; object-fit: contain !important; transform-origin: center center !important; transform: ${modalTransform} !important;`;
             
             previewContainer.appendChild(previewImg);
             previewDiv.appendChild(previewLabel);
@@ -6941,6 +7063,12 @@
             
             document.body.appendChild(backdrop);
             document.body.appendChild(editor);
+            
+            console.log('Modal and backdrop appended to body');
+            } catch (error) {
+                console.error('Error in toggleLinkImageEditor:', error);
+                console.error('Error stack:', error.stack);
+            }
         }
 
         function closeLinkImageEditor() {
@@ -6964,6 +7092,27 @@
             if (editor) editor.remove();
             const backdrop = document.getElementById('link-image-editor-backdrop');
             if (backdrop) backdrop.remove();
+        }
+
+        // Helper function to calculate image transform - ensures consistency across all views
+        // Uses container-size-relative calculations so all views match visually
+        function calculateLinkImageTransform(link, containerSize = 100) {
+            const imagePosition = link.imagePosition || { x: 50, y: 50 };
+            const imageScale = link.imageScale !== undefined ? link.imageScale : 100;
+            
+            const scale = imageScale / 100;
+            const x = imagePosition.x ?? 50;
+            const y = imagePosition.y ?? 50;
+            
+            // Map x/y (0–100) to pan values relative to container size
+            // Scale pan values based on actual container size for consistency
+            // Reference: 100px container = -30px to +30px range (30% of container)
+            const panRange = containerSize * 0.3; // 30% of container size
+            const panX = ((x - 50) / 50) * panRange;
+            const panY = ((y - 50) / 50) * panRange;
+            
+            // Use pixel values for translate, scale for zoom
+            return `translate(${panX}px, ${panY}px) scale(${scale})`;
         }
 
         function applyLinkImgTransform(linkIndex) {
@@ -6993,26 +7142,27 @@
                 return;
             }
 
-            const scale = (links[linkIndex].imageScale || 100) / 100;   // 0.5–2.0
-            const x = links[linkIndex].imagePosition?.x ?? 50;          // 0–100
-            const y = links[linkIndex].imagePosition?.y ?? 50;
+            if (!links[linkIndex]) {
+                console.log(`DEBUG: No link data found for index ${linkIndex}`);
+                return;
+            }
 
-            // Map x/y (0–100) to pan values
-            // With object-fit: contain, we can pan more aggressively since the image isn't cropped
-            const panX = ((x - 50) / 50) * 30;  // -30 .. +30 (increased from 20)
-            const panY = ((y - 50) / 50) * 30;
-
-            const transform = `translate(${panX}%, ${panY}%) scale(${scale})`;
+            // Link list container is 72px
+            const transform = calculateLinkImageTransform(links[linkIndex], 72);
             console.log(`DEBUG: Applying transform to link ${linkIndex}:`, {
-                scale: scale,
-                x: x,
-                y: y,
-                panX: panX,
-                panY: panY,
+                imagePosition: links[linkIndex].imagePosition,
+                imageScale: links[linkIndex].imageScale,
                 transform: transform
             });
 
-            img.style.transform = transform;
+            // Apply all necessary styles to ensure consistency
+            img.style.cssText = `width: 100%; height: 100%; object-fit: contain; transform: ${transform}; transform-origin: center center;`;
+            
+            console.log(`DEBUG: Applied transform to link ${linkIndex} image:`, {
+                transform: transform,
+                imagePosition: links[linkIndex].imagePosition,
+                imageScale: links[linkIndex].imageScale
+            });
         }
 
         // Test function - call from browser console: testImageTransform(0, 50)
@@ -7073,12 +7223,16 @@
             console.log('Preview update complete');
         }
 
+        // Debounce map to prevent rapid database saves during slider dragging
+        const linkSaveDebounceTimers = new Map();
+        
         function updateLinkImagePosition(linkIndex, axis, value) {
             if (linkIndex >= 0 && linkIndex < links.length) {
                 if (!links[linkIndex].imagePosition) {
                     links[linkIndex].imagePosition = { x: 50, y: 50 };
                 }
                 
+                // Update the data first
                 links[linkIndex].imagePosition[axis] = parseInt(value);
                 
                 // Initialize imageScale if it doesn't exist
@@ -7089,45 +7243,79 @@
                 // Update the value display
                 document.getElementById(`link-${axis}-value-${linkIndex}`).textContent = value;
                 
-                // Update the image position in the link list
-                applyLinkImgTransform(linkIndex);
-                
-                // Debug: Log the updated link data
-                console.log(`Updated link ${linkIndex} image position:`, {
+                // Debug: Log the updated link data BEFORE rendering
+                console.log(`✅ Updated link ${linkIndex} image position BEFORE render:`, {
                     title: links[linkIndex].title,
                     imagePosition: links[linkIndex].imagePosition,
-                    imageScale: links[linkIndex].imageScale
+                    imageScale: links[linkIndex].imageScale,
+                    x: links[linkIndex].imagePosition.x,
+                    y: links[linkIndex].imagePosition.y
                 });
                 
-                // Save to database
-                saveLinkToDatabase(links[linkIndex]);
-                
-                // Update the phone mockup preview
-                updatePreview();
-                
-                // Update the modal preview
+                // Update the modal preview using shared transform function
                 const modalImg = document.getElementById(`modal-preview-img-${linkIndex}`);
                 if (modalImg) {
-                    const scale = (links[linkIndex].imageScale || 100) / 100;
-                    const x = links[linkIndex].imagePosition.x;
-                    const y = links[linkIndex].imagePosition.y;
-                    
-                    // Use transform approach like the main image
-                    const panX = ((x - 50) / 50) * 30;
-                    const panY = ((y - 50) / 50) * 30;
-                    const transform = `translate(${panX}%, ${panY}%) scale(${scale})`;
-                    
-                    modalImg.style.transform = transform;
-                    modalImg.style.width = '100%';
-                    modalImg.style.height = '100%';
-                    modalImg.style.objectFit = 'contain';
-                    modalImg.style.position = 'static';
-                    modalImg.style.left = 'auto';
-                    modalImg.style.top = 'auto';
+                    // Modal preview container is 120px
+                    const transform = calculateLinkImageTransform(links[linkIndex], 120);
+                    modalImg.style.cssText = `width: 100% !important; height: 100% !important; object-fit: contain !important; transform: ${transform} !important; transform-origin: center center !important; position: static !important; left: auto !important; top: auto !important;`;
+                    console.log(`✅ Updated modal preview with transform:`, transform);
                 }
                 
-                // Update preview
-                updatePreview();
+                // Debounce database save to prevent overwhelming the database during rapid slider changes
+                // Clear any existing timer for this link
+                if (linkSaveDebounceTimers.has(linkIndex)) {
+                    clearTimeout(linkSaveDebounceTimers.get(linkIndex));
+                }
+                
+                // Set a new timer to save after user stops dragging (500ms delay)
+                const saveTimer = setTimeout(() => {
+                    saveLinkToDatabase(links[linkIndex]);
+                    linkSaveDebounceTimers.delete(linkIndex);
+                }, 500);
+                
+                linkSaveDebounceTimers.set(linkIndex, saveTimer);
+                
+                // Force refresh all views to ensure they show the latest data
+                // Double-check the data is correct before rendering
+                const verifyData = links[linkIndex];
+                console.log(`🔄 Verifying data before refresh for link ${linkIndex}:`, {
+                    imagePosition: verifyData.imagePosition,
+                    imageScale: verifyData.imageScale,
+                    x: verifyData.imagePosition?.x,
+                    y: verifyData.imagePosition?.y
+                });
+                
+                // Use a small delay to ensure data is fully updated, then refresh
+                setTimeout(() => {
+                    // Verify data again right before rendering
+                    const finalData = links[linkIndex];
+                    console.log(`🔄 Final data check before rendering link ${linkIndex}:`, {
+                        imagePosition: finalData.imagePosition,
+                        imageScale: finalData.imageScale,
+                        x: finalData.imagePosition?.x,
+                        y: finalData.imagePosition?.y
+                    });
+                    
+                    // Force complete re-render of both views
+                    updatePreview();
+                    renderLinks();
+                    
+                    // Verify transforms were applied correctly after a brief delay
+                    setTimeout(() => {
+                        const listImg = document.querySelector(`[data-index="${linkIndex}"] .link-image-container img`);
+                        const previewImgs = document.querySelectorAll('#preview-links .preview-link-image img');
+                        if (listImg) {
+                            const listTransform = window.getComputedStyle(listImg).transform;
+                            console.log(`✅ Links list transform after render:`, listTransform);
+                        }
+                        if (previewImgs[linkIndex]) {
+                            const previewTransform = window.getComputedStyle(previewImgs[linkIndex]).transform;
+                            console.log(`✅ Live preview transform after render:`, previewTransform);
+                        }
+                        const expectedTransform = calculateLinkImageTransform(finalData);
+                        console.log(`✅ Expected transform:`, expectedTransform);
+                    }, 100);
+                }, 0);
             }
         }
 
@@ -7154,16 +7342,11 @@
                 // Update the phone mockup preview
                 updatePreview();
                 
-                // Update the modal preview
+                // Update the modal preview using shared transform function
+                // Modal preview container is 120px
                 const modalImg = document.getElementById(`modal-preview-img-${linkIndex}`);
                 if (modalImg) {
-                    const scale = (links[linkIndex].imageScale || 100) / 100;
-                    
-                    // Use transform approach like the main image
-                    const panX = ((x - 50) / 50) * 30;
-                    const panY = ((y - 50) / 50) * 30;
-                    const transform = `translate(${panX}%, ${panY}%) scale(${scale})`;
-                    
+                    const transform = calculateLinkImageTransform(links[linkIndex], 120);
                     modalImg.style.transform = transform;
                     modalImg.style.width = '100%';
                     modalImg.style.height = '100%';
@@ -7173,8 +7356,11 @@
                     modalImg.style.top = 'auto';
                 }
                 
-                // Update preview
-                updatePreview();
+                // Force refresh all views
+                setTimeout(() => {
+                    updatePreview();
+                    renderLinks();
+                }, 0);
             }
         }
 
@@ -7191,45 +7377,79 @@
                 // Update the value display
                 document.getElementById(`link-scale-value-${linkIndex}`).textContent = value;
                 
-                // Update the image scale in the link list
-                applyLinkImgTransform(linkIndex);
-                
-                // Debug: Log the updated link data
-                console.log(`Updated link ${linkIndex} image scale:`, {
+                // Debug: Log the updated link data BEFORE rendering
+                console.log(`✅ Updated link ${linkIndex} image scale BEFORE render:`, {
                     title: links[linkIndex].title,
                     imagePosition: links[linkIndex].imagePosition,
-                    imageScale: links[linkIndex].imageScale
+                    imageScale: links[linkIndex].imageScale,
+                    x: links[linkIndex].imagePosition?.x,
+                    y: links[linkIndex].imagePosition?.y
                 });
                 
-                // Save to database
-                saveLinkToDatabase(links[linkIndex]);
-                
-                // Update the phone mockup preview
-                updatePreview();
-                
-                // Update the modal preview
+                // Update the modal preview using shared transform function
                 const modalImg = document.getElementById(`modal-preview-img-${linkIndex}`);
                 if (modalImg) {
-                    const x = links[linkIndex].imagePosition?.x || 50;
-                    const y = links[linkIndex].imagePosition?.y || 50;
-                    const scale = value / 100;
-                    
-                    // Use transform approach like the main image
-                    const panX = ((x - 50) / 50) * 30;
-                    const panY = ((y - 50) / 50) * 30;
-                    const transform = `translate(${panX}%, ${panY}%) scale(${scale})`;
-                    
-                    modalImg.style.transform = transform;
-                    modalImg.style.width = '100%';
-                    modalImg.style.height = '100%';
-                    modalImg.style.objectFit = 'contain';
-                    modalImg.style.position = 'static';
-                    modalImg.style.left = 'auto';
-                    modalImg.style.top = 'auto';
+                    // Modal preview container is 120px
+                    const transform = calculateLinkImageTransform(links[linkIndex], 120);
+                    modalImg.style.cssText = `width: 100% !important; height: 100% !important; object-fit: contain !important; transform: ${transform} !important; transform-origin: center center !important; position: static !important; left: auto !important; top: auto !important;`;
+                    console.log(`✅ Updated modal preview with transform:`, transform);
                 }
                 
-                // Update preview
-                updatePreview();
+                // Debounce database save to prevent overwhelming the database during rapid slider changes
+                // Clear any existing timer for this link
+                if (linkSaveDebounceTimers.has(linkIndex)) {
+                    clearTimeout(linkSaveDebounceTimers.get(linkIndex));
+                }
+                
+                // Set a new timer to save after user stops dragging (500ms delay)
+                const saveTimer = setTimeout(() => {
+                    saveLinkToDatabase(links[linkIndex]);
+                    linkSaveDebounceTimers.delete(linkIndex);
+                }, 500);
+                
+                linkSaveDebounceTimers.set(linkIndex, saveTimer);
+                
+                // Force refresh all views to ensure they show the latest data
+                // Double-check the data is correct before rendering
+                const verifyData = links[linkIndex];
+                console.log(`🔄 Verifying data before refresh for link ${linkIndex}:`, {
+                    imagePosition: verifyData.imagePosition,
+                    imageScale: verifyData.imageScale,
+                    x: verifyData.imagePosition?.x,
+                    y: verifyData.imagePosition?.y
+                });
+                
+                // Use a small delay to ensure data is fully updated, then refresh
+                setTimeout(() => {
+                    // Verify data again right before rendering
+                    const finalData = links[linkIndex];
+                    console.log(`🔄 Final data check before rendering link ${linkIndex}:`, {
+                        imagePosition: finalData.imagePosition,
+                        imageScale: finalData.imageScale,
+                        x: finalData.imagePosition?.x,
+                        y: finalData.imagePosition?.y
+                    });
+                    
+                    // Force complete re-render of both views
+                    updatePreview();
+                    renderLinks();
+                    
+                    // Verify transforms were applied correctly after a brief delay
+                    setTimeout(() => {
+                        const listImg = document.querySelector(`[data-index="${linkIndex}"] .link-image-container img`);
+                        const previewImgs = document.querySelectorAll('#preview-links .preview-link-image img');
+                        if (listImg) {
+                            const listTransform = window.getComputedStyle(listImg).transform;
+                            console.log(`✅ Links list transform after render:`, listTransform);
+                        }
+                        if (previewImgs[linkIndex]) {
+                            const previewTransform = window.getComputedStyle(previewImgs[linkIndex]).transform;
+                            console.log(`✅ Live preview transform after render:`, previewTransform);
+                        }
+                        const expectedTransform = calculateLinkImageTransform(finalData);
+                        console.log(`✅ Expected transform:`, expectedTransform);
+                    }, 100);
+                }, 0);
             }
         }
 
@@ -8022,7 +8242,7 @@
             document.getElementById('mediaModal').classList.remove('hidden');
             loadMediaFiles();
             checkBackupAvailability();
-            setupDragAndDrop();
+            setupMediaDragAndDrop();
         }
 
         // Track if drag and drop is already set up to prevent duplicate listeners
@@ -8030,7 +8250,7 @@
         // Track if upload is in progress to prevent duplicate calls
         let uploadInProgress = false;
         
-        function setupDragAndDrop() {
+        function setupMediaDragAndDrop() {
             const dropZone = document.getElementById('mediaDropZone');
             const modalBody = document.querySelector('#mediaModal .modal-body');
             

@@ -4058,7 +4058,7 @@
         .link-image-container img {
             width: 100% !important; 
             height: 100% !important;      
-            object-fit: cover !important;              /* fill square container, crop if needed */
+            object-fit: contain !important;              /* fit image within container, maintain aspect ratio */
             transform-origin: center center !important;
             transition: transform 120ms ease !important;
             display: block !important;

@@ -920,21 +920,54 @@
                     collection.links = [];
                 } else {
                     collection.links = linksResult.data || [];
-                    console.log('Loaded links:', collection.links.length, collection.links);
+                    console.log('✅ Loaded', collection.links.length, 'links from database');
+                    console.log('Links data:', collection.links);
                     
                     // Map database fields to camelCase and ensure imagePosition/imageScale are properly set
                     collection.links.forEach(link => {
-                        // Map image_position to imagePosition
-                        if (link.image_position && !link.imagePosition) {
-                            link.imagePosition = link.image_position;
-                        }
-                        // Map image_scale to imageScale
-                        if (link.image_scale !== undefined && link.image_scale !== null && link.imageScale === undefined) {
-                            link.imageScale = link.image_scale;
-                        }
-                        // Map image_url to image if image doesn't exist
-                        if (link.image_url && !link.image) {
-                            link.image = link.image_url;
+                        try {
+                            // Map image_position to imagePosition
+                            if (link.image_position && !link.imagePosition) {
+                                // Handle both JSON string and object
+                                if (typeof link.image_position === 'string') {
+                                    try {
+                                        link.imagePosition = JSON.parse(link.image_position);
+                                    } catch (e) {
+                                        // Invalid JSON, use default
+                                        link.imagePosition = { x: 50, y: 50 };
+                                    }
+                                } else if (typeof link.image_position === 'object' && link.image_position !== null) {
+                                    link.imagePosition = link.image_position;
+                                } else {
+                                    // Null or invalid, use default
+                                    link.imagePosition = { x: 50, y: 50 };
+                                }
+                            } else if (!link.imagePosition) {
+                                // No imagePosition at all, use default
+                                link.imagePosition = { x: 50, y: 50 };
+                            }
+                            
+                            // Map image_scale to imageScale
+                            if (link.image_scale !== undefined && link.image_scale !== null && link.imageScale === undefined) {
+                                link.imageScale = link.image_scale;
+                            } else if (link.imageScale === undefined) {
+                                // No imageScale, use default
+                                link.imageScale = 100;
+                            }
+                            
+                            // Map image_url to image if image doesn't exist
+                            if (link.image_url && !link.image) {
+                                link.image = link.image_url;
+                            }
+                        } catch (error) {
+                            // If any error occurs, set defaults
+                            console.warn('Error processing link image data:', error, link);
+                            if (!link.imagePosition) {
+                                link.imagePosition = { x: 50, y: 50 };
+                            }
+                            if (link.imageScale === undefined) {
+                                link.imageScale = 100;
+                            }
                         }
                     });
                 }
@@ -1273,22 +1306,47 @@
         }
 
         function renderLinks(links) {
-            const container = document.getElementById('preview-links');
-            container.innerHTML = '';
+            try {
+                const container = document.getElementById('preview-links');
+                if (!container) {
+                    console.error('preview-links container not found');
+                    return;
+                }
+                
+                container.innerHTML = '';
 
-            if (!links || links.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #6c757d;">No links available</p>';
-                return;
-            }
+                if (!links || links.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #6c757d;">No links available</p>';
+                    return;
+                }
 
-            links.forEach(link => {
-                const linkElement = document.createElement('a');
-                // Use tracking URL for analytics
-                const baseUrl = window.location.origin;
-                linkElement.href = `${baseUrl}/api/track/${link.id}`;
-                linkElement.target = '_blank';
-                linkElement.rel = 'noopener noreferrer';
-                linkElement.className = 'preview-link';
+                console.log('Rendering', links.length, 'links');
+
+                links.forEach((link, index) => {
+                    try {
+                        // Skip links without required data
+                        if (!link) {
+                            console.warn('Skipping null/undefined link at index:', index);
+                            return;
+                        }
+                        
+                        if (!link.url) {
+                            console.warn('Skipping link without URL:', link);
+                            return;
+                        }
+                        
+                        const linkElement = document.createElement('a');
+                        // Use tracking URL for analytics if link has ID, otherwise use direct URL
+                        if (link.id && !link.id.startsWith('local-')) {
+                            const baseUrl = window.location.origin;
+                            linkElement.href = `${baseUrl}/api/track/${link.id}`;
+                        } else {
+                            // For links without ID, use direct URL
+                            linkElement.href = link.url;
+                        }
+                        linkElement.target = '_blank';
+                        linkElement.rel = 'noopener noreferrer';
+                        linkElement.className = 'preview-link';
 
                 // Set font size immediately on the link element
                 linkElement.style.setProperty('font-size', '1.25rem', 'important');
@@ -1312,21 +1370,46 @@
                     // Apply image position and scale
                     let imgStyle = 'width: 100%; height: 100%; object-fit: contain;';
                     
-                    // Get image position and scale from link data
-                    // Support both camelCase (from code) and snake_case (from database)
-                    const imagePosition = link.imagePosition || link.image_position || { x: 50, y: 50 };
-                    const imageScale = link.imageScale !== undefined ? link.imageScale : (link.image_scale !== undefined ? link.image_scale : 100);
-                    
-                    const scale = imageScale / 100;
-                    const x = imagePosition?.x ?? 50;
-                    const y = imagePosition?.y ?? 50;
-                    
-                    // Map x/y (0–100) to pan values
-                    const panX = ((x - 50) / 50) * 30;
-                    const panY = ((y - 50) / 50) * 30;
-                    
-                    const transform = `translate(${panX}%, ${panY}%) scale(${scale})`;
-                    imgStyle += ` transform: ${transform}; transform-origin: center center;`;
+                    // Get image position and scale from link data with safe defaults
+                    try {
+                        // Support both camelCase (from code) and snake_case (from database)
+                        let imagePosition = link.imagePosition || link.image_position || { x: 50, y: 50 };
+                        let imageScale = link.imageScale !== undefined ? link.imageScale : (link.image_scale !== undefined ? link.image_scale : 100);
+                        
+                        // Ensure imagePosition is an object with x and y
+                        if (typeof imagePosition === 'string') {
+                            try {
+                                imagePosition = JSON.parse(imagePosition);
+                            } catch (e) {
+                                imagePosition = { x: 50, y: 50 };
+                            }
+                        }
+                        if (!imagePosition || typeof imagePosition !== 'object') {
+                            imagePosition = { x: 50, y: 50 };
+                        }
+                        
+                        // Ensure x and y are valid numbers
+                        const x = (typeof imagePosition.x === 'number' && !isNaN(imagePosition.x)) ? imagePosition.x : 50;
+                        const y = (typeof imagePosition.y === 'number' && !isNaN(imagePosition.y)) ? imagePosition.y : 50;
+                        
+                        // Ensure scale is a valid number
+                        if (typeof imageScale !== 'number' || isNaN(imageScale)) {
+                            imageScale = 100;
+                        }
+                        
+                        const scale = imageScale / 100;
+                        
+                        // Map x/y (0–100) to pan values
+                        const panX = ((x - 50) / 50) * 30;
+                        const panY = ((y - 50) / 50) * 30;
+                        
+                        const transform = `translate(${panX}%, ${panY}%) scale(${scale})`;
+                        imgStyle += ` transform: ${transform}; transform-origin: center center;`;
+                    } catch (error) {
+                        // If any error occurs, use default transform
+                        console.warn('Error applying image transform:', error, link);
+                        imgStyle += ` transform: translate(0%, 0%) scale(1); transform-origin: center center;`;
+                    }
                     
                     img.style.cssText = imgStyle;
                     imageDiv.appendChild(img);
@@ -1364,7 +1447,17 @@
                 textElement.style.fontSize = '1.25rem';
 
                 container.appendChild(linkElement);
-            });
+                    } catch (linkError) {
+                        console.error('Error rendering link:', linkError, link);
+                        // Continue with next link even if one fails
+                    }
+                });
+            } catch (error) {
+                console.error('Error in renderLinks:', error);
+                if (container) {
+                    container.innerHTML = '<p style="text-align: center; color: #dc2626;">Error loading links. Please refresh the page.</p>';
+                }
+            }
         }
 
         function loadPresentationInfo(collection, profileData) {
@@ -1979,14 +2072,14 @@
         // Validate URL parameters first
         if (!urlValidation.valid) {
             // Wait for DOM to be ready before showing error
+            console.error('URL parameter validation failed:', urlValidation.error);
             if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
+                document.addEventListener('DOMContentLoaded', function() {
                     showError(urlValidation.error || 'Invalid URL parameters');
                 });
             } else {
                 showError(urlValidation.error || 'Invalid URL parameters');
             }
-            console.error('URL parameter validation failed:', urlValidation.error);
         } else if (userId && collectionId) {
             // Start loading immediately if DOM is ready, otherwise wait
             if (document.readyState === 'loading') {
@@ -1995,8 +2088,9 @@
                 // DOM already ready, load immediately
                 loadProfile();
             }
-            } else {
+        } else {
             // Wait for DOM to be ready before showing error
+            console.error('Missing user ID or collection ID parameter');
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', function() {
                     showError('Missing required URL parameters');
@@ -2004,8 +2098,7 @@
             } else {
                 showError('Missing required URL parameters');
             }
-                console.error('Missing user ID or collection ID parameter');
-            }
+        }
     </script>
 </body>
 </html>
