@@ -440,10 +440,54 @@
         }
 
         // Validate and sanitize image URL to prevent XSS
+        // Compress Supabase storage URLs to reduce payload size
+        function compressImageUrl(url) {
+            if (!url || typeof url !== 'string') {
+                return url;
+            }
+            
+            // Check if it's a Supabase storage URL
+            const supabaseStorageRegex = /^https?:\/\/([^.]+)\.supabase\.co\/storage\/v1\/object\/(public|sign)\/([^\/]+)\/(.+)$/i;
+            const match = url.match(supabaseStorageRegex);
+            
+            if (match) {
+                const [, projectRef, type, bucket, path] = match;
+                
+                // For public URLs, use the shorter public format (remove query params)
+                if (type === 'public') {
+                    // Extract just the path without query parameters
+                    const cleanPath = path.split('?')[0];
+                    // Reconstruct shorter URL
+                    return `https://${projectRef}.supabase.co/storage/v1/object/public/${bucket}/${cleanPath}`;
+                }
+                
+                // For signed URLs, try to extract and optimize
+                // Parse the URL to get query params
+                try {
+                    const urlObj = new URL(url);
+                    const token = urlObj.searchParams.get('token');
+                    const expires = urlObj.searchParams.get('expires');
+                    
+                    // Reconstruct with only essential params
+                    if (token && expires) {
+                        return `https://${projectRef}.supabase.co/storage/v1/object/sign/${bucket}/${path.split('?')[0]}?token=${token}&expires=${expires}`;
+                    }
+                } catch (e) {
+                    // If URL parsing fails, return original
+                }
+            }
+            
+            // For non-Supabase URLs or if compression fails, return as-is
+            return url;
+        }
+
         function sanitizeImageUrl(url) {
             if (!url || typeof url !== 'string') {
                 return null;
             }
+            
+            // First compress the URL to reduce size
+            url = compressImageUrl(url);
             
             // Trim whitespace
             url = url.trim();
@@ -984,7 +1028,7 @@
                 const [linksResult, profileResult] = await Promise.all([
                     supabase
                         .from('link_items')
-                        .select('*')
+                        .select('id, url, title, image, image_url, image_position, image_scale, order_index')
                         .eq('list_id', collection.id)
                         .order('order_index', { ascending: true }),
                     supabase
@@ -1001,7 +1045,16 @@
                 } else {
                     collection.links = linksResult.data || [];
                     console.log('✅ Loaded', collection.links.length, 'links from database');
-                    console.log('Links data:', collection.links);
+                    
+                    // Compress image URLs immediately to reduce memory footprint
+                    collection.links.forEach(link => {
+                        if (link.image) {
+                            link.image = compressImageUrl(link.image);
+                        }
+                        if (link.image_url) {
+                            link.image_url = compressImageUrl(link.image_url);
+                        }
+                    });
                     
                     // Map database fields to camelCase and ensure imagePosition/imageScale are properly set
                     collection.links.forEach(link => {
@@ -1277,6 +1330,7 @@
                 const img = document.createElement('img');
                 img.src = sanitizedUrl; // Safe: URL has been validated
                 img.alt = 'Profile'; // Static, safe value
+                img.fetchPriority = 'high'; // Prioritize profile photo loading (above the fold)
                 
                 // Apply base photo styles
                 img.style.setProperty('width', '100%', 'important');
@@ -1446,6 +1500,7 @@
                     const img = document.createElement('img');
                         img.src = sanitizedImageUrl; // Safe: URL has been validated
                         img.alt = escapeHtml(link.title || 'Link Icon'); // Escape alt text to prevent XSS
+                        img.loading = 'lazy'; // Lazy load images for better performance
                     
                     // Apply image position and scale
                     let imgStyle = 'width: 100%; height: 100%; object-fit: contain;';
