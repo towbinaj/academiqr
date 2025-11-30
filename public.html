@@ -1046,6 +1046,18 @@
                     collection.links = linksResult.data || [];
                     console.log('✅ Loaded', collection.links.length, 'links from database');
                     
+                    // Sort links by order_index to ensure consistent ordering
+                    // Handle NULL values by putting them last
+                    collection.links.sort((a, b) => {
+                        const aOrder = a.order_index ?? 999999;
+                        const bOrder = b.order_index ?? 999999;
+                        if (aOrder !== bOrder) {
+                            return aOrder - bOrder;
+                        }
+                        // If order_index is the same, sort by id for consistency
+                        return a.id.localeCompare(b.id);
+                    });
+                    
                     // Compress image URLs immediately to reduce memory footprint
                     collection.links.forEach(link => {
                         if (link.image) {
