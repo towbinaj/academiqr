@@ -1,5 +1,5 @@
 ﻿
-        // Cache bust: v0.6.5 - QR code improvements: size update (250x250), rounded padding corners, border fixes, download button layout
+        // Cache bust: v0.6.6 - Fix link ordering, image upload, and public site access
         // Supabase configuration
         const SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
@@ -2053,9 +2053,9 @@
             const link = links.splice(fromIndex, 1)[0];
             links.splice(toIndex, 0, link);
             
-            // Update positions in local array
+            // Update order_index in local array (use order_index, not position)
             for (let i = 0; i < links.length; i++) {
-                links[i].position = i * 100;
+                links[i].order_index = i * 100;
             }
             
             console.log('Links reordered, new order:', links.map(l => l.title));
@@ -2067,29 +2067,32 @@
             try {
                 if (!currentList.id.startsWith('local-')) {
                     console.log('Syncing reorder to database...');
-                    // Batch update all link positions at once to prevent database locks
-                    const positionUpdates = links
+                    // Batch update all link order_index at once to prevent database locks
+                    const orderUpdates = links
                         .filter(link => !link.id.startsWith('local-'))
                         .map((link, i) => ({
                             id: link.id,
-                            position: i * 100
+                            order_index: i * 100
                         }));
                     
-                    if (positionUpdates.length > 0) {
+                    if (orderUpdates.length > 0) {
                         // Use upsert to update multiple records in a single transaction
                         const { error } = await supabaseClient
                             .from('link_items')
-                            .upsert(positionUpdates, { onConflict: 'id' });
+                            .upsert(orderUpdates, { onConflict: 'id' });
                         
                         if (error) {
                             console.error('Error syncing reorder:', error);
+                            showMessage('Failed to save link order. Please try again.', 'error');
                         } else {
                             console.log('Reorder synced to database');
+                            showMessage('Link order saved!', 'success');
                         }
                     }
                 }
             } catch (error) {
                 console.log('Reorder sync failed:', error);
+                showMessage('Failed to save link order. Please try again.', 'error');
             }
         }
         
@@ -2187,7 +2190,7 @@
                 image: selectedImageUrl || (imageFile ? await convertImageToBase64(imageFile) : null),
                 imagePosition: { x: 50, y: 50 },
                 imageScale: 100,
-                position: links.length * 100,
+                order_index: links.length * 100,
                 visible: true,
                 created_at: new Date().toISOString()
             };
@@ -2953,9 +2956,12 @@
                 const updateData = {
                     title: link.title, // Save HTML as-is
                     url: link.url,
-                    image_url: link.image_url || link.image,
+                    // Use image_url if set, otherwise use image, or null if neither exists
+                    image_url: link.image_url || link.image || null,
                     order_index: link.order_index
                 };
+                
+                console.log('💾 Saving link image - image_url:', link.image_url, 'image:', link.image, 'final:', updateData.image_url);
                 
                 // Add image position and scale - explicitly handle null to clear database fields
                 // imagePosition is an object {x, y}, save it as JSON
@@ -7695,9 +7701,19 @@
             const preview = document.getElementById('new-link-image-preview');
             const previewImg = document.getElementById('new-link-image-preview-img');
             
-            fileInput.value = '';
-            preview.style.display = 'none';
-            previewImg.src = '';
+            // Clear the file input value to allow re-selecting the same file
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            
+            if (preview) {
+                preview.style.display = 'none';
+            }
+            
+            if (previewImg) {
+                previewImg.src = '';
+            }
+            
             window.selectedLinkImageUrl = null;
         }
 
@@ -7707,10 +7723,18 @@
             const previewImg = document.getElementById('new-link-image-preview-img');
             
             if (fileInput) {
+                // Use a flag to prevent duplicate handlers
+                if (fileInput.dataset.handlerAttached === 'true') {
+                    return; // Handler already attached
+                }
+                fileInput.dataset.handlerAttached = 'true';
+                
                 fileInput.addEventListener('change', async function(e) {
                     const file = e.target.files[0];
                     if (file) {
                         try {
+                            console.log('File selected:', file.name);
+                            
                             // Convert file to base64
                             const base64 = await convertImageToBase64(file);
                             
@@ -7732,16 +7756,36 @@
                             console.log('Image added to media library:', mediaItem.name);
                             
                             // Update preview
-                            previewImg.src = base64;
-                            preview.style.display = 'block';
+                            if (previewImg) {
+                                previewImg.src = base64;
+                            }
+                            if (preview) {
+                                preview.style.display = 'block';
+                            }
                             
                             // Store for addLink function
                             window.selectedLinkImageUrl = base64;
                             
+                            console.log('Image preview updated, selectedLinkImageUrl set');
+                            
+                            // Reset the file input value to allow selecting the same file again
+                            // Do this after a short delay to ensure the change event completes
+                            setTimeout(() => {
+                                if (fileInput) {
+                                    fileInput.value = '';
+                                }
+                            }, 100);
+                            
                         } catch (error) {
                             console.error('Error processing image:', error);
                             showMessage('Error processing image. Please try again.', 'error');
+                            // Reset file input on error too
+                            if (fileInput) {
+                                fileInput.value = '';
+                            }
                         }
+                    } else {
+                        console.log('No file selected');
                     }
                 });
             }
@@ -7802,12 +7846,35 @@
             console.log('Selecting image for link edit:', imageUrl, 'link index:', linkIndex);
             
             if (linkIndex !== undefined && links[linkIndex]) {
-                // Update the link's image
+                // Cancel any pending debounced saves for this link
+                if (linkSaveDebounceTimers.has(linkIndex)) {
+                    clearTimeout(linkSaveDebounceTimers.get(linkIndex));
+                    linkSaveDebounceTimers.delete(linkIndex);
+                }
+                
+                // Update the link's image - set both image and image_url to ensure save works
                 links[linkIndex].image = imageUrl;
+                links[linkIndex].image_url = imageUrl; // Also set image_url so saveLinkToDatabase uses it
+                // Reset image position and scale to defaults when setting a new image
+                if (!links[linkIndex].imagePosition) {
+                    links[linkIndex].imagePosition = { x: 50, y: 50 };
+                }
+                if (links[linkIndex].imageScale === null || links[linkIndex].imageScale === undefined) {
+                    links[linkIndex].imageScale = 100;
+                }
                 
                 // Update the UI immediately
                 renderLinks();
                 updatePreview();
+                
+                // Save to database immediately (not debounced)
+                if (links[linkIndex].id && !links[linkIndex].id.startsWith('local-')) {
+                    saveLinkToDatabase(links[linkIndex]).then(() => {
+                        console.log('Link image saved to database');
+                    }).catch(error => {
+                        console.error('Error saving link image:', error);
+                    });
+                }
                 
                 // Show success message
                 showMessage('Link image updated!', 'success');
@@ -7831,8 +7898,9 @@
                     linkSaveDebounceTimers.delete(linkIndex);
                 }
                 
-                // Remove the image from the link
+                // Remove the image from the link - clear both image and image_url
                 links[linkIndex].image = null;
+                links[linkIndex].image_url = null;
                 links[linkIndex].imagePosition = null;
                 links[linkIndex].imageScale = null;
                 
@@ -8496,21 +8564,40 @@
                         // Add to media files array
                         mediaFiles.push(mediaItem);
                         
-                        // Save to localStorage
-                        try {
-                            localStorage.setItem('academiq-media', JSON.stringify(mediaFiles));
-                            console.log('Image added to media library:', mediaItem.name);
-                        } catch (storageError) {
-                            console.warn('Could not save to localStorage:', storageError);
-                        }
+                        // Save to database (or localStorage if not logged in)
+                        await saveMediaFiles();
+                        console.log('Image added to media library:', mediaItem.name);
                         
                         // Update the link's image
                         if (links[linkIndex]) {
+                            // Cancel any pending debounced saves for this link
+                            if (linkSaveDebounceTimers.has(linkIndex)) {
+                                clearTimeout(linkSaveDebounceTimers.get(linkIndex));
+                                linkSaveDebounceTimers.delete(linkIndex);
+                            }
+                            
                             links[linkIndex].image = base64;
+                            links[linkIndex].image_url = base64; // Also set image_url so saveLinkToDatabase uses it
+                            // Reset image position and scale to defaults when setting a new image
+                            if (!links[linkIndex].imagePosition) {
+                                links[linkIndex].imagePosition = { x: 50, y: 50 };
+                            }
+                            if (links[linkIndex].imageScale === null || links[linkIndex].imageScale === undefined) {
+                                links[linkIndex].imageScale = 100;
+                            }
                             
                             // Update the UI immediately
                             renderLinks();
                             updatePreview();
+                            
+                            // Save to database immediately (not debounced)
+                            if (links[linkIndex].id && !links[linkIndex].id.startsWith('local-')) {
+                                saveLinkToDatabase(links[linkIndex]).then(() => {
+                                    console.log('Link image saved to database');
+                                }).catch(error => {
+                                    console.error('Error saving link image:', error);
+                                });
+                            }
                             
                             // Show success message
                             showMessage('Image added to media library and link updated!', 'success');
@@ -9274,12 +9361,19 @@
         }
 
         function checkBackupAvailability() {
+            // No longer using localStorage backups - all media is in database
             try {
-                const backupData = localStorage.getItem('academiq-media-backup');
                 const restoreButton = document.querySelector('button[onclick="restoreMediaFromBackup()"]');
                 
-                if (backupData && restoreButton) {
-                    const backup = JSON.parse(backupData);
+                if (restoreButton) {
+                    // Hide restore button since we don't use localStorage anymore
+                    restoreButton.style.display = 'none';
+                }
+                
+                // Legacy code - no longer used
+                if (false) {
+                    const backupData = null;
+                    const backup = null;
                     restoreButton.textContent = `🔄 Restore (${backup.count})`;
                     restoreButton.title = `Restore ${backup.count} files from backup (${new Date(backup.timestamp).toLocaleString()})`;
                     restoreButton.style.backgroundColor = '#fef3c7';
@@ -9344,171 +9438,76 @@
             // Always start fresh - clear existing array first
             mediaFiles = [];
             
-            // If user is logged in, try to load from database
-            if (currentUser && supabaseClient) {
-                try {
-                    const { data, error } = await supabaseClient
-                        .from('user_media')
-                        .select('*')
-                        .eq('user_id', currentUser.id)
-                        .order('uploaded_at', { ascending: false });
-                    
-                    if (error) {
-                        console.error('Error loading media from database:', error);
-                        // Fall back to localStorage
-                        await loadMediaFilesFromLocalStorage();
-                    } else if (data && data.length > 0) {
-                        // Convert database records to mediaFiles format
-                        mediaFiles = data.map(record => ({
-                            id: record.id,
-                            name: record.name,
-                            url: record.url,
-                            size: record.size,
-                            type: record.type,
-                            uploadedAt: record.uploaded_at
-                        }));
-                        console.log('Successfully loaded', mediaFiles.length, 'media files from database');
-                        
-                        // Migrate any localStorage data to database (one-time migration)
-                        await migrateLocalStorageToDatabase();
-                    } else {
-                        console.log('No media files in database');
-                        // Check localStorage for migration
-                        await migrateLocalStorageToDatabase();
-                    }
-                } catch (error) {
-                    console.error('Error loading from database:', error);
-                    // Fall back to localStorage
-                    await loadMediaFilesFromLocalStorage();
+            // Only load from database - no localStorage fallback
+            if (!currentUser || !supabaseClient) {
+                console.warn('User not logged in - cannot load media library');
+                mediaFiles = [];
+                renderMediaGrid();
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('user_media')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('uploaded_at', { ascending: false });
+                
+                if (error) {
+                    console.error('Error loading media from database:', error);
+                    showMessage('Error loading media library. Please try again.', 'error');
+                    mediaFiles = [];
+                } else if (data && data.length > 0) {
+                    // Convert database records to mediaFiles format
+                    mediaFiles = data.map(record => ({
+                        id: record.id,
+                        name: record.name,
+                        url: record.url,
+                        size: record.size,
+                        type: record.type,
+                        uploadedAt: record.uploaded_at
+                    }));
+                    console.log('Successfully loaded', mediaFiles.length, 'media files from database');
+                } else {
+                    console.log('No media files in database');
+                    mediaFiles = [];
                 }
-            } else {
-                // User not logged in, load from localStorage
-                await loadMediaFilesFromLocalStorage();
+                
+                // One-time cleanup: clear any old localStorage data
+                clearOldLocalStorageMedia();
+            } catch (error) {
+                console.error('Error loading from database:', error);
+                showMessage('Error loading media library. Please try again.', 'error');
+                mediaFiles = [];
             }
             
             console.log('Final mediaFiles length after load:', mediaFiles.length);
             renderMediaGrid();
         }
         
-        async function loadMediaFilesFromLocalStorage() {
+        function clearOldLocalStorageMedia() {
+            // One-time cleanup: remove any old localStorage media data
             try {
-                const stored = localStorage.getItem('academiq-media');
-                if (stored) {
-                    const parsedFiles = JSON.parse(stored);
-                    if (Array.isArray(parsedFiles) && parsedFiles.length > 0) {
-                        mediaFiles = parsedFiles;
-                        console.log('Successfully loaded media files from localStorage:', mediaFiles.length);
-                    } else {
-                        console.log('No valid files in localStorage, starting fresh');
-                        mediaFiles = [];
-                    }
-                } else {
-                    console.log('No stored media files found, starting fresh');
-                    mediaFiles = [];
-                }
-            } catch (error) {
-                console.error('Error loading media files from localStorage:', error);
-                console.log('Starting with empty array due to error');
-                // Clear corrupted data and start fresh
-                mediaFiles = [];
-                try {
-                    localStorage.removeItem('academiq-media');
-                    localStorage.removeItem('academiq-media-metadata');
-                    console.log('Cleared corrupted localStorage data');
-                } catch (e) {
-                    console.warn('Could not clear localStorage:', e);
-                }
+                localStorage.removeItem('academiq-media');
+                localStorage.removeItem('academiq-media-metadata');
+                localStorage.removeItem('academiq-media-backup');
+                console.log('Cleared old localStorage media data (no longer used)');
+            } catch (e) {
+                console.warn('Could not clear localStorage:', e);
             }
         }
         
-        async function migrateLocalStorageToDatabase() {
-            // One-time migration: move localStorage data to database
-            if (!currentUser || !supabaseClient) {
-                return;
-            }
-            
-            try {
-                const stored = localStorage.getItem('academiq-media');
-                if (!stored) {
-                    return; // Nothing to migrate
-                }
-                
-                const parsedFiles = JSON.parse(stored);
-                if (!Array.isArray(parsedFiles) || parsedFiles.length === 0) {
-                    return; // Nothing to migrate
-                }
-                
-                console.log('Migrating', parsedFiles.length, 'media files from localStorage to database...');
-                
-                // Check if we already have these files in the database
-                const { data: existingData } = await supabaseClient
-                    .from('user_media')
-                    .select('id, name, uploaded_at')
-                    .eq('user_id', currentUser.id);
-                
-                const existingNames = new Set(existingData?.map(f => f.name) || []);
-                
-                // Only migrate files that don't already exist
-                const filesToMigrate = parsedFiles.filter(file => !existingNames.has(file.name));
-                
-                if (filesToMigrate.length > 0) {
-                    const mediaRecords = filesToMigrate.map(file => ({
-                        user_id: currentUser.id,
-                        name: file.name,
-                        url: file.url,
-                        size: file.size,
-                        type: file.type,
-                        uploaded_at: file.uploadedAt || new Date().toISOString()
-                    }));
-                    
-                    const { error } = await supabaseClient
-                        .from('user_media')
-                        .insert(mediaRecords);
-                    
-                    if (error) {
-                        console.error('Error migrating media files:', error);
-                    } else {
-                        console.log('Successfully migrated', filesToMigrate.length, 'media files to database');
-                        // Update mediaFiles array to include migrated files
-                        mediaFiles = [...mediaFiles, ...filesToMigrate];
-                        // Clear localStorage after successful migration
-                        localStorage.removeItem('academiq-media');
-                    }
-                } else {
-                    console.log('All localStorage files already exist in database');
-                    // Clear localStorage since everything is migrated
-                    localStorage.removeItem('academiq-media');
-                }
-            } catch (error) {
-                console.error('Error during migration:', error);
-                // Don't clear localStorage if migration fails
-            }
-        }
+        // Removed migrateLocalStorageToDatabase - no longer using localStorage for media
 
         function clearOldMediaData() {
-            // Clear any old media data that might be taking up space
-            localStorage.removeItem('academiq-media-metadata');
-            console.log('Cleared old media metadata');
+            // Clear any old localStorage media data (cleanup)
+            clearOldLocalStorageMedia();
         }
 
         async function clearAllMedia() {
             console.log('clearAllMedia called, current mediaFiles count:', mediaFiles.length);
             
             if (confirm('Are you sure you want to clear all media files? This cannot be undone.')) {
-                // Create backup before clearing
-                const backup = {
-                    timestamp: new Date().toISOString(),
-                    mediaFiles: [...mediaFiles],
-                    count: mediaFiles.length
-                };
-                
-                try {
-                    localStorage.setItem('academiq-media-backup', JSON.stringify(backup));
-                    console.log('Backup created before clearing media files');
-                } catch (error) {
-                    console.warn('Could not create backup:', error);
-                }
-                
                 // Delete from database if user is logged in
                 if (currentUser && supabaseClient) {
                     try {
@@ -9536,19 +9535,8 @@
                 mediaFiles = [];
                 console.log('MediaFiles array cleared. Length:', mediaFiles.length);
                 
-                // Remove all media-related localStorage items
-                localStorage.removeItem('academiq-media');
-                localStorage.removeItem('academiq-media-metadata');
-                
-                // Force clear any cached data
-                try {
-                    const test = localStorage.getItem('academiq-media');
-                    if (test) {
-                        localStorage.removeItem('academiq-media');
-                    }
-                } catch (e) {
-                    console.warn('Error checking localStorage:', e);
-                }
+                // Clear any old localStorage data (cleanup)
+                clearOldLocalStorageMedia();
                 
                 // Reload media files to ensure UI is updated (should be empty now)
                 await loadMediaFiles();
@@ -9563,53 +9551,10 @@
             }
         }
 
+        // Removed restoreMediaFromBackup - no longer using localStorage for media
         function restoreMediaFromBackup() {
-            try {
-                console.log('Attempting to restore from backup...');
-                const backupData = localStorage.getItem('academiq-media-backup');
-                console.log('Backup data found:', !!backupData);
-                
-                if (backupData) {
-                    const backup = JSON.parse(backupData);
-                    console.log('Backup parsed:', backup);
-                    console.log('Backup mediaFiles:', backup.mediaFiles);
-                    console.log('Backup count:', backup.count);
-                    
-                    if (backup.mediaFiles && Array.isArray(backup.mediaFiles)) {
-                        mediaFiles = [...backup.mediaFiles];
-                        saveMediaFiles();
-                        renderMediaGrid();
-                        showMessage(`Restored ${backup.count} media files from backup`, 'success');
-                        return true;
-                    } else {
-                        showMessage('Backup data is corrupted', 'error');
-                        return false;
-                    }
-                }
-                
-                // Check if there are any media files in the main storage
-                const mainData = localStorage.getItem('academiq-media');
-                if (mainData) {
-                    try {
-                        const mainMedia = JSON.parse(mainData);
-                        if (Array.isArray(mainMedia) && mainMedia.length > 0) {
-                            mediaFiles = mainMedia;
-                            renderMediaGrid();
-                            showMessage(`Found ${mainMedia.length} media files in storage`, 'success');
-                            return true;
-                        }
-                    } catch (e) {
-                        console.error('Error parsing main media data:', e);
-                    }
-                }
-                
-                showMessage('No backup found', 'warning');
-                return false;
-            } catch (error) {
-                console.error('Error restoring from backup:', error);
-                showMessage('Error restoring from backup', 'error');
-                return false;
-            }
+            showMessage('Backup restore is no longer available. All media is stored in the database.', 'info');
+            return false;
         }
 
         async function saveMediaFiles() {
@@ -9617,22 +9562,10 @@
             console.log('currentUser:', currentUser ? 'exists' : 'null/undefined');
             console.log('supabaseClient:', supabaseClient ? 'exists' : 'null/undefined');
             
-            // If user is not logged in, fall back to localStorage
+            // Only save to database - no localStorage fallback
             if (!currentUser || !supabaseClient) {
-                console.log('⚠️ User not logged in or Supabase client not available, saving to localStorage');
-                try {
-                    const dataToSave = JSON.stringify(mediaFiles);
-                    localStorage.setItem('academiq-media', dataToSave);
-                    console.log('Successfully saved media files to localStorage');
-                } catch (error) {
-                    console.error('Error saving to localStorage:', error);
-                    if (error.name === 'QuotaExceededError') {
-                        console.log('Quota exceeded, compressing images...');
-                        compressAllImages();
-                    } else {
-                        showMessage('Error saving media files. Please try again.', 'error');
-                    }
-                }
+                console.error('User not logged in or Supabase client not available');
+                showMessage('You must be logged in to save media files.', 'error');
                 return;
             }
             
@@ -9668,10 +9601,7 @@
                     
                     if (error) {
                         console.error('Error saving media files to database:', error);
-                        // Fall back to localStorage
-                        const dataToSave = JSON.stringify(mediaFiles);
-                        localStorage.setItem('academiq-media', dataToSave);
-                        console.log('Fell back to localStorage due to database error');
+                        showMessage('Error saving media files to database. Please try again.', 'error');
                     } else {
                         console.log('✅ Successfully saved', data.length, 'media files to database');
                         console.log('Database records:', data.map(r => ({ id: r.id, name: r.name, size: r.size })));
@@ -9693,120 +9623,18 @@
                             });
                             mediaFiles = updatedFiles;
                         }
-                        // Clear localStorage since we're using database now
-                        localStorage.removeItem('academiq-media');
                         showMessage(`Saved ${data.length} media files to database`, 'success');
                     }
                 } else {
                     console.log('No media files to save');
-                    // Clear localStorage
-                    localStorage.removeItem('academiq-media');
                 }
             } catch (error) {
                 console.error('Error saving media files:', error);
-                // Fall back to localStorage
-                try {
-                    const dataToSave = JSON.stringify(mediaFiles);
-                    localStorage.setItem('academiq-media', dataToSave);
-                    console.log('Fell back to localStorage due to error');
-                } catch (localError) {
-                    console.error('Error saving to localStorage:', localError);
-                    if (localError.name === 'QuotaExceededError') {
-                        console.log('Quota exceeded, compressing images...');
-                        compressAllImages();
-                    } else {
-                        showMessage('Error saving media files. Please try again.', 'error');
-                    }
-                }
+                showMessage('Error saving media files to database. Please try again.', 'error');
             }
         }
 
-        function compressAllImages() {
-            const compressionPromises = mediaFiles.map((file, index) => {
-                if (file.url && file.url.startsWith('data:image/')) {
-                    return new Promise((resolve) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            
-                            // Calculate new dimensions (max 600px)
-                            const maxSize = 600;
-                            let { width, height } = img;
-                            
-                            if (width > height) {
-                                if (width > maxSize) {
-                                    height = (height * maxSize) / width;
-                                    width = maxSize;
-                                }
-                            } else {
-                                if (height > maxSize) {
-                                    width = (width * maxSize) / height;
-                                    height = maxSize;
-                                }
-                            }
-                            
-                            canvas.width = width;
-                            canvas.height = height;
-                            ctx.drawImage(img, 0, 0, width, height);
-                            
-                            // Compress with quality 0.7
-                            const compressedUrl = canvas.toDataURL(file.type, 0.7);
-                            
-                            resolve({
-                                ...file,
-                                url: compressedUrl,
-                                size: Math.round(compressedUrl.length * 0.75) // Approximate compressed size
-                            });
-                        };
-                        img.src = file.url;
-                    });
-                }
-                return Promise.resolve(file);
-            });
-            
-            Promise.all(compressionPromises).then(compressedFiles => {
-                mediaFiles = compressedFiles;
-                console.log('Images compressed, trying to save again...');
-                
-                try {
-                    localStorage.setItem('academiq-media', JSON.stringify(mediaFiles));
-                    showMessage('Images compressed to save space. All files saved!', 'success');
-                    renderMediaGrid();
-                } catch (e) {
-                    console.log('Still too large after compression, creating backup before removing files...');
-                    
-                    // Create backup before removing files
-                    const backup = {
-                        timestamp: new Date().toISOString(),
-                        mediaFiles: [...mediaFiles],
-                        count: mediaFiles.length
-                    };
-                    
-                    try {
-                        localStorage.setItem('academiq-media-backup', JSON.stringify(backup));
-                        console.log('Backup created before removing files');
-                    } catch (backupError) {
-                        console.warn('Could not create backup:', backupError);
-                    }
-                    
-                    // Remove oldest files if still too large
-                    if (mediaFiles.length > 10) {
-                        const removedCount = mediaFiles.length - 10;
-                        mediaFiles = mediaFiles.slice(-10);
-                        try {
-                            localStorage.setItem('academiq-media', JSON.stringify(mediaFiles));
-                            showMessage(`Removed ${removedCount} oldest files to make space. 10 most recent files saved. Backup available for restore.`, 'warning');
-                            renderMediaGrid();
-                        } catch (e2) {
-                            showMessage('Storage full. Please delete some files manually or restore from backup.', 'error');
-                        }
-                    } else {
-                        showMessage('Storage full. Please delete some files manually or restore from backup.', 'error');
-                    }
-                }
-            });
-        }
+        // Removed compressAllImages - no longer using localStorage for media
 
         function renderMediaGrid() {
             const grid = document.getElementById('mediaGrid');
@@ -13061,22 +12889,8 @@
                     showMessage('Error saving gradient. Please try again.', 'error');
                 }
             } else {
-                // User not logged in, save to localStorage
-                const savedGradients = getSavedGradientsFromLocalStorage();
-                const newGradient = {
-                    id: Date.now().toString(),
-                    name: name,
-                    gradient: gradientText,
-                    timestamp: new Date().toISOString()
-                };
-                
-                savedGradients.push(newGradient);
-                localStorage.setItem('academiq-gradients', JSON.stringify(savedGradients));
-                
-                showMessage(`Gradient "${name}" saved!`, 'success');
-                // Reload both containers so the gradient appears everywhere
-                await loadSavedGradients('main');
-                await loadSavedGradients('border');
+                // User must be logged in to save gradients
+                showMessage('You must be logged in to save gradients.', 'error');
             }
         }
         
@@ -13121,8 +12935,8 @@
                     
                     if (error) {
                         console.error('Error loading gradients from database:', error);
-                        // Fall back to localStorage
-                        return getSavedGradientsFromLocalStorage();
+                        showMessage('Error loading gradients. Please try again.', 'error');
+                        return [];
                     } else if (data && data.length > 0) {
                         // Convert database records to gradient format
                         savedGradients = data.map(record => ({
@@ -13139,19 +12953,16 @@
                     }
                 } catch (error) {
                     console.error('Error loading gradients:', error);
-                    return getSavedGradientsFromLocalStorage();
+                    showMessage('Error loading gradients. Please try again.', 'error');
+                    return [];
                 }
             } else {
-                // User not logged in, load from localStorage
-                return getSavedGradientsFromLocalStorage();
+                // User must be logged in to load gradients
+                return [];
             }
         }
         
-        function getSavedGradientsFromLocalStorage() {
-            const key = 'academiq-gradients';
-            const saved = localStorage.getItem(key);
-            return saved ? JSON.parse(saved) : [];
-        }
+        // Removed getSavedGradientsFromLocalStorage - no longer using localStorage for gradients
         
         // Track if migration has been attempted to prevent duplicate calls
         let themesMigrationAttempted = false;
@@ -13225,9 +13036,13 @@
                             
                             if (successCount > 0) {
                                 console.log('✅ Successfully migrated', successCount, 'appearance themes to database');
+                                // Clear localStorage after successful migration
+                                localStorage.removeItem('academiq_saved_themes');
                             }
                         } else {
                             console.log('All appearance themes already in database');
+                            // Clear localStorage since everything is migrated
+                            localStorage.removeItem('academiq_saved_themes');
                         }
                     }
                 }
@@ -13287,9 +13102,13 @@
                             
                             if (successCount > 0) {
                                 console.log('✅ Successfully migrated', successCount, 'QR themes to database');
+                                // Clear localStorage after successful migration
+                                localStorage.removeItem('academiq_saved_qr_themes');
                             }
                         } else {
                             console.log('All QR themes already in database');
+                            // Clear localStorage since everything is migrated
+                            localStorage.removeItem('academiq_saved_qr_themes');
                         }
                     }
                 }
@@ -13344,6 +13163,8 @@
                         console.error('Error migrating gradients:', error);
                     } else {
                         console.log('✅ Successfully migrated', gradientsToMigrate.length, 'gradients to database');
+                        // Clear localStorage after successful migration
+                        localStorage.removeItem('academiq-gradients');
                         
                         // Reload gradients from database
                         const { data } = await supabaseClient
@@ -13363,6 +13184,8 @@
                     }
                 } else {
                     console.log('All gradients already in database');
+                    // Clear localStorage since everything is migrated
+                    localStorage.removeItem('academiq-gradients');
                     // Still load from database
                     const { data } = await supabaseClient
                         .from('user_gradients')
@@ -13466,14 +13289,8 @@
                     showMessage('Error deleting gradient. Please try again.', 'error');
                 }
             } else {
-                // User not logged in, delete from localStorage
-                const savedGradients = getSavedGradientsFromLocalStorage();
-                const filtered = savedGradients.filter(g => g.id !== gradientId);
-                localStorage.setItem('academiq-gradients', JSON.stringify(filtered));
-                // Reload both containers
-                await loadSavedGradients('main');
-                await loadSavedGradients('border');
-                showMessage('Gradient deleted!', 'success');
+                // User must be logged in to delete gradients
+                showMessage('You must be logged in to delete gradients.', 'error');
             }
         }
         
@@ -13863,38 +13680,14 @@
         }
 
         function migrateGradients() {
-            // Migrate old separate gradient storage to unified storage
-            const mainKey = 'academiq-main-gradients';
-            const borderKey = 'academiq-border-gradients';
-            const unifiedKey = 'academiq-gradients';
-            
-            // Get existing gradients from old storage
-            const mainGradients = localStorage.getItem(mainKey) ? JSON.parse(localStorage.getItem(mainKey)) : [];
-            const borderGradients = localStorage.getItem(borderKey) ? JSON.parse(localStorage.getItem(borderKey)) : [];
-            
-            // Get existing unified gradients (if any)
-            const existingUnified = localStorage.getItem(unifiedKey) ? JSON.parse(localStorage.getItem(unifiedKey)) : [];
-            
-            // Merge all gradients, avoiding duplicates by ID
-            const allGradients = [...existingUnified];
-            const existingIds = new Set(allGradients.map(g => g.id));
-            
-            [...mainGradients, ...borderGradients].forEach(gradient => {
-                if (!existingIds.has(gradient.id)) {
-                    allGradients.push(gradient);
-                    existingIds.add(gradient.id);
-                }
-            });
-            
-            // Save to unified storage
-            if (allGradients.length > 0) {
-                localStorage.setItem(unifiedKey, JSON.stringify(allGradients));
-            }
-            
-            // Remove old storage keys
-            if (mainGradients.length > 0 || borderGradients.length > 0) {
-                localStorage.removeItem(mainKey);
-                localStorage.removeItem(borderKey);
+            // Cleanup: Remove old localStorage gradient keys (no longer used)
+            try {
+                localStorage.removeItem('academiq-main-gradients');
+                localStorage.removeItem('academiq-border-gradients');
+                localStorage.removeItem('academiq-gradients');
+                console.log('Cleared old localStorage gradient data (no longer used)');
+            } catch (e) {
+                console.warn('Could not clear localStorage:', e);
             }
         }
         
@@ -15084,31 +14877,8 @@
                     showMessage('Error saving theme. Please try again.', 'error');
                 }
             } else {
-                // User not logged in, save to localStorage
-                let savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
-                
-                // Check if theme name already exists
-                const existingIndex = savedThemes.findIndex(theme => theme.name === themeName);
-                if (existingIndex !== -1) {
-                    if (confirm(`Theme "${themeName}" already exists. Do you want to overwrite it?`)) {
-                        savedThemes[existingIndex] = themeToSave;
-                    } else {
-                        return;
-                    }
-                } else {
-                    savedThemes.push(themeToSave);
-                }
-
-                // Save to localStorage
-                localStorage.setItem('academiq_saved_themes', JSON.stringify(savedThemes));
-                
-                // Clear the input
-                document.getElementById('theme-name').value = '';
-                
-                // Refresh the saved themes list
-                await loadSavedThemes();
-                
-                showMessage(`Theme "${themeName}" saved successfully!`, 'success');
+                // User must be logged in to save themes
+                showMessage('You must be logged in to save themes.', 'error');
             }
         }
         async function loadSavedThemes() {
@@ -15126,8 +14896,8 @@
                     
                     if (error) {
                         console.error('Error loading themes from database:', error);
-                        // Fall back to localStorage
-                        savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+                        showMessage('Error loading themes. Please try again.', 'error');
+                        savedThemes = [];
                     } else if (data && data.length > 0) {
                         // Convert database records to theme format
                         savedThemes = data.map(record => ({
@@ -15156,11 +14926,12 @@
                     }
                 } catch (error) {
                     console.error('Error loading themes:', error);
-                    savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+                    showMessage('Error loading themes. Please try again.', 'error');
+                    savedThemes = [];
                 }
             } else {
-                // User not logged in, load from localStorage
-                savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+                // User must be logged in to load themes
+                savedThemes = [];
             }
             
             const themesList = document.getElementById('saved-themes-list');
@@ -15240,21 +15011,14 @@
                     return;
                 } catch (error) {
                     console.error('Error loading theme:', error);
-                    savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
+                    showMessage('Error loading theme. Please try again.', 'error');
+                    return;
                 }
             } else {
-                // User not logged in, load from localStorage
-                savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
-            }
-            
-            const theme = savedThemes.find(t => t.name === themeName);
-            
-            if (!theme) {
-                showMessage('Theme not found', 'error');
+                // User must be logged in to load themes
+                showMessage('You must be logged in to load themes.', 'error');
                 return;
             }
-            
-            applyLoadedTheme(theme);
         }
         
         function applyLoadedTheme(theme) {
@@ -15413,31 +15177,8 @@
                     showMessage('Error saving QR theme. Please try again.', 'error');
                 }
             } else {
-                // User not logged in, save to localStorage
-                let savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
-                
-                // Check if theme name already exists
-                const existingIndex = savedQRThemes.findIndex(theme => theme.name === themeName);
-                if (existingIndex !== -1) {
-                    if (confirm(`QR Theme "${themeName}" already exists. Do you want to overwrite it?`)) {
-                        savedQRThemes[existingIndex] = qrThemeToSave;
-                    } else {
-                        return;
-                    }
-                } else {
-                    savedQRThemes.push(qrThemeToSave);
-                }
-
-                // Save to localStorage
-                localStorage.setItem('academiq_saved_qr_themes', JSON.stringify(savedQRThemes));
-                
-                // Clear the input
-                document.getElementById('qr-theme-name').value = '';
-                
-                // Refresh the saved QR themes list
-                await loadSavedQRThemes();
-                
-                showMessage(`QR Theme "${themeName}" saved successfully!`, 'success');
+                // User must be logged in to save QR themes
+                showMessage('You must be logged in to save QR themes.', 'error');
             }
         }
 
@@ -15456,8 +15197,8 @@
                     
                     if (error) {
                         console.error('Error loading QR themes from database:', error);
-                        // Fall back to localStorage
-                        savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+                        showMessage('Error loading QR themes. Please try again.', 'error');
+                        savedQRThemes = [];
                     } else if (data && data.length > 0) {
                         // Convert database records to theme format
                         savedQRThemes = data.map(record => ({
@@ -15486,11 +15227,12 @@
                     }
                 } catch (error) {
                     console.error('Error loading QR themes:', error);
-                    savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+                    showMessage('Error loading QR themes. Please try again.', 'error');
+                    savedQRThemes = [];
                 }
             } else {
-                // User not logged in, load from localStorage
-                savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+                // User must be logged in to load QR themes
+                savedQRThemes = [];
             }
             
             const themesList = document.getElementById('saved-qr-themes-list');
@@ -15554,21 +15296,14 @@
                     return;
                 } catch (error) {
                     console.error('Error loading QR theme:', error);
-                    savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
+                    showMessage('Error loading QR theme. Please try again.', 'error');
+                    return;
                 }
             } else {
-                // User not logged in, load from localStorage
-                savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
-            }
-            
-            const theme = savedQRThemes.find(t => t.name === themeName);
-            
-            if (!theme) {
-                showMessage('QR Theme not found', 'error');
+                // User must be logged in to load QR themes
+                showMessage('You must be logged in to load QR themes.', 'error');
                 return;
             }
-            
-            applyQRTheme(theme);
         }
         
         function applyQRTheme(theme) {
@@ -15684,15 +15419,8 @@
                     showMessage('Error deleting QR theme. Please try again.', 'error');
                 }
             } else {
-                // User not logged in, delete from localStorage
-                let savedQRThemes = JSON.parse(localStorage.getItem('academiq_saved_qr_themes') || '[]');
-                savedQRThemes = savedQRThemes.filter(theme => theme.name !== themeName);
-                localStorage.setItem('academiq_saved_qr_themes', JSON.stringify(savedQRThemes));
-                
-                // Refresh the list
-                await loadSavedQRThemes();
-                
-                showMessage(`QR Theme "${themeName}" deleted successfully!`, 'success');
+                // User must be logged in to delete QR themes
+                showMessage('You must be logged in to delete QR themes.', 'error');
             }
         }
 
@@ -15913,14 +15641,8 @@
                     showMessage('Error deleting theme. Please try again.', 'error');
                 }
             } else {
-                // User not logged in, delete from localStorage
-                const savedThemes = JSON.parse(localStorage.getItem('academiq_saved_themes') || '[]');
-                const filteredThemes = savedThemes.filter(theme => theme.name !== themeName);
-                
-                localStorage.setItem('academiq_saved_themes', JSON.stringify(filteredThemes));
-                await loadSavedThemes();
-                
-                showMessage(`Theme "${themeName}" deleted successfully!`, 'success');
+                // User must be logged in to delete themes
+                showMessage('You must be logged in to delete themes.', 'error');
             }
         }
 
