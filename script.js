@@ -16,6 +16,24 @@
             buttonStyle: 'soft'
         };
         
+        // QR Code variables - defined at top level for global access
+        let currentQRCode = null;
+        let currentQRLogo = null; // Store the logo image data
+        let qrTabInitialized = false; // Track if QR tab has been opened/initialized
+        
+        // QR Code debug function - make it available immediately
+        window.checkQRTabStatus = function() {
+            const status = {
+                initialized: qrTabInitialized,
+                hasQRData: !!currentList?.qr_code_data,
+                currentQRLogo: currentQRLogo ? 'Set' : 'Not set',
+                collectionId: currentList?.id || 'No collection loaded',
+                collectionName: currentList?.slug || 'No collection loaded'
+            };
+            console.log('QR Tab Status:', status);
+            return status;
+        };
+        
         // Initialize app
         document.addEventListener('DOMContentLoaded', function() {
             
@@ -1239,7 +1257,10 @@
         }
         
         async function loadCollection(collection) {
-            console.log('Loading collection:', collection);
+            // Reset QR tab initialization flag when loading a new collection
+            qrTabInitialized = false;
+            console.log('🔄 Loading collection:', collection.slug || collection.id);
+            console.log('   QR tab flag reset to:', qrTabInitialized);
             currentList = collection;
             
             // Always reload links from database to ensure we have the latest data
@@ -3338,34 +3359,48 @@
                     currentList.presentation_data = presentationData;
                 }
                 
-                // Save QR code style data
-                const qrCodeData = {
-                    size: '250', // Always 250px
-                    pattern: 'square', // Always square pattern
-                    color: document.getElementById('qr-color')?.value || '#1A2F5B',
-                    bgColor: document.getElementById('qr-bg-color')?.value || '#ffffff',
-                    padding: '16', // Always 16px
-                    logo: currentQRLogo || null,
-                    borderEnabled: document.getElementById('qr-border-enabled')?.checked || false,
-                    borderWidth: '8', // Always 8px
-                    borderColor: document.getElementById('qr-border-color')?.value || '#000000',
-                    borderStyle: document.getElementById('qr-border-style')?.value || 'solid',
-                    borderRadius: document.getElementById('qr-border-radius')?.value || '16'
-                };
-                
-                // Update collection with QR code data
-                const { error: qrError } = await supabaseClient
-                    .from('link_lists')
-                    .update({
-                        qr_code_data: qrCodeData
-                    })
-                    .eq('id', currentList.id);
-                
-                if (qrError) {
-                    console.warn('QR code data update failed:', qrError);
+                // Save QR code style data - only if QR tab has been initialized
+                // This prevents overwriting QR settings when saving other tabs
+                console.log('💾 Checking QR code save condition - qrTabInitialized:', qrTabInitialized);
+                if (qrTabInitialized) {
+                    console.log('✅ QR tab initialized - saving QR code data');
+                    // Only update QR code data if QR tab has been opened/initialized
+                    // Merge with existing data to preserve any fields that weren't changed
+                    const existingQRData = currentList.qr_code_data || {};
+                    const qrCodeData = {
+                        size: '250', // Always 250px
+                        pattern: 'square', // Always square pattern
+                        color: document.getElementById('qr-color')?.value || existingQRData.color || '#1A2F5B',
+                        bgColor: document.getElementById('qr-bg-color')?.value || existingQRData.bgColor || '#ffffff',
+                        padding: '16', // Always 16px
+                        logo: currentQRLogo !== null ? currentQRLogo : (existingQRData.logo || null),
+                        borderEnabled: document.getElementById('qr-border-enabled')?.checked ?? existingQRData.borderEnabled ?? false,
+                        borderWidth: '8', // Always 8px
+                        borderColor: document.getElementById('qr-border-color')?.value || existingQRData.borderColor || '#000000',
+                        borderStyle: document.getElementById('qr-border-style')?.value || existingQRData.borderStyle || 'solid',
+                        borderRadius: document.getElementById('qr-border-radius')?.value || existingQRData.borderRadius || '16'
+                    };
+                    
+                    // Update collection with QR code data
+                    const { error: qrError } = await supabaseClient
+                        .from('link_lists')
+                        .update({
+                            qr_code_data: qrCodeData
+                        })
+                        .eq('id', currentList.id);
+                    
+                    if (qrError) {
+                        console.warn('QR code data update failed:', qrError);
+                    } else {
+                        // Update currentList with QR code data
+                        currentList.qr_code_data = qrCodeData;
+                        console.log('✅ QR code data saved successfully');
+                    }
                 } else {
-                    // Update currentList with QR code data
-                    currentList.qr_code_data = qrCodeData;
+                    // QR tab hasn't been opened - preserve existing QR code data
+                    // Don't update qr_code_data in database if QR tab hasn't been initialized
+                    console.log('⚠️ QR tab not initialized - preserving existing QR code data');
+                    console.log('   Existing QR data:', currentList.qr_code_data);
                 }
                 
                 // Save profile
@@ -3460,10 +3495,13 @@
         }
         
         // QR Code Functions
-        let currentQRCode = null;
-        let currentQRLogo = null; // Store the logo image data
+        // Note: Variables (currentQRCode, currentQRLogo, qrTabInitialized) are defined at top level
         
         async function initQRCodeTab() {
+            // Mark QR tab as initialized
+            qrTabInitialized = true;
+            console.log('✅ QR tab initialized - flag set to:', qrTabInitialized);
+            
             // Load saved QR themes
             await loadSavedQRThemes();
             
