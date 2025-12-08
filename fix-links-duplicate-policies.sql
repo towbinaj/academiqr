@@ -25,11 +25,21 @@ ORDER BY policyname;
 -- Fix duplicate SELECT policies
 -- ============================================================================
 
--- Drop all existing SELECT policies
-DROP POLICY IF EXISTS "Anyone can view links for public collections" ON links;
-DROP POLICY IF EXISTS "Anyone can view links in public collections" ON links;
-DROP POLICY IF EXISTS "Users can view links for own collections" ON links;
-DROP POLICY IF EXISTS "Users can view links in own or public collections" ON links;
+-- First, drop ALL existing SELECT policies on links table
+-- This is the most reliable way to ensure we can re-run the script
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN (
+        SELECT policyname 
+        FROM pg_policies 
+        WHERE tablename = 'links' 
+        AND cmd = 'SELECT'
+    ) LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON links', r.policyname);
+    END LOOP;
+END $$;
 
 -- Create a single consolidated SELECT policy for authenticated
 -- This allows users to view links in their own collections OR public collections
@@ -44,6 +54,9 @@ USING (
         OR visibility = 'unlisted'
     )
 );
+
+-- Drop the anon policy if it exists before creating (already dropped above, but ensure it's gone)
+DROP POLICY IF EXISTS "Anyone can view links for public collections" ON links;
 
 -- Create separate policy for anonymous users (public only)
 CREATE POLICY "Anyone can view links for public collections"

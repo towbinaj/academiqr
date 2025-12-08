@@ -2494,6 +2494,20 @@
         function switchTab(tabName) {
             // Auto-load analytics when tab is opened
             if (tabName === 'analytics') {
+                // Set default date range (last 30 days) if inputs are empty
+                const dateFromInput = document.getElementById('date-from');
+                const dateToInput = document.getElementById('date-to');
+                
+                if (dateFromInput && dateToInput && !dateFromInput.value) {
+                    const dateTo = new Date();
+                    const dateFrom = new Date();
+                    dateFrom.setDate(dateFrom.getDate() - 30); // 30 days ago
+                    
+                    // Format as YYYY-MM-DD for date inputs
+                    dateFromInput.value = dateFrom.toISOString().split('T')[0];
+                    dateToInput.value = dateTo.toISOString().split('T')[0];
+                }
+                
                 // Small delay to ensure tab is visible
                 setTimeout(() => {
                     refreshAnalytics();
@@ -7315,14 +7329,45 @@
                     return;
                 }
                 
-                console.log('📊 Analytics for collection ID:', listId);
+                // Get date range from inputs
+                const dateFromInput = document.getElementById('date-from');
+                const dateToInput = document.getElementById('date-to');
+                let dateFrom = null;
+                let dateTo = null;
                 
-                // Get total clicks (filtered by current collection)
-                const clicksQuery = supabaseClient
+                if (dateFromInput && dateFromInput.value) {
+                    // Parse date string and set to start of day in local time (00:00:00)
+                    const dateStr = dateFromInput.value; // Format: YYYY-MM-DD
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    const localDate = new Date(year, month - 1, day, 0, 0, 0, 0); // month is 0-indexed
+                    dateFrom = localDate.toISOString();
+                }
+                
+                if (dateToInput && dateToInput.value) {
+                    // Parse date string and set to end of day in local time (23:59:59.999)
+                    const dateStr = dateToInput.value; // Format: YYYY-MM-DD
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    const localDate = new Date(year, month - 1, day, 23, 59, 59, 999); // month is 0-indexed
+                    dateTo = localDate.toISOString();
+                }
+                
+                
+                // Get total link clicks (filtered by current collection and date range)
+                // Only count regular link clicks (exclude social media clicks which have NULL link_id)
+                let clicksQuery = supabaseClient
                     .from('link_clicks')
                     .select('*', { count: 'exact', head: true })
                     .eq('owner_id', user.id)
-                    .eq('list_id', listId); // Always filter by collection
+                    .eq('list_id', listId) // Always filter by collection
+                    .not('link_id', 'is', null); // Exclude social media clicks
+                
+                // Apply date filters if provided
+                if (dateFrom) {
+                    clicksQuery = clicksQuery.gte('clicked_at', dateFrom);
+                }
+                if (dateTo) {
+                    clicksQuery = clicksQuery.lte('clicked_at', dateTo);
+                }
                 
                 const { count: totalClicks, error: clicksError } = await clicksQuery;
                 
@@ -7332,8 +7377,9 @@
                     return;
                 }
                 
-                // Get clicks by link (filtered by current collection)
-                const linksQuery = supabaseClient
+                // Get clicks by link (filtered by current collection and date range)
+                // Only get regular link clicks (exclude social media clicks which have NULL link_id)
+                let linksQuery = supabaseClient
                     .from('link_clicks')
                     .select(`
                         link_id,
@@ -7341,7 +7387,16 @@
                     `)
                     .eq('owner_id', user.id)
                     .eq('list_id', listId) // Always filter by collection
+                    .not('link_id', 'is', null) // Exclude social media clicks
                     .order('clicked_at', { ascending: false });
+                
+                // Apply date filters if provided
+                if (dateFrom) {
+                    linksQuery = linksQuery.gte('clicked_at', dateFrom);
+                }
+                if (dateTo) {
+                    linksQuery = linksQuery.lte('clicked_at', dateTo);
+                }
                 
                 const { data: clicksData, error: linksError } = await linksQuery;
                 
@@ -7349,21 +7404,39 @@
                     console.error('❌ Error fetching clicks by link:', linksError);
                 }
                 
-                // Get page views (filtered by current collection)
-                const viewsQuery = supabaseClient
+                // Get page views (filtered by current collection and date range)
+                let viewsQuery = supabaseClient
                     .from('page_views')
                     .select('*', { count: 'exact', head: true })
                     .eq('owner_id', user.id)
                     .eq('list_id', listId); // Always filter by collection
                 
+                // Apply date filters if provided
+                if (dateFrom) {
+                    viewsQuery = viewsQuery.gte('viewed_at', dateFrom);
+                }
+                if (dateTo) {
+                    viewsQuery = viewsQuery.lte('viewed_at', dateTo);
+                }
+                
                 const { count: totalViews, error: viewsError } = await viewsQuery;
                 
-                // Get all page views to calculate unique sessions (filtered by current collection)
-                const { data: allPageViews, error: uniqueError } = await supabaseClient
+                // Get all page views to calculate unique sessions (filtered by current collection and date range)
+                let uniqueViewsQuery = supabaseClient
                     .from('page_views')
                     .select('session_id')
                     .eq('owner_id', user.id)
                     .eq('list_id', listId); // Always filter by collection
+                
+                // Apply date filters if provided
+                if (dateFrom) {
+                    uniqueViewsQuery = uniqueViewsQuery.gte('viewed_at', dateFrom);
+                }
+                if (dateTo) {
+                    uniqueViewsQuery = uniqueViewsQuery.lte('viewed_at', dateTo);
+                }
+                
+                const { data: allPageViews, error: uniqueError } = await uniqueViewsQuery;
                     
                 let uniqueVisitors = 0;
                 if (allPageViews && !uniqueError) {
@@ -7371,6 +7444,60 @@
                     const uniqueSessions = new Set(allPageViews.map(pv => pv.session_id).filter(id => id));
                     uniqueVisitors = uniqueSessions.size;
                 }
+                
+                // Get social media clicks (filtered by current collection and date range)
+                // Use a filter to get only rows where social_platform is not null
+                // Try using .not() with 'is' operator, or fallback to selecting all and filtering
+                let socialQuery = supabaseClient
+                    .from('link_clicks')
+                    .select('social_platform, clicked_at')
+                    .eq('owner_id', user.id)
+                    .eq('list_id', listId);
+                
+                // Apply date filters if provided
+                if (dateFrom) {
+                    socialQuery = socialQuery.gte('clicked_at', dateFrom);
+                }
+                if (dateTo) {
+                    socialQuery = socialQuery.lte('clicked_at', dateTo);
+                }
+                
+                const { data: allClicksData, error: socialError } = await socialQuery;
+                
+                let socialBreakdownArray = [];
+                
+                if (socialError) {
+                    console.error('Error fetching social media clicks:', socialError);
+                    // Show empty state on error
+                    renderSocialBreakdown([]);
+                } else {
+                    // Filter for social media clicks (where social_platform is not null)
+                    const socialClicksData = allClicksData ? allClicksData.filter(click => click.social_platform !== null && click.social_platform !== undefined) : [];
+                    
+                    // Process social media clicks
+                    let socialBreakdown = {};
+                    if (socialClicksData && socialClicksData.length > 0) {
+                        socialClicksData.forEach(click => {
+                            const platform = click.social_platform || 'unknown';
+                            if (!socialBreakdown[platform]) {
+                                socialBreakdown[platform] = {
+                                    platform: platform,
+                                    clicks: 0
+                                };
+                            }
+                            socialBreakdown[platform].clicks++;
+                        });
+                    }
+                    
+                    // Sort by clicks (highest first)
+                    socialBreakdownArray = Object.values(socialBreakdown).sort((a, b) => b.clicks - a.clicks);
+                    
+                    // Render social media breakdown
+                    renderSocialBreakdown(socialBreakdownArray);
+                }
+                
+                // Calculate total social media clicks
+                const totalSocialMediaClicks = socialBreakdownArray.reduce((sum, item) => sum + item.clicks, 0);
                 
                 // Process clicks by link
                 let linksBreakdown = {};
@@ -7400,14 +7527,8 @@
                 // Update UI
                 document.getElementById('total-clicks').textContent = totalClicks || 0;
                 document.getElementById('total-views').textContent = totalViews || 0;
+                document.getElementById('social-media-clicks').textContent = totalSocialMediaClicks || 0;
                 document.getElementById('unique-visitors').textContent = uniqueVisitors || 0;
-                
-                console.log('📊 Analytics data loaded:', {
-                    totalClicks: totalClicks || 0,
-                    totalViews: totalViews || 0,
-                    uniqueVisitors: uniqueVisitors || 0,
-                    linksBreakdown: linksBreakdownArray.length
-                });
                 
                 if (totalClicks === 0) {
                     showMessage('No analytics data yet. Start sharing your links!');
@@ -7416,7 +7537,7 @@
                 }
                 
             } catch (error) {
-                console.error('❌ Error loading analytics:', error);
+                console.error('Error loading analytics:', error);
                 showMessage('Error loading analytics. Please try again.', 'error');
             }
         }
@@ -7426,6 +7547,47 @@
             // This might be stored in a variable or data attribute
             // For now, return null to get all analytics
             return currentList ? currentList.id : null;
+        }
+        
+        function renderSocialBreakdown(socialArray) {
+            const container = document.getElementById('social-breakdown-list');
+            
+            if (!container) {
+                console.warn('Social breakdown container not found');
+                return;
+            }
+            
+            if (!socialArray || socialArray.length === 0) {
+                container.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 2rem;">No social media clicks yet.</p>';
+                return;
+            }
+            
+            const platformNames = {
+                instagram: 'Instagram',
+                facebook: 'Facebook',
+                twitter: 'X (Twitter)',
+                linkedin: 'LinkedIn',
+                youtube: 'YouTube',
+                tiktok: 'TikTok',
+                snapchat: 'Snapchat',
+                email: 'Email'
+            };
+            
+            container.innerHTML = socialArray.map(item => {
+                const platform = item.platform.toLowerCase();
+                const name = platformNames[platform] || platform.charAt(0).toUpperCase() + platform.slice(1);
+                
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb;">
+                        <div style="display: flex; align-items: center;">
+                            <span style="font-weight: 500; color: #1f2937;">${name}</span>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <span style="font-weight: 600; color: #1f2937;">${item.clicks}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
         
         function renderLinksBreakdown(linksArray) {

@@ -809,12 +809,16 @@
                             <div class="analytics-content">
                                 <div class="stats-grid">
                                     <div class="stat-card">
-                                        <div class="stat-number" id="total-clicks">0</div>
-                                        <div class="stat-label">Total Clicks</div>
-                                    </div>
-                                    <div class="stat-card">
                                         <div class="stat-number" id="total-views">0</div>
                                         <div class="stat-label">Total Views</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number" id="total-clicks">0</div>
+                                        <div class="stat-label">Link Clicks</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-number" id="social-media-clicks">0</div>
+                                        <div class="stat-label">Social Media Clicks</div>
                                     </div>
                                     <div class="stat-card">
                                         <div class="stat-number" id="unique-visitors">0</div>
@@ -825,6 +829,13 @@
                                     <h4 style="margin-bottom: 1rem; font-size: 1.125rem; font-weight: 600;">Clicks by Link</h4>
                                     <div id="links-breakdown-list" style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                                         <p style="color: #6b7280; text-align: center; padding: 2rem;">Loading link data...</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="social-breakdown" style="margin-top: 2rem;">
+                                    <h4 style="margin-bottom: 1rem; font-size: 1.125rem; font-weight: 600;">Social Media Clicks</h4>
+                                    <div id="social-breakdown-list" style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                                        <p style="color: #6b7280; text-align: center; padding: 2rem;">Loading social media data...</p>
                                     </div>
                                 </div>
                             </div>
@@ -1189,6 +1200,6 @@
     <!-- TODO: Get SRI hash from https://www.srihash.org/ for this URL -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js" integrity="sha384-8FWZA6BGMXhsfO+BLtrJK0We6gg5o1JyO8xQm6peWDEUs17ACA5ziE/NIAkl9z2k" crossorigin="anonymous"></script>
     
-    <script src="script.js?v=0.6.5"></script>
+    <script src="script.js?v=0.6.6"></script>
 </body>
 </html>

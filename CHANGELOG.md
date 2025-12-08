@@ -5,6 +5,20 @@ All notable changes to AcademiQR will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.6] - 2025-01-XX
+
+### Fixed
+- Fixed link ordering: Changed from 'position' to 'order_index' field to match database schema
+- Fixed image upload after deletion: Images now save correctly to database and persist after refresh
+- Fixed image saving: Set both 'image' and 'image_url' fields when updating link images
+- Fixed SQL script robustness: Added DROP statements to prevent "already exists" errors
+- Fixed public site access: Restored public viewing policies for profiles, themes, and media
+
+### Changed
+- Improved file input handling: Reset file input after processing to allow re-selecting same file
+- Added better logging for image save operations
+- Updated link_lists policies to use proper policy names matching existing schema
+
 ## [0.6.5] - 2025-01-XX
 
 ### Changed
