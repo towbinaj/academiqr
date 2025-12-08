@@ -825,17 +825,31 @@
                                         <div class="stat-label">Unique Visitors</div>
                                     </div>
                                 </div>
-                                <div class="links-breakdown" style="margin-top: 2rem;">
-                                    <h4 style="margin-bottom: 1rem; font-size: 1.125rem; font-weight: 600;">Clicks by Link</h4>
-                                    <div id="links-breakdown-list" style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                                        <p style="color: #6b7280; text-align: center; padding: 2rem;">Loading link data...</p>
+                                <div class="section" style="margin-top: 2rem;">
+                                    <div class="section-header" onclick="toggleSection('links-breakdown-section')">
+                                        <h3>Clicks by Link</h3>
+                                        <svg class="section-chevron" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="section-content" id="links-breakdown-section">
+                                        <div id="links-breakdown-list">
+                                            <p style="color: #6b7280; text-align: center; padding: 2rem;">Loading link data...</p>
+                                        </div>
                                     </div>
                                 </div>
                                 
-                                <div class="social-breakdown" style="margin-top: 2rem;">
-                                    <h4 style="margin-bottom: 1rem; font-size: 1.125rem; font-weight: 600;">Social Media Clicks</h4>
-                                    <div id="social-breakdown-list" style="background: white; border-radius: 8px; padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                                        <p style="color: #6b7280; text-align: center; padding: 2rem;">Loading social media data...</p>
+                                <div class="section" style="margin-top: 2rem;">
+                                    <div class="section-header" onclick="toggleSection('social-breakdown-section')">
+                                        <h3>Social Media Clicks</h3>
+                                        <svg class="section-chevron" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div class="section-content" id="social-breakdown-section">
+                                        <div id="social-breakdown-list">
+                                            <p style="color: #6b7280; text-align: center; padding: 2rem;">Loading social media data...</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
