@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdnjs.cloudflare.com; img-src 'self' data: blob: https://*.supabase.co https://natzpfyxpuycsuuzbqrd.supabase.co; connect-src 'self' https://*.supabase.co; font-src fonts.gstatic.com cdnjs.cloudflare.com;">
+  <title>AcademiQR — Link Library</title>
+  <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png">
+  <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1A2F5B">
+  <link rel="stylesheet" href="/src/styles/base.css">
+  <link rel="stylesheet" href="/src/pages/library.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top Nav -->
+    <nav id="main-nav" class="main-nav"></nav>
+
+    <!-- Link Library: Master list of all links -->
+    <main class="library">
+      <div id="back-to-collection" class="back-breadcrumb" style="display:none;"></div>
+      <header class="library-header">
+        <div>
+          <h1>Link Library</h1>
+          <p class="library-subtitle">All your links in one place. Reuse them across collections.</p>
+        </div>
+        <div class="library-actions">
+          <div class="search-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input type="search" id="link-search" placeholder="Search links..." class="search-input">
+          </div>
+          <select id="sort-select" class="sort-select">
+            <option value="created-desc">Newest First</option>
+            <option value="created-asc">Oldest First</option>
+            <option value="title-asc">Title A–Z</option>
+            <option value="title-desc">Title Z–A</option>
+            <option value="collection-asc">Collection A–Z</option>
+            <option value="collection-desc">Collection Z–A</option>
+            <option value="active-first">Active First</option>
+            <option value="inactive-first">Inactive First</option>
+            <option value="most-used">Most Used</option>
+            <option value="updated-desc">Recently Updated</option>
+          </select>
+          <button class="btn-primary" id="new-link-btn"><i class="fas fa-plus"></i> New Link</button>
+        </div>
+      </header>
+
+      <div id="library-content" class="library-content">
+        <!-- Content rendered by JS -->
+      </div>
+    </main>
+
+    <!-- Edit Link Modal -->
+    <div id="link-modal" class="modal-overlay" style="display:none;">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="modal-title">New Link</h3>
+          <button class="modal-close" id="modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="modal-link-title">Title</label>
+            <input type="text" id="modal-link-title" placeholder="Link title">
+          </div>
+          <div class="form-group">
+            <label for="modal-link-url">URL</label>
+            <input type="url" id="modal-link-url" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label for="modal-link-image">Image URL</label>
+            <div class="image-input-row">
+              <input type="text" id="modal-link-image" placeholder="Image URL (optional)">
+              <button class="btn-secondary" id="modal-upload-btn"><i class="fas fa-upload"></i> Upload</button>
+              <button class="btn-secondary" id="modal-browse-btn"><i class="fas fa-images"></i> Browse</button>
+              <input type="file" id="modal-image-file" accept="image/*" style="display:none;">
+            </div>
+            <div id="modal-image-preview" class="modal-image-preview"></div>
+          </div>
+          <div class="form-group" id="modal-image-controls" style="display:none;">
+            <label>Image Position X</label>
+            <input type="range" id="modal-img-pos-x" min="0" max="100" value="50" class="form-range">
+            <label>Image Position Y</label>
+            <input type="range" id="modal-img-pos-y" min="0" max="100" value="50" class="form-range">
+            <label>Image Scale</label>
+            <input type="range" id="modal-img-scale" min="50" max="200" value="100" class="form-range">
+          </div>
+          <div class="form-group">
+            <label for="modal-link-collection">Collection</label>
+            <select id="modal-link-collection" class="form-select">
+              <!-- Options populated by JS -->
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" id="modal-cancel">Cancel</button>
+          <button class="btn-primary" id="modal-save">Save Link</button>
+        </div>
+      </div>
+    </div>
+    <!-- Add to Collection Modal -->
+    <div id="add-to-collection-modal" class="modal-overlay" style="display:none;">
+      <div class="modal" style="width:400px;">
+        <div class="modal-header">
+          <h3>Add to Collection</h3>
+          <button class="modal-close" id="atc-modal-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <p id="atc-link-name" style="font-size:0.85rem; color:#64748b; margin-bottom:12px;"></p>
+          <div id="atc-collections-list" class="atc-collections-list">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Media Library Modal (for browse) -->
+    <div id="media-library-modal" class="modal-overlay" style="display:none;">
+      <div class="modal modal-lg">
+        <div class="modal-header">
+          <h3>Media Library</h3>
+          <button class="modal-close" id="media-library-close"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+          <div id="media-library-content"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/pages/library.js"></script>
+</body>
+</html>

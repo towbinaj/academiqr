@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdnjs.cloudflare.com; img-src 'self' data: blob: https://*.supabase.co https://natzpfyxpuycsuuzbqrd.supabase.co; connect-src 'self' https://*.supabase.co; font-src fonts.gstatic.com cdnjs.cloudflare.com;">
+  <title>AcademiQR — Sign In</title>
+  <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png">
+  <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1A2F5B">
+  <link rel="stylesheet" href="/src/styles/base.css">
+  <link rel="stylesheet" href="/src/pages/login.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- Loading Screen -->
+    <div id="loading" class="loading-screen">
+      <div class="loading-spinner"></div>
+      <p>Loading AcademiQR...</p>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login" class="login-screen hidden">
+      <div class="login-card">
+
+        <!-- Logo -->
+        <div class="login-logo">
+          <img id="login-logo-img" alt="AcademiQR" src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png"
+               style="display: none;">
+          <h1 id="login-logo-fallback" class="login-title">AcademiQR</h1>
+        </div>
+        <p class="login-subtitle">Amplify your impact</p>
+
+        <!-- Messages -->
+        <div id="message"></div>
+
+        <!-- Google OAuth -->
+        <div class="oauth-section">
+          <button type="button" id="google-btn" class="oauth-btn google-btn">
+            <i class="fab fa-google"></i>
+            Continue with Google
+          </button>
+        </div>
+
+        <!-- Divider -->
+        <div class="divider"><span>or</span></div>
+
+        <!-- Email/Password Form -->
+        <form id="login-form">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" placeholder="Enter your email" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password" required autocomplete="current-password">
+            <!-- Password Requirements (shown in sign-up mode) -->
+            <div id="password-requirements" class="password-requirements hidden">
+              <div class="requirements-title">Password must contain:</div>
+              <ul class="requirements-list">
+                <li id="req-length" class="req-unmet">At least 8 characters</li>
+                <li id="req-uppercase" class="req-unmet">One uppercase letter</li>
+                <li id="req-lowercase" class="req-unmet">One lowercase letter</li>
+                <li id="req-number" class="req-unmet">One number</li>
+                <li id="req-special" class="req-unmet">One special character (!@#$%^&*)</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Remember Me -->
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="remember-me" checked>
+              <span>Remember me for 14 days</span>
+            </label>
+            <div class="remember-me-info">
+              Your email and login status are stored locally in your browser for 14 days.
+              This data stays on your device and is not shared.
+              <a href="#" id="privacy-link">Learn more</a>.
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn btn-primary btn-full" id="login-btn">
+            Sign In
+          </button>
+
+          <!-- Forgot Password -->
+          <div class="forgot-password" id="forgot-password-section">
+            <a href="#" id="forgot-link">Forgot your password?</a>
+          </div>
+
+          <!-- Toggle Sign Up / Sign In -->
+          <div class="toggle-auth">
+            <span id="toggle-text">Don't have an account? </span>
+            <a href="#" id="toggle-link">Sign Up</a>
+          </div>
+
+          <!-- Legal Links -->
+          <div class="legal-links">
+            <a href="/privacy.html" target="_blank">Privacy Policy</a>
+            <span>·</span>
+            <a href="/terms.html" target="_blank">Terms of Service</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+  <script type="module" src="/src/pages/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdnjs.cloudflare.com; img-src 'self' data: blob: https://*.supabase.co https://natzpfyxpuycsuuzbqrd.supabase.co; connect-src 'self' https://*.supabase.co; font-src fonts.gstatic.com cdnjs.cloudflare.com;">
+  <title>Page Not Found — AcademiQR</title>
+  <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #f8fafc;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .error-page {
+      text-align: center;
+      max-width: 480px;
+    }
+    .error-logo {
+      width: 120px;
+      margin-bottom: 24px;
+      opacity: 0.8;
+    }
+    .error-code {
+      font-size: 5rem;
+      font-weight: 700;
+      color: #1A2F5B;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .error-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1A2F5B;
+      margin-bottom: 12px;
+    }
+    .error-message {
+      font-size: 1rem;
+      color: #64748b;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+    .error-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.15s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #1A2F5B;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #152547;
+    }
+    .btn-secondary {
+      background: white;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+    }
+    .btn-secondary:hover {
+      background: #f1f5f9;
+    }
+  </style>
+</head>
+<body>
+  <div class="error-page">
+    <img src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png" alt="AcademiQR" class="error-logo">
+    <div class="error-code">404</div>
+    <h1 class="error-title">Page Not Found</h1>
+    <p class="error-message">The page you're looking for doesn't exist or has been moved. If you scanned a QR code, the collection may have been removed.</p>
+    <div class="error-actions">
+      <a href="/" class="btn btn-primary"><i class="fas fa-home"></i> Go Home</a>
+      <a href="javascript:history.back()" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Go Back</a>
+    </div>
+  </div>
+</body>
+</html>

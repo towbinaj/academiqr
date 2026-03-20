@@ -1,0 +1,392 @@
+/**
+ * Base Styles — Light theme matching v0.6.7
+ */
+@import './variables.css';
+
+/* ── Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--text-base);
+  line-height: var(--line-height-normal);
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Typography ── */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-semibold);
+  line-height: var(--line-height-tight);
+  color: var(--text-heading);
+}
+
+h1 { font-size: var(--text-3xl); }
+h2 { font-size: var(--text-2xl); }
+h3 { font-size: var(--text-xl); }
+h4 { font-size: var(--text-lg); }
+
+p {
+  color: var(--text-secondary);
+  line-height: var(--line-height-relaxed);
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}
+
+/* ── Form Elements (Light Theme) ── */
+input, textarea, select, button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+input, textarea, select {
+  background: #f8fafc;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px 16px;
+  color: var(--text-primary);
+  transition: all 0.2s;
+  width: 100%;
+  font-size: 16px;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+  border-color: #1A2F5B;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(26, 47, 91, 0.1);
+}
+
+input::placeholder, textarea::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── Buttons ── */
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-6);
+  font-weight: var(--font-medium);
+  transition: all var(--transition-fast);
+}
+
+.btn-primary {
+  background: #1A2F5B;
+  color: white;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: #152547;
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+/* ── Navigation Bar ── */
+.main-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  z-index: 100;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.nav-inner {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6);
+}
+
+.nav-brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1A2F5B;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-logo {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.nav-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: var(--font-medium);
+  transition: color var(--transition-fast);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.nav-link:hover {
+  color: #1A2F5B;
+  background: #f1f5f9;
+}
+
+.nav-link.active {
+  color: #1A2F5B;
+  font-weight: 600;
+  background: #eef2ff;
+}
+
+.nav-link i {
+  margin-right: 6px;
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-left: var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 1px solid #e2e8f0;
+}
+
+.btn-ghost {
+  background: none;
+  border: 1px solid #e2e8f0;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all var(--transition-fast);
+}
+
+.btn-ghost:hover {
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
+}
+
+/* ── Utility ── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ── Scrollbar (Light Theme) ── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* ── Dark Mode Overrides ── */
+[data-theme="dark"] body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .main-nav {
+  background: var(--bg-secondary);
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .nav-logo {
+  filter: brightness(0) invert(1);
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+  background: var(--bg-secondary);
+  border-color: var(--color-primary);
+}
+
+[data-theme="dark"] .btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .btn-ghost {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .btn-ghost:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .modal-overlay {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .modal {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .modal-header {
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .modal-header h3 {
+  color: var(--text-heading);
+}
+
+[data-theme="dark"] .modal-footer {
+  border-top-color: var(--border-color);
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .modal-close {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .modal-close:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* Bug 2: Blue labels unreadable in dark mode — use lighter blue */
+[data-theme="dark"] .nav-brand {
+  color: var(--color-primary-light);
+}
+
+[data-theme="dark"] .nav-link:hover,
+[data-theme="dark"] .nav-link.active {
+  color: var(--color-primary-light);
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .modal-body label {
+  color: var(--text-heading);
+}
+
+/* Bug 3: Color picker inputs invisible in dark mode */
+[data-theme="dark"] input[type="color"] {
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+}
+
+/* Date/time inputs: calendar icon and styling for dark mode */
+[data-theme="dark"] input[type="date"],
+[data-theme="dark"] input[type="time"],
+[data-theme="dark"] input[type="datetime-local"] {
+  color-scheme: dark;
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+/* Select dropdowns in dark mode */
+[data-theme="dark"] select {
+  color-scheme: dark;
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+/* ── Auto-Save Status Indicator ── */
+.auto-save-status {
+  display: inline-block;
+  font-size: 0.7rem;
+  margin-left: 8px;
+  vertical-align: middle;
+  transition: opacity 0.3s;
+}
+.auto-save-status:empty { display: none; }
+.auto-save-status.saving { color: var(--text-muted, #94a3b8); }
+.auto-save-status.saved { color: #22c55e; }
+.auto-save-status.error { color: #ef4444; }
+.auto-save-status.fade-out { opacity: 0; }
+
+/* ── Back Breadcrumb ── */
+.back-breadcrumb { margin-bottom: 12px; }
+.back-breadcrumb a {
+  font-size: 0.85rem;
+  color: var(--color-primary, #1A2F5B);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  transition: opacity 0.15s;
+}
+.back-breadcrumb a:hover { opacity: 0.7; }
+[data-theme="dark"] .back-breadcrumb a { color: #93c5fd !important; }

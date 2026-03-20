@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdnjs.cloudflare.com; img-src 'self' data: blob: https://*.supabase.co https://natzpfyxpuycsuuzbqrd.supabase.co; connect-src 'self' https://*.supabase.co; font-src fonts.gstatic.com cdnjs.cloudflare.com;">
+  <title>AcademiQR — Profile</title>
+  <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png">
+  <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#1A2F5B">
+  <script type="module" crossorigin src="/assets/profile-BMPvuR09.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/supabase-whCCoo43.js">
+  <link rel="modulepreload" crossorigin href="/assets/router-CHKU_QSV.js">
+  <link rel="modulepreload" crossorigin href="/assets/image-utils-gR03vQbS.js">
+  <link rel="modulepreload" crossorigin href="/assets/theme-toggle-yIlytQ8Y.js">
+  <link rel="stylesheet" crossorigin href="/assets/profile-DyYpvpl-.css">
+  <link rel="stylesheet" crossorigin href="/assets/base-9lKe5MTW.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top Nav -->
+    <nav id="main-nav" class="main-nav"></nav>
+
+    <!-- Profile Page -->
+    <main class="profile-page">
+      <div class="profile-container">
+        <div id="back-to-collection" class="back-breadcrumb" style="display:none;"></div>
+        <h1>Profile Settings</h1>
+        <p class="profile-subtitle">Manage your public profile and social links. These appear on all your collection pages.</p>
+
+        <!-- Profile Photo -->
+        <section class="profile-section">
+          <h3>Profile Photo</h3>
+          <div class="profile-photo-area">
+            <div class="profile-photo-preview" id="photo-preview">
+              <img id="photo-img" src="" alt="Profile" style="display:none;">
+              <div class="photo-placeholder" id="photo-placeholder">
+                <i class="fas fa-user"></i>
+              </div>
+            </div>
+            <div class="profile-photo-actions">
+              <input type="file" id="photo-upload" accept="image/jpeg,image/png,image/gif,image/webp" style="display:none;">
+              <div class="photo-btn-row">
+                <button class="btn-primary btn-sm" id="photo-upload-btn"><i class="fas fa-upload"></i> Upload</button>
+                <button class="btn-secondary btn-sm" id="photo-browse-btn"><i class="fas fa-images"></i> Browse</button>
+                <button class="btn-secondary btn-sm" id="photo-edit-btn" style="display:none;"><i class="fas fa-crop-alt"></i> Edit</button>
+                <button class="btn-danger btn-sm" id="photo-remove-btn" style="display:none;"><i class="fas fa-trash"></i> Remove</button>
+              </div>
+              <p class="photo-hint">Images are automatically compressed.</p>
+            </div>
+          </div>
+
+          <!-- Photo Edit Panel (hidden by default) -->
+          <div class="photo-edit-panel" id="photo-edit-panel" style="display:none;">
+            <div class="photo-edit-preview">
+              <div class="photo-edit-circle">
+                <img id="photo-edit-img" src="" alt="Edit preview">
+              </div>
+            </div>
+            <div class="photo-edit-controls">
+              <div class="form-group">
+                <label>Zoom <span id="zoom-value">100%</span></label>
+                <input type="range" id="photo-zoom" min="50" max="200" value="100">
+              </div>
+              <div class="form-group">
+                <label>Horizontal <span id="pan-x-value">50</span></label>
+                <input type="range" id="photo-pan-x" min="0" max="100" value="50">
+              </div>
+              <div class="form-group">
+                <label>Vertical <span id="pan-y-value">50</span></label>
+                <input type="range" id="photo-pan-y" min="0" max="100" value="50">
+              </div>
+              <div class="photo-edit-actions">
+                <button class="btn-primary btn-sm" id="photo-edit-save">Apply</button>
+                <button class="btn-secondary btn-sm" id="photo-edit-cancel">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Display Name -->
+        <section class="profile-section">
+          <h3>Display Name</h3>
+          <input type="text" id="display-name" placeholder="Your name" maxlength="100">
+        </section>
+
+        <!-- Username -->
+        <section class="profile-section">
+          <h3>Username</h3>
+          <p class="field-hint">Used in your public collection URLs: academiqr.com/u/<strong id="username-preview">your-username</strong>/collection</p>
+          <div class="username-input-row">
+            <span class="username-prefix">academiqr.com/u/</span>
+            <input type="text" id="username" placeholder="your-username" maxlength="30" pattern="[a-z0-9-]+">
+          </div>
+          <p id="username-status" class="username-status"></p>
+          <p id="username-locked-msg" class="username-locked-msg" style="display:none;">
+            <i class="fas fa-lock"></i> Your username is permanent and cannot be changed. It is used in all your public collection URLs.
+          </p>
+        </section>
+
+        <!-- Social Links -->
+        <section class="profile-section">
+          <h3>Social Links</h3>
+          <p class="section-hint">Add your social media links. These will appear as icons on your public pages.</p>
+          <div class="social-links-grid">
+            <div class="social-input-group">
+              <label><i class="fas fa-envelope"></i> Email</label>
+              <input type="email" id="social-email" placeholder="you@example.com">
+            </div>
+            <div class="social-input-group">
+              <label><i class="fab fa-instagram"></i> Instagram</label>
+              <input type="url" id="social-instagram" placeholder="https://instagram.com/yourprofile">
+            </div>
+            <div class="social-input-group">
+              <label><i class="fab fa-facebook"></i> Facebook</label>
+              <input type="url" id="social-facebook" placeholder="https://facebook.com/yourprofile">
+            </div>
+            <div class="social-input-group">
+              <label><i class="fab fa-x-twitter"></i> X (Twitter)</label>
+              <input type="url" id="social-twitter" placeholder="https://x.com/yourprofile">
+            </div>
+            <div class="social-input-group">
+              <label><i class="fab fa-linkedin"></i> LinkedIn</label>
+              <input type="url" id="social-linkedin" placeholder="https://linkedin.com/in/yourprofile">
+            </div>
+            <div class="social-input-group">
+              <label><i class="fab fa-youtube"></i> YouTube</label>
+              <input type="url" id="social-youtube" placeholder="https://youtube.com/@yourchannel">
+            </div>
+            <div class="social-input-group">
+              <label><i class="fab fa-tiktok"></i> TikTok</label>
+              <input type="url" id="social-tiktok" placeholder="https://tiktok.com/@yourprofile">
+            </div>
+            <div class="social-input-group">
+              <label><i class="fab fa-snapchat"></i> Snapchat</label>
+              <input type="url" id="social-snapchat" placeholder="https://snapchat.com/add/yourprofile">
+            </div>
+          </div>
+        </section>
+
+        <!-- Save -->
+        <div class="profile-save-area">
+          <button class="btn-primary btn-lg" id="save-profile-btn">
+            <i class="fas fa-save"></i> Save Profile
+          </button>
+        </div>
+
+        <!-- Data Export -->
+        <section class="profile-section">
+          <h3>Export Your Data
+            <span class="info-tooltip" tabindex="0">
+              <i class="fas fa-info-circle"></i>
+              <span class="info-tooltip-text">Includes: profile info, all collections &amp; settings, all links, saved themes, and analytics (page views &amp; link clicks).</span>
+            </span>
+          </h3>
+          <p>Download a copy of all your AcademiQR data.</p>
+          <div class="export-actions">
+            <button class="btn-secondary btn-sm" id="export-json-btn">
+              <i class="fas fa-code"></i> JSON
+            </button>
+            <button class="btn-secondary btn-sm" id="export-excel-btn">
+              <i class="fas fa-file-excel"></i> Excel
+            </button>
+            <button class="btn-secondary btn-sm" id="export-csv-btn">
+              <i class="fas fa-file-csv"></i> CSV
+            </button>
+          </div>
+        </section>
+
+        <!-- Danger Zone -->
+        <section class="profile-section danger-zone">
+          <h3>Danger Zone</h3>
+          <p>Permanently delete your account and all associated data. This action cannot be undone.</p>
+          <button class="btn-danger btn-sm" id="delete-account-btn">
+            <i class="fas fa-exclamation-triangle"></i> Delete Account
+          </button>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
