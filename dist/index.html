@@ -30,17 +30,32 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "AcademiQR",
-    "applicationCategory": "EducationalApplication",
-    "operatingSystem": "Web",
-    "description": "Create shareable QR code link collections for conferences, lectures, and academic presentations.",
-    "url": "https://academiqr.com",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    }
+    "@graph": [
+      {
+        "@type": "Organization",
+        "name": "AcademiQR",
+        "url": "https://academiqr.com",
+        "logo": "https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_wordmark_blue_logo_.png"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "AcademiQR",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Web",
+        "url": "https://academiqr.com",
+        "description": "Create shareable link collections with QR codes for conferences, lectures, and presentations.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      },
+      {
+        "@type": "WebSite",
+        "name": "AcademiQR",
+        "url": "https://academiqr.com"
+      }
+    ]
   }
   </script>
   <script type="module" crossorigin src="/assets/main-C1PTNlQp.js"></script>
