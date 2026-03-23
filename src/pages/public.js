@@ -177,7 +177,7 @@ async function loadLinks(collectionId) {
 async function loadProfile(ownerId) {
   const { data, error } = await supabase
     .from('profiles')
-    .select('display_name, profile_photo, profile_photo_position, social_email, social_instagram, social_facebook, social_twitter, social_linkedin, social_youtube, social_tiktok, social_snapchat')
+    .select('display_name, profile_photo, profile_photo_position, social_order, social_website, social_email, social_instagram, social_facebook, social_twitter, social_linkedin, social_youtube, social_tiktok, social_snapchat, social_google_scholar, social_orcid, social_researchgate')
     .eq('id', ownerId)
     .single()
 
@@ -296,8 +296,9 @@ function renderPage(collection, links, profile) {
   const panY = ((photoPosition.y || 50) - 50) * -1
 
   // Social links
-  const socials = [
+  const allSocials = [
     { key: 'social_email', icon: 'fa-envelope', prefix: 'mailto:', fab: false },
+    { key: 'social_website', icon: 'fa-globe', prefix: '', fab: false },
     { key: 'social_instagram', icon: 'fa-instagram', prefix: '', fab: true },
     { key: 'social_facebook', icon: 'fa-facebook', prefix: '', fab: true },
     { key: 'social_twitter', icon: 'fa-x-twitter', prefix: '', fab: true },
@@ -305,7 +306,28 @@ function renderPage(collection, links, profile) {
     { key: 'social_youtube', icon: 'fa-youtube', prefix: '', fab: true },
     { key: 'social_tiktok', icon: 'fa-tiktok', prefix: '', fab: true },
     { key: 'social_snapchat', icon: 'fa-snapchat', prefix: '', fab: true },
-  ].filter(s => p[s.key]?.trim())
+    { key: 'social_google_scholar', icon: 'fa-graduation-cap', prefix: '', fab: false },
+    { key: 'social_orcid', icon: 'fa-orcid', prefix: '', fab: true },
+    { key: 'social_researchgate', icon: 'fa-researchgate', prefix: '', fab: true },
+  ]
+
+  // Apply user's custom order if saved
+  const savedOrder = p.social_order
+  let socials
+  if (savedOrder && Array.isArray(savedOrder)) {
+    const ordered = []
+    for (const key of savedOrder) {
+      const s = allSocials.find(s => s.key === `social_${key}`)
+      if (s) ordered.push(s)
+    }
+    // Append any not in saved order
+    for (const s of allSocials) {
+      if (!ordered.includes(s)) ordered.push(s)
+    }
+    socials = ordered.filter(s => p[s.key]?.trim())
+  } else {
+    socials = allSocials.filter(s => p[s.key]?.trim())
+  }
 
   // Presentation data
   const title = pd.title || ''

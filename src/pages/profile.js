@@ -10,6 +10,7 @@ import { compressAndUpload, listUserImages, deleteUserImages } from '../shared/i
 import { initThemeToggle, toggleTheme, getCurrentTheme } from '../shared/theme-toggle.js'
 import { showToast } from '../shared/toast.js'
 import { createAutoSaver } from '../shared/auto-save.js'
+import Sortable from 'sortablejs'
 // XLSX is lazy-loaded only when user exports (297KB library)
 let XLSX = null
 async function loadXLSX() {
@@ -97,7 +98,7 @@ function renderNav() {
 async function loadProfile() {
   const { data, error } = await supabase
     .from('profiles')
-    .select('display_name, username, profile_photo, profile_photo_position, social_email, social_instagram, social_facebook, social_twitter, social_linkedin, social_youtube, social_tiktok, social_snapchat')
+    .select('display_name, username, profile_photo, profile_photo_position, social_order, social_website, social_email, social_instagram, social_facebook, social_twitter, social_linkedin, social_youtube, social_tiktok, social_snapchat, social_google_scholar, social_orcid, social_researchgate')
     .eq('id', user.id)
     .single()
 
@@ -144,10 +145,26 @@ function populateForm() {
   if (previewEl) previewEl.textContent = p.username || 'your-username'
 
   // Social links
-  const socials = ['email', 'instagram', 'facebook', 'twitter', 'linkedin', 'youtube', 'tiktok', 'snapchat']
+  const socials = ['email', 'website', 'instagram', 'facebook', 'twitter', 'linkedin', 'youtube', 'tiktok', 'snapchat', 'google_scholar', 'orcid', 'researchgate']
   for (const s of socials) {
     const el = document.getElementById(`social-${s}`)
     if (el) el.value = p[`social_${s}`] || ''
+  }
+
+  // Restore social link order
+  const grid = document.getElementById('social-links-grid')
+  if (grid && p.social_order && Array.isArray(p.social_order)) {
+    const items = [...grid.querySelectorAll('.social-input-group[data-social]')]
+    const ordered = []
+    for (const key of p.social_order) {
+      const item = items.find(el => el.dataset.social === key)
+      if (item) ordered.push(item)
+    }
+    // Append any remaining items not in the saved order
+    for (const item of items) {
+      if (!ordered.includes(item)) ordered.push(item)
+    }
+    for (const item of ordered) grid.appendChild(item)
   }
 
   // Photo
@@ -359,6 +376,43 @@ function normalizeUrl(value) {
   }
 }
 
+function isValidEmail(value) {
+  if (!value || !value.trim()) return true // empty is valid (optional field)
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+}
+
+function isValidUrl(value) {
+  if (!value || !value.trim()) return true // empty is valid (optional field)
+  let url = value.trim()
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url
+  }
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:'
+  } catch {
+    return false
+  }
+}
+
+function validateSocialInput(input, type) {
+  const value = input.value.trim()
+  if (!value) {
+    input.classList.remove('input-invalid')
+    input.removeAttribute('title')
+    return true
+  }
+  const valid = type === 'email' ? isValidEmail(value) : isValidUrl(value)
+  if (valid) {
+    input.classList.remove('input-invalid')
+    input.removeAttribute('title')
+  } else {
+    input.classList.add('input-invalid')
+    input.title = type === 'email' ? 'Please enter a valid email address' : 'Please enter a valid URL'
+  }
+  return valid
+}
+
 // ── Save Profile Data (shared by autosave and button) ──
 async function saveProfileData() {
   const displayName = document.getElementById('display-name')?.value?.trim() || ''
@@ -366,15 +420,24 @@ async function saveProfileData() {
   const finalUsername = profile?.username ? profile.username : username
 
   const socialData = {}
-  const socials = ['email', 'instagram', 'facebook', 'twitter', 'linkedin', 'youtube', 'tiktok', 'snapchat']
+  const socials = ['email', 'website', 'instagram', 'facebook', 'twitter', 'linkedin', 'youtube', 'tiktok', 'snapchat', 'google_scholar', 'orcid', 'researchgate']
   for (const s of socials) {
-    const val = document.getElementById(`social-${s}`)?.value?.trim() || ''
+    const el = document.getElementById(`social-${s}`)
+    const val = el?.value?.trim() || ''
     if (s === 'email') {
-      socialData[`social_${s}`] = val
+      // Only save if valid or empty
+      socialData[`social_${s}`] = isValidEmail(val) ? val : (profile?.[`social_${s}`] || '')
     } else {
-      socialData[`social_${s}`] = normalizeUrl(val)
+      // Only save if valid or empty
+      socialData[`social_${s}`] = isValidUrl(val) ? normalizeUrl(val) : (profile?.[`social_${s}`] || '')
     }
   }
+
+  // Get current social link order from DOM
+  const grid = document.getElementById('social-links-grid')
+  const socialOrder = grid
+    ? [...grid.querySelectorAll('.social-input-group[data-social]')].map(el => el.dataset.social)
+    : null
 
   const updates = {
     display_name: displayName,
@@ -386,6 +449,7 @@ async function saveProfileData() {
       y: photoState.y,
     }),
     ...socialData,
+    social_order: socialOrder,
     updated_at: new Date().toISOString(),
   }
 
@@ -717,9 +781,35 @@ function bindEvents() {
     return result
   }, { delay: 1500, statusSelector: '#profile-save-status' })
 
-  const autoSaveFields = ['display-name', 'social-email', 'social-instagram', 'social-facebook', 'social-twitter', 'social-linkedin', 'social-youtube', 'social-tiktok', 'social-snapchat']
+  const autoSaveFields = ['display-name', 'social-email', 'social-website', 'social-instagram', 'social-facebook', 'social-twitter', 'social-linkedin', 'social-youtube', 'social-tiktok', 'social-snapchat', 'social-google_scholar', 'social-orcid', 'social-researchgate']
   for (const id of autoSaveFields) {
-    document.getElementById(id)?.addEventListener('input', () => profileSaver.trigger())
+    const el = document.getElementById(id)
+    if (!el) continue
+    el.addEventListener('input', () => {
+      // Validate social inputs on each keystroke
+      if (id.startsWith('social-')) {
+        validateSocialInput(el, id === 'social-email' ? 'email' : 'url')
+      }
+      profileSaver.trigger()
+    })
+    // Also validate on blur for immediate feedback
+    if (id.startsWith('social-')) {
+      el.addEventListener('blur', () => {
+        validateSocialInput(el, id === 'social-email' ? 'email' : 'url')
+      })
+    }
+  }
+
+  // Social links drag-and-drop reordering
+  const socialGrid = document.getElementById('social-links-grid')
+  if (socialGrid) {
+    new Sortable(socialGrid, {
+      handle: '.social-drag-handle',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      dragClass: 'sortable-drag',
+      onEnd: () => profileSaver.trigger(),
+    })
   }
 
   // Explicit save button (also flushes any pending autosave)

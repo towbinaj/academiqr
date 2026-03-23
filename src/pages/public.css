@@ -205,6 +205,10 @@ body {
 .public-social-icon.social_youtube { background: #ff0000; }
 .public-social-icon.social_tiktok { background: #000000; }
 .public-social-icon.social_snapchat { background: #fffc00; color: #000; }
+.public-social-icon.social_website { background: #1A2F5B; }
+.public-social-icon.social_google_scholar { background: #4285f4; }
+.public-social-icon.social_orcid { background: #a6ce39; color: #fff; }
+.public-social-icon.social_researchgate { background: #00ccbb; }
 
 /* ── Presentation Info ── */
 .public-presentation {

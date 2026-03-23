@@ -916,6 +916,10 @@ select:focus {
 .phone-social-icon.social_youtube { background: #ff0000; }
 .phone-social-icon.social_tiktok { background: #000000; }
 .phone-social-icon.social_snapchat { background: #fffc00; color: #000; }
+.phone-social-icon.social_website { background: #1A2F5B; }
+.phone-social-icon.social_google_scholar { background: #4285f4; }
+.phone-social-icon.social_orcid { background: #a6ce39; color: #fff; }
+.phone-social-icon.social_researchgate { background: #00ccbb; }
 
 /* Presentation info */
 .phone-presentation {
@@ -1958,6 +1962,10 @@ select:focus {
     max-height: 80vh;
     width: 100%;
     max-width: 390px;
+    border-radius: 24px;
+    overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Preview FAB */

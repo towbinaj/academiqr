@@ -15,13 +15,14 @@
   <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer"></noscript>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#1A2F5B">
-  <script type="module" crossorigin src="/assets/profile-CxHqcfqW.js"></script>
+  <script type="module" crossorigin src="/assets/profile-03T5MpGm.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/supabase-whCCoo43.js">
   <link rel="modulepreload" crossorigin href="/assets/toast-C5Ve3yOU.js">
   <link rel="modulepreload" crossorigin href="/assets/image-utils-gR03vQbS.js">
   <link rel="modulepreload" crossorigin href="/assets/theme-toggle-D-yRes8V.js">
   <link rel="modulepreload" crossorigin href="/assets/auto-save-CVe8WLcj.js">
-  <link rel="stylesheet" crossorigin href="/assets/profile-DyYpvpl-.css">
+  <link rel="modulepreload" crossorigin href="/assets/sortable.esm-D-EvzYhP.js">
+  <link rel="stylesheet" crossorigin href="/assets/profile-CnzLfLhU.css">
   <link rel="stylesheet" crossorigin href="/assets/base-sPe8OZRE.css">
 </head>
 <body>
@@ -109,39 +110,55 @@
         <!-- Social Links -->
         <section class="profile-section">
           <h3>Social Links</h3>
-          <p class="section-hint">Add your social media links. These will appear as icons on your public pages.</p>
-          <div class="social-links-grid">
-            <div class="social-input-group">
-              <label><i class="fas fa-envelope"></i> Email</label>
+          <p class="section-hint">Add your social media links. Drag to reorder how they appear on your public pages.</p>
+          <div class="social-links-grid" id="social-links-grid">
+            <div class="social-input-group" data-social="email">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fas fa-envelope"></i> Email</label>
               <input type="email" id="social-email" placeholder="you@example.com">
             </div>
-            <div class="social-input-group">
-              <label><i class="fab fa-instagram"></i> Instagram</label>
+            <div class="social-input-group" data-social="website">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fas fa-globe"></i> Website URL</label>
+              <input type="url" id="social-website" placeholder="https://yourwebsite.com">
+            </div>
+            <div class="social-input-group" data-social="instagram">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fab fa-instagram"></i> Instagram</label>
               <input type="url" id="social-instagram" placeholder="https://instagram.com/yourprofile">
             </div>
-            <div class="social-input-group">
-              <label><i class="fab fa-facebook"></i> Facebook</label>
+            <div class="social-input-group" data-social="facebook">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fab fa-facebook"></i> Facebook</label>
               <input type="url" id="social-facebook" placeholder="https://facebook.com/yourprofile">
             </div>
-            <div class="social-input-group">
-              <label><i class="fab fa-x-twitter"></i> X (Twitter)</label>
+            <div class="social-input-group" data-social="twitter">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fab fa-x-twitter"></i> X (Twitter)</label>
               <input type="url" id="social-twitter" placeholder="https://x.com/yourprofile">
             </div>
-            <div class="social-input-group">
-              <label><i class="fab fa-linkedin"></i> LinkedIn</label>
+            <div class="social-input-group" data-social="linkedin">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fab fa-linkedin"></i> LinkedIn</label>
               <input type="url" id="social-linkedin" placeholder="https://linkedin.com/in/yourprofile">
             </div>
-            <div class="social-input-group">
-              <label><i class="fab fa-youtube"></i> YouTube</label>
+            <div class="social-input-group" data-social="youtube">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fab fa-youtube"></i> YouTube</label>
               <input type="url" id="social-youtube" placeholder="https://youtube.com/@yourchannel">
             </div>
-            <div class="social-input-group">
-              <label><i class="fab fa-tiktok"></i> TikTok</label>
+            <div class="social-input-group" data-social="tiktok">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fab fa-tiktok"></i> TikTok</label>
               <input type="url" id="social-tiktok" placeholder="https://tiktok.com/@yourprofile">
             </div>
-            <div class="social-input-group">
-              <label><i class="fab fa-snapchat"></i> Snapchat</label>
+            <div class="social-input-group" data-social="snapchat">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fab fa-snapchat"></i> Snapchat</label>
               <input type="url" id="social-snapchat" placeholder="https://snapchat.com/add/yourprofile">
+            </div>
+            <div class="social-input-group" data-social="google_scholar">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fas fa-graduation-cap"></i> Google Scholar</label>
+              <input type="url" id="social-google_scholar" placeholder="https://scholar.google.com/citations?user=yourID">
+            </div>
+            <div class="social-input-group" data-social="orcid">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fab fa-orcid"></i> ORCID</label>
+              <input type="url" id="social-orcid" placeholder="https://orcid.org/0000-0000-0000-0000">
+            </div>
+            <div class="social-input-group" data-social="researchgate">
+              <label><i class="fas fa-grip-vertical social-drag-handle"></i> <i class="fab fa-researchgate"></i> ResearchGate</label>
+              <input type="url" id="social-researchgate" placeholder="https://researchgate.net/profile/yourprofile">
             </div>
           </div>
         </section>
