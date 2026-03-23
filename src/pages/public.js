@@ -39,7 +39,7 @@ function setMetaTags(collection, profile) {
     : title
 
   // Profile photo for og:image
-  const ogImage = profile?.profile_photo || 'https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png'
+  const ogImage = profile?.profile_photo || 'https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png'
 
   // Page title
   document.title = `${title} | AcademiQR`

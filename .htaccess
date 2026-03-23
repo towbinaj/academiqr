@@ -5,11 +5,18 @@
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set X-XSS-Protection "1; mode=block"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
 </IfModule>
 
 # ── Force HTTPS ──
 <IfModule mod_rewrite.c>
   RewriteEngine On
+
+  # www to non-www redirect
+  RewriteCond %{HTTP_HOST} ^www\.academiqr\.com [NC]
+  RewriteRule ^(.*)$ https://academiqr.com/$1 [R=301,L]
+
+  # Force HTTPS
   RewriteCond %{HTTPS} off
   RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>

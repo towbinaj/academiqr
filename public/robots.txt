@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /src/pages/
+Sitemap: https://academiqr.com/sitemap.xml

@@ -18,8 +18,6 @@ const $ = (id) => document.getElementById(id)
 
 // ── Initialization ──
 async function init() {
-  console.log('[AcademiQR v1.0] Login page initializing...')
-
   const loadingEl = $('loading')
   const loginEl = $('login')
 
@@ -90,9 +88,11 @@ async function init() {
     // Fall through to show login
   }
 
-  // No session found — show login form
+  // No session found — show landing page + login form
   if (loadingEl) loadingEl.classList.add('hidden')
   if (loginEl) loginEl.classList.remove('hidden')
+  const landingEl = document.getElementById('landing')
+  if (landingEl) landingEl.classList.remove('hidden')
 
   // Logo load/error handlers (moved from inline HTML for CSP compliance)
   const logoImg = document.getElementById('login-logo-img')
@@ -118,7 +118,6 @@ async function init() {
   // Bind event listeners
   bindEvents()
 
-  console.log('[AcademiQR v1.0] Login page ready')
 }
 
 // ── Event Binding ──
@@ -405,8 +404,8 @@ async function handlePasswordResetCallback() {
 
   card.innerHTML = `
     <div class="login-logo">
-      <img alt="AcademiQR" src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png"
-           style="max-width: 180px; margin: 0 auto; display: block;">
+      <img alt="AcademiQR" src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png"
+           style="max-height: 80px; width: auto; margin: 0 auto; display: block;">
     </div>
     <h2 style="text-align:center; color:#1A2F5B; margin:16px 0 8px;">Set New Password</h2>
     <p style="text-align:center; color:#64748b; font-size:0.85rem; margin-bottom:20px;">Enter your new password below.</p>

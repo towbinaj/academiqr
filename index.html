@@ -4,19 +4,149 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdnjs.cloudflare.com; img-src 'self' data: blob: https://*.supabase.co https://natzpfyxpuycsuuzbqrd.supabase.co; connect-src 'self' https://*.supabase.co; font-src fonts.gstatic.com cdnjs.cloudflare.com;">
-  <title>AcademiQR — Sign In</title>
-  <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png">
-  <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png">
+  <title>AcademiQR — Shareable Link Collections for Conferences & Academia</title>
+  <meta name="description" content="Create shareable QR code link collections for conferences, lectures, and academic presentations. Organize your resources and share them instantly.">
+  <link rel="canonical" href="https://academiqr.com/">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://academiqr.com/">
+  <meta property="og:title" content="AcademiQR — Shareable Link Collections for Academia">
+  <meta property="og:description" content="Create QR code link collections for conferences and academic presentations. Share your resources instantly.">
+  <meta property="og:image" content="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="AcademiQR — Shareable Link Collections for Academia">
+  <meta name="twitter:description" content="Create QR code link collections for conferences and academic presentations.">
+  <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue_favicon.png" media="(prefers-color-scheme: light)">
+  <link rel="icon" type="image/png" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_white_.png" media="(prefers-color-scheme: dark)">
+  <link rel="apple-touch-icon" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png" as="image">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer"></noscript>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#1A2F5B">
   <link rel="stylesheet" href="/src/styles/base.css">
   <link rel="stylesheet" href="/src/pages/login.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "AcademiQR",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web",
+    "description": "Create shareable QR code link collections for conferences, lectures, and academic presentations.",
+    "url": "https://academiqr.com",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
 </head>
 <body>
+  <!-- Landing Page -->
+  <div id="landing" class="landing hidden">
+
+    <nav class="landing-nav">
+      <div class="landing-nav-inner">
+        <a href="/" class="landing-nav-logo">
+          <img src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png" alt="AcademiQR" class="landing-logo-icon" height="40" width="40">
+          <img src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_wordmark_blue_logo_.png" alt="AcademiQR" class="landing-logo-wordmark" height="40" width="149">
+        </a>
+        <a href="#signin" class="landing-nav-cta">Sign In</a>
+      </div>
+    </nav>
+
+    <section class="landing-hero">
+      <div class="landing-container">
+        <h1 class="landing-headline">Share Your Work, Instantly</h1>
+        <p class="landing-subheadline">Create clean, organized link collections with QR codes for conferences, lectures, and presentations, so your audience can access your papers, slides, datasets, and resources in seconds.</p>
+        <a href="#signin" class="landing-cta-btn">Get Started Free <i class="fas fa-arrow-right"></i></a>
+      </div>
+    </section>
+
+    <section class="landing-features">
+      <div class="landing-container">
+        <h2 class="landing-section-title">Everything You Need to Share Your Work</h2>
+        <div class="landing-features-grid">
+          <div class="landing-feature-card">
+            <div class="landing-feature-icon"><i class="fas fa-link"></i></div>
+            <h3>Link Collections</h3>
+            <p>Organize papers, datasets, videos, and other resources into a single page your audience can easily navigate.</p>
+          </div>
+          <div class="landing-feature-card">
+            <div class="landing-feature-icon"><i class="fas fa-id-card"></i></div>
+            <h3>Your Professional Profile</h3>
+            <p>Every collection includes your name, photo, and links to your professional profiles, so your audience knows who you are and how to connect with you after your talk.</p>
+          </div>
+          <div class="landing-feature-card">
+            <div class="landing-feature-icon"><i class="fas fa-palette"></i></div>
+            <h3>Custom Themes</h3>
+            <p>Create custom stylings to match the look and feel of your presentation, institution, or personal style.</p>
+          </div>
+          <div class="landing-feature-card">
+            <div class="landing-feature-icon"><i class="fas fa-qrcode"></i></div>
+            <h3>QR Code Generation</h3>
+            <p>Create QR codes for any collection. Add your logo, choose your styling, and download in multiple formats.</p>
+          </div>
+          <div class="landing-feature-card">
+            <div class="landing-feature-icon"><i class="fas fa-chalkboard-user"></i></div>
+            <h3>Conference Ready</h3>
+            <p>Add a QR code to your final slide and give your audience immediate access to everything behind your talk.</p>
+          </div>
+          <div class="landing-feature-card">
+            <div class="landing-feature-icon"><i class="fas fa-chart-line"></i></div>
+            <h3>Analytics</h3>
+            <p>See how your resources are used with simple tracking of page views and link clicks.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-steps">
+      <div class="landing-container">
+        <h2 class="landing-section-title">How It Works</h2>
+        <div class="landing-steps-grid">
+          <div class="landing-step">
+            <div class="landing-step-number">1</div>
+            <h3>Create a Collection</h3>
+            <p>Add your links, organize your content, and adjust the look to match your presentation or institution.</p>
+          </div>
+          <div class="landing-step">
+            <div class="landing-step-number">2</div>
+            <h3>Generate a QR Code</h3>
+            <p>Customize the design and download a QR code ready to drop into your slides or poster.</p>
+          </div>
+          <div class="landing-step">
+            <div class="landing-step-number">3</div>
+            <h3>Share at Your Event</h3>
+            <p>Your audience scans the code and gets access to your resources instantly.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="landing-final-cta">
+      <div class="landing-container">
+        <h2>Make Your Next Presentation More Useful</h2>
+        <p>Give your audience an easy way to access the work behind your talk, while they're still engaged.</p>
+        <p class="landing-cta-sub">Join researchers and educators using AcademiQR to share their work more effectively.</p>
+        <a href="#signin" class="landing-cta-btn">Create Your First Collection <i class="fas fa-arrow-right"></i></a>
+      </div>
+    </section>
+
+    <footer class="landing-footer">
+      <a href="/privacy.html">Privacy Policy</a>
+      <span>·</span>
+      <a href="/terms.html">Terms of Service</a>
+      <span>·</span>
+      <span>&copy; 2026 AcademiQR</span>
+    </footer>
+
+  </div>
+
   <div id="app">
 
     <!-- Loading Screen -->
@@ -26,16 +156,17 @@
     </div>
 
     <!-- Login Screen -->
+    <div id="signin"></div>
     <div id="login" class="login-screen hidden">
       <div class="login-card">
 
         <!-- Logo -->
         <div class="login-logo">
-          <img id="login-logo-img" alt="AcademiQR" src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png"
-               style="display: none;">
-          <h1 id="login-logo-fallback" class="login-title">AcademiQR</h1>
+          <img id="login-logo-img" alt="AcademiQR" src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png"
+               style="max-height: 80px; width: auto;">
+          <p class="login-tagline">Share your work, instantly</p>
         </div>
-        <p class="login-subtitle">Amplify your impact</p>
+        <p class="login-subtitle">Share your work, instantly</p>
 
         <!-- Messages -->
         <div id="message"></div>

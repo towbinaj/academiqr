@@ -255,7 +255,6 @@ async function init() {
     title: collection.presentation_data?.title || 'Untitled Collection',
   }))
 
-  console.log(`[AcademiQR v1.0] Editor loaded: "${collection.presentation_data?.title || 'Untitled'}" with ${links.length} links`)
 }
 
 // ── Nav ──
@@ -264,7 +263,10 @@ function renderNav() {
   if (!nav) return
   nav.innerHTML = `
     <div class="nav-inner">
-      <a href="/src/pages/dashboard.html" class="nav-brand"><img src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png" alt="AcademiQR" class="nav-logo"></a>
+      <a href="/src/pages/dashboard.html" class="nav-brand">
+            <img src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png" alt="AcademiQR" class="nav-logo-icon" width="40" height="40" data-light="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png" data-dark="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_white_.png">
+            <img src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_wordmark_blue_logo_.png" alt="" class="nav-logo-wordmark" width="200" height="40" data-light="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_wordmark_blue_logo_.png" data-dark="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_wordmark_white_logo_.png">
+          </a>
       <div class="nav-links">
         <a href="/src/pages/dashboard.html" class="nav-link"><i class="fas fa-th-large"></i> My Collections</a>
         <a href="/src/pages/library.html" class="nav-link"><i class="fas fa-link"></i> Link Library</a>
@@ -303,7 +305,6 @@ async function loadCollection(id) {
 
     if (error) throw error
     collection = data
-    console.log('[Editor] Collection loaded:', collection?.id)
   } catch (error) {
     console.error('Failed to load collection:', error)
     collection = null

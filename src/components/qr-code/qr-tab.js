@@ -6,8 +6,9 @@
 import { supabase } from '../../shared/supabase.js'
 import { getPublicUrl } from '../../shared/router.js'
 import { createAutoSaver, registerAutoSaver } from '../../shared/auto-save.js'
+import { showToast } from '../../shared/toast.js'
 
-const LOGO_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png'
+const LOGO_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png'
 const CONTAINER_SIZE = 250
 const QR_PADDING = 16
 const BORDER_WIDTH = 8
@@ -325,7 +326,7 @@ async function saveQRTheme(container, userId, publicUrl) {
   const nameInput = container.querySelector('#qr-theme-name')
   const themeName = nameInput?.value?.trim()
   if (!themeName) {
-    alert('Please enter a QR theme name')
+    showToast('Please enter a QR theme name', 'warning')
     return
   }
 
@@ -418,7 +419,7 @@ function handleLogoUpload(container, publicUrl, e) {
   if (!file) return
 
   if (file.size > 5 * 1024 * 1024) {
-    alert('Logo must be under 5 MB')
+    showToast('Logo must be under 5 MB', 'warning')
     e.target.value = ''
     return
   }

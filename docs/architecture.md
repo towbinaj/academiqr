@@ -1,57 +1,75 @@
-# AcademiQR v1.0 — Architecture
+# AcademiQR v1.1 — Architecture
 
 ## Overview
 
-AcademiQR is a link-in-bio platform for academics and conference presenters. Users create themed link collections, generate QR codes, and share them via short URLs. Built as a vanilla JS SPA with Supabase backend, deployed to GoDaddy cPanel.
+AcademiQR is a link-in-bio platform for academics and conference presenters. Users create themed link collections, generate QR codes, and share them via short URLs. Built as a vanilla JS multi-page app with Supabase backend, deployed to GoDaddy cPanel.
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Vanilla ES6+ modules, HTML5, CSS3 (custom properties) |
-| Build | Vite (code-splitting, asset hashing) |
-| Backend | Supabase (Auth, PostgreSQL, Storage) |
+| Build | Vite (code-splitting, asset hashing, MPA mode) |
+| Backend | Supabase (Auth, PostgreSQL, Storage, RLS) |
 | Auth | Email/password + Google OAuth via Supabase Auth |
 | Hosting | GoDaddy cPanel (Apache) |
 | Icons | Font Awesome 6.4.2 (CDN) |
 | Fonts | Inter (Google Fonts) |
 | QR | qrcode.min.js (CDN) |
 | Export | SheetJS (XLSX) bundled via Vite |
+| Drag & Drop | SortableJS (dashboard collection reordering) |
 
 ## Project Structure
 
 ```
 academiqr-v1/
-├── src/                    # Source code (gitignored, local only)
-│   ├── main.js             # App bootstrap, auth, routing
+├── src/
 │   ├── pages/
-│   │   ├── dashboard.js    # Collection grid, search, create
-│   │   ├── editor.js       # 3-column collection editor
-│   │   ├── library.js      # Link library table, bulk ops
-│   │   └── profile.js      # User settings, export, delete
-│   ├── public.js           # Public collection view + analytics
-│   ├── router.js           # Client-side page routing
-│   ├── supabase.js         # Supabase client init
-│   ├── image-utils.js      # Upload, compress, crop
-│   ├── link-utils.js       # Link resolution, overrides
-│   └── theme-toggle.js     # Dark/light mode
-├── dist/                   # Built output (committed for cPanel deploy)
-│   ├── index.html          # Login entry point
-│   ├── public.html         # Public collection view
-│   ├── privacy.html        # Privacy policy
-│   ├── terms.html          # Terms of service
-│   ├── 404.html            # Error page
-│   ├── manifest.json       # PWA manifest
-│   ├── sw.js               # Service worker
-│   ├── og.php              # Open Graph metadata
-│   ├── .htaccess           # Apache routing & security
-│   ├── src/pages/*.html    # Authenticated page templates
-│   └── assets/             # Vite-hashed JS/CSS bundles
-├── migrations/             # SQL schema changes
-├── docs/                   # Project documentation
-├── CLAUDE.md               # AI dev instructions
-├── DEPLOYMENT_GUIDE.md     # cPanel deploy procedure
-└── .env.local              # Supabase keys (gitignored)
+│   │   ├── dashboard.html/js/css  # Collection grid, search, tag filter, drag reorder
+│   │   ├── editor.html/js/css     # 3-column collection editor (mobile: bottom tab bar)
+│   │   ├── library.html/js/css    # Link library table, bulk ops, pagination
+│   │   ├── profile.html/js/css    # User settings, export, delete account
+│   │   ├── login.css              # Login page styles (HTML is index.html)
+│   │   ├── login.js               # Login/register logic
+│   │   ├── public.css             # Public collection view styles
+│   │   └── public.js              # Public collection view + analytics
+│   ├── shared/
+│   │   ├── auth.js                # Auth guard, session check
+│   │   ├── auto-save.js           # Debounced auto-save for editor/profile
+│   │   ├── image-utils.js         # Upload, compress, crop
+│   │   ├── link-utils.js          # Link resolution, overrides
+│   │   ├── rate-limit.js          # Client-side rate limiting
+│   │   ├── router.js              # Client-side page navigation
+│   │   ├── security.js            # CSP, input sanitization
+│   │   ├── state.js               # Shared state management
+│   │   ├── supabase.js            # Supabase client init
+│   │   ├── tag-utils.js           # Tag normalization, autocomplete, CRUD
+│   │   ├── theme-toggle.js        # Dark/light mode
+│   │   ├── toast.js               # Toast notification system
+│   │   └── utils.js               # General utilities
+│   ├── components/
+│   │   ├── analytics/analytics-tab.js  # Analytics tab in editor
+│   │   └── qr-code/qr-tab.js          # QR code tab in editor
+│   └── styles/
+│       ├── base.css               # Global styles, nav, shared components
+│       └── variables.css          # CSS custom properties, dark mode overrides
+├── dist/                          # Built output (committed for cPanel deploy)
+│   ├── index.html                 # Login entry point
+│   ├── public.html                # Public collection view
+│   ├── privacy.html               # Privacy policy
+│   ├── terms.html                 # Terms of service
+│   ├── 404.html                   # Error page
+│   ├── manifest.json              # PWA manifest
+│   ├── sw.js                      # Service worker
+│   ├── og.php                     # Open Graph metadata
+│   ├── .htaccess                  # Apache routing & security
+│   ├── src/pages/*.html           # Authenticated page templates
+│   └── assets/                    # Vite-hashed JS/CSS bundles
+├── migrations/                    # SQL schema changes
+├── docs/                          # Project documentation
+├── CLAUDE.md                      # AI dev instructions
+├── DEPLOYMENT_GUIDE.md            # cPanel deploy procedure
+└── .env.local                     # Supabase keys (gitignored)
 ```
 
 ## Database Schema (Supabase PostgreSQL)
@@ -76,7 +94,9 @@ academiqr-v1/
 | slug | TEXT | URL-safe, unique per user |
 | description | TEXT | |
 | theme | JSONB | backgroundType, backgroundImage, accentColor, buttonStyle, etc. |
-| passkey | TEXT | Optional plain-text access control |
+| presentation_data | JSONB | tags[], conference, location, date, show_title, show_conference |
+| passkey | TEXT | Optional plain-text access code for presentation sharing |
+| order_index | INT | Dashboard card position (drag-and-drop) |
 | created_at | TIMESTAMPTZ | |
 | updated_at | TIMESTAMPTZ | |
 
@@ -94,6 +114,7 @@ academiqr-v1/
 | image_scale | FLOAT | |
 | sort_order | INT | Position within collection |
 | is_active | BOOLEAN | |
+| tags | TEXT[] | Array of lowercase tag strings |
 | source_link_id | UUID (FK → link_items, ON DELETE SET NULL) | Points to library original |
 | use_library_defaults | BOOLEAN | If true, inherit title/image from source |
 | custom_overrides | JSONB | Per-collection title/image overrides |
@@ -115,11 +136,11 @@ academiqr-v1/
 Each page is a standalone Vite entry point that lazy-loads its own JS/CSS bundle:
 
 ```
-Login (index.html) ─── main.js ─── supabase.js, router.js
-Dashboard ─────────── dashboard.js ─── supabase, router, theme-toggle
-Editor ────────────── editor.js ──── supabase, router, image-utils, link-utils, theme-toggle
-Library ───────────── library.js ─── supabase, router, image-utils, link-utils, theme-toggle
-Profile ───────────── profile.js ─── supabase, router, image-utils, theme-toggle
+Login (index.html) ─── login.js ─── supabase, router, theme-toggle
+Dashboard ─────────── dashboard.js ─── supabase, router, theme-toggle, tag-utils, toast, state
+Editor ────────────── editor.js ──── supabase, router, image-utils, link-utils, theme-toggle, tag-utils, toast, auto-save, state
+Library ───────────── library.js ─── supabase, router, image-utils, link-utils, theme-toggle, tag-utils, toast
+Profile ───────────── profile.js ─── supabase, router, image-utils, theme-toggle, toast, auto-save
 Public ────────────── public.js ──── supabase (analytics only)
 ```
 
@@ -129,7 +150,7 @@ Public ────────────── public.js ──── supabas
 |------------|-------------|
 | `/` | `index.html` (login) |
 | `/src/pages/dashboard.html` | Dashboard |
-| `/src/pages/editor.html?collection=ID` | Collection editor |
+| `/src/pages/editor.html?id=UUID` | Collection editor |
 | `/src/pages/library.html` | Link library |
 | `/src/pages/profile.html` | Profile settings |
 | `/u/{username}/{slug}` | `.htaccess` rewrites to `public.html?username=X&slug=Y` |
@@ -138,7 +159,7 @@ Public ────────────── public.js ──── supabas
 
 1. User submits email/password or clicks Google OAuth
 2. Supabase returns session token
-3. Token stored in memory; email cached in localStorage if "Remember me" checked
+3. Token stored in localStorage via Supabase JS client
 4. Each authenticated page checks session on load → redirects to login if expired
 5. Rate limiting: 5 attempts/hour with 15-minute lockout (client + server)
 
@@ -152,6 +173,14 @@ Links support a 3-tier override system:
 
 Resolution order: custom_overrides → source link (if use_library_defaults) → own columns.
 
+## Tag System
+
+Tags are stored in two places:
+- **Collections**: `presentation_data.tags[]` in `link_lists` (JSONB array)
+- **Links**: `tags` column in `link_items` (TEXT[] Postgres array)
+
+Tags are normalized to lowercase. The autocomplete pool is built dynamically from all existing tags across the user's collections and links. Dashboard supports filtering by tag (disables drag-and-drop while filtered).
+
 ## Deployment Pipeline
 
 ```
@@ -163,3 +192,11 @@ Local dev (src/) → npx vite build → dist/ → git push → cPanel pull → .
 - **Hashed assets** (JS/CSS): Cache-Control max-age 1 year
 - **HTML pages**: No cache (immediate updates on deploy)
 - **Service Worker**: Cache-first for static assets, network-first for HTML
+
+## Security
+
+- **CSP**: Restricts scripts to self + cdnjs, connections to self + Supabase
+- **RLS**: All Supabase tables use Row Level Security scoped to `auth.uid()`
+- **Auth tokens**: Managed by Supabase JS client in localStorage, mitigated by CSP
+- **Input sanitization**: Via `security.js` shared module
+- **Rate limiting**: Client-side via `rate-limit.js`

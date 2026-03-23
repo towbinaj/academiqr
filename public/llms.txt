@@ -1,0 +1,18 @@
+# AcademiQR
+
+> AcademiQR is a link-sharing platform for academics and conference presenters. Create themed link collections with QR codes to share research papers, datasets, and resources at conferences and lectures.
+
+## Features
+- Create themed link collections for conferences and presentations
+- Generate customizable QR codes with logo overlay
+- Share via short URLs (academiqr.com/u/username/collection)
+- Track page views and link click analytics
+- Reusable link library across collections
+- Passkey-protected collections for controlled access
+- Dark/light mode support
+- Data export (JSON, Excel, CSV)
+
+## Links
+- Homepage: https://academiqr.com
+- Privacy Policy: https://academiqr.com/privacy.html
+- Terms of Service: https://academiqr.com/terms.html

@@ -1,0 +1,94 @@
+AcademiQR — App Description
+============================
+
+What It Is
+----------
+AcademiQR is a free web platform that helps academics, researchers, and conference presenters share resources with their audience using QR codes and themed link collections.
+
+The Problem It Solves
+---------------------
+When you give a talk at a conference, you want your audience to access your papers, datasets, slides, and related resources. Today, most presenters either:
+- Put individual URLs on their slides (nobody types those)
+- Email a list after the talk (most people never open it)
+- Use a generic link-in-bio tool that wasn't designed for academic use
+
+AcademiQR gives presenters a purpose-built solution: create a collection of links, customize it with your branding, generate a QR code, put it on your last slide, and your audience has instant access to everything.
+
+How It Works
+------------
+1. Create a collection — add links to your papers, datasets, videos, websites, or any online resource
+2. Customize the theme — choose colors, backgrounds, button styles, and layout to match your presentation or institution branding
+3. Generate a QR code — customize the QR code with your logo, colors, and borders, then download it for your slides
+4. Share at your event — your audience scans the QR code and lands on a clean, branded page with all your resources
+
+Key Features
+------------
+- Link Collections: Organize papers, datasets, videos, and resources into themed collections
+- QR Code Generation: Fully customizable QR codes with logo overlay, custom colors, borders, and export to PNG/JPEG/SVG
+- Short URLs: Every collection gets a clean URL at academiqr.com/u/yourname/collection-slug
+- Link Library: Reuse the same links across multiple collections (e.g., your CV link appears in every talk)
+- Per-Collection Overrides: Customize how a shared link appears in each collection (different title/image per talk)
+- Analytics: Track page views and link clicks per collection to see which resources your audience values most
+- Conference Metadata: Tag collections with conference name, event, location, and date
+- Tags: Organize collections and links with user-defined tags for easy filtering
+- Passkey Protection: Set a simple access code to share during your presentation (audience types it to view the collection)
+- Collection Templates: Quick-start templates for common presentation types
+- Profile Page: Display name, photo, and social links (8 platforms) on every collection
+- Data Export: Download your data as JSON, Excel (XLSX), or CSV at any time
+- Dark/Light Mode: Toggle between themes
+- Drag-and-Drop: Reorder links within collections and collections on your dashboard
+- Collection Duplication: Clone a collection as a starting point for a new talk
+- Mobile Responsive: Works on phones and tablets for both presenters and audience
+
+Who It's For
+------------
+- Conference presenters sharing papers and supplementary materials
+- Visiting professors sharing lecture resources with host institutions
+- Researchers sharing datasets, code repositories, and publications
+- Educators sharing course materials and reading lists
+- Medical professionals sharing clinical guidelines and references at grand rounds
+- Anyone who presents academic or professional content and wants an easy way to share links
+
+What Makes It Different from Linktree/Similar Tools
+----------------------------------------------------
+- Conference/event metadata (not just a list of links)
+- Per-collection customization (each talk gets its own themed page, not one page for everything)
+- Link library with reuse across collections (add a paper once, use it in 10 talks)
+- QR code generation built-in (no need for a separate QR tool)
+- Passkey protection for controlling access during live presentations
+- Analytics per collection (know which talk's resources got the most engagement)
+- Academic-first design (conference name, event fields, research-oriented templates)
+- Free to use
+
+Tech Stack (for reference)
+--------------------------
+- Frontend: Vanilla JavaScript (ES6+), HTML5, CSS3
+- Backend: Supabase (PostgreSQL, Auth, Storage)
+- Hosting: GoDaddy cPanel
+- Build: Vite
+- Live at: https://academiqr.com
+
+Current Landing Page Copy
+-------------------------
+Hero: "Share Your Research, Instantly"
+Subheadline: "Create beautiful link collections with QR codes for conferences, lectures, and academic presentations. Your audience scans — and gets instant access to all your resources."
+
+Feature highlights:
+1. QR Code Generation — Generate customizable QR codes for any collection
+2. Link Collections — Organize papers, datasets, videos, and resources into themed collections
+3. Conference Ready — Put a QR code on your last slide
+4. Analytics — Track page views and link clicks
+
+How It Works:
+1. Create a Collection
+2. Generate a QR Code
+3. Share at Your Event
+
+CTA: "Ready to Amplify Your Impact?"
+
+Brand Colors
+------------
+Primary: #1A2F5B (dark navy)
+Accent: #2E86AB (bright blue)
+Background: #FFFFFF / #0F172A (light/dark mode)
+Font: Inter (Google Fonts)

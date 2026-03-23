@@ -1816,20 +1816,38 @@ select:focus {
 }
 
 @media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+  }
   .editor-layout {
     grid-template-columns: 1fr;
-    height: calc(100vh - var(--nav-height) - 56px); /* account for bottom tab bar */
+    height: auto;
+    min-height: calc(100vh - var(--nav-height));
+    padding-bottom: 60px; /* space for bottom tab bar */
+    overflow-x: hidden;
+    width: 100%;
+  }
+  .editor-main {
+    overflow-x: hidden;
+    width: 100%;
+    min-width: 0;
   }
   .editor-sidebar {
-    max-height: 140px;
+    max-height: none;
     border-right: none;
     border-bottom: 1px solid #e2e8f0;
-    overflow: hidden;
+    overflow-x: hidden;
   }
   .editor-sidebar-header {
-    padding: 10px 16px;
+    padding: 8px 16px;
   }
   .editor-sidebar-header .back-link {
+    margin-bottom: 2px;
+    font-size: 0.75rem;
+  }
+  #collection-title {
+    font-size: 1rem;
     margin-bottom: 4px;
   }
   .links-list {
@@ -1844,24 +1862,26 @@ select:focus {
   .link-item {
     flex-shrink: 0;
     min-width: auto;
-    padding: 8px 12px;
-    font-size: 0.75rem;
-    gap: 6px;
+    padding: 6px 10px;
+    font-size: 0.7rem;
+    gap: 4px;
+    border-radius: 6px;
   }
   .link-thumb { display: none; }
   .link-item-text { white-space: nowrap; }
   .sidebar-actions {
     display: flex;
     flex-direction: row;
-    padding: 4px 12px;
+    padding: 4px 12px 8px;
     gap: 6px;
   }
   .sidebar-actions button {
-    font-size: 0.75rem;
-    padding: 6px 10px;
+    font-size: 0.7rem;
+    padding: 5px 8px;
   }
-  .editor-tabs { display: none; }
-  .tab-content { padding: 16px; }
+  /* Hide desktop tabs — mobile uses bottom tab bar */
+  .tab-bar { display: none !important; }
+  .tab-content { padding: 12px 16px; }
   .nav-email { display: none; }
   .collection-meta { display: none; }
 

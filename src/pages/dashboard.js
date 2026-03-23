@@ -22,8 +22,6 @@ async function init() {
   user = await requireAuth()
   if (!user) return
 
-  console.log('[AcademiQR v1.0] Dashboard loaded')
-
   renderNav()
   await loadCollections()
   renderCollections()
@@ -162,7 +160,10 @@ function renderNav() {
 
   nav.innerHTML = `
     <div class="nav-inner">
-      <a href="/src/pages/dashboard.html" class="nav-brand"><img src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_Dark.png" alt="AcademiQR" class="nav-logo"></a>
+      <a href="/src/pages/dashboard.html" class="nav-brand">
+            <img src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png" alt="AcademiQR" class="nav-logo-icon" width="40" height="40" data-light="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png" data-dark="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_white_.png">
+            <img src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_wordmark_blue_logo_.png" alt="" class="nav-logo-wordmark" width="200" height="40" data-light="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_wordmark_blue_logo_.png" data-dark="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_wordmark_white_logo_.png">
+          </a>
       <div class="nav-links">
         <a href="/src/pages/library.html" class="nav-link">
           <i class="fas fa-link"></i> Link Library
@@ -241,8 +242,6 @@ async function loadCollections() {
         collection._linkCount = 0
       }
     }))
-
-    console.log(`[AcademiQR v1.0] Loaded ${collections.length} collections`)
 
   } catch (error) {
     console.error('Failed to load collections:', error)
@@ -590,7 +589,6 @@ async function handleReorderEnd() {
         .update({ order_index: c.order_index })
         .eq('id', c.id)
     }))
-    console.log('[AcademiQR v1.0] Collection order saved')
   } catch (error) {
     console.error('Failed to save order:', error)
   }
