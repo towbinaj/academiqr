@@ -1046,7 +1046,7 @@ async function handleLinkImageUpload(e) {
     }
 
     // Compress and upload to Supabase Storage
-    const publicUrl = await compressAndUpload(file, 'links', user.id, { maxWidth: 2000, maxHeight: 2000 })
+    const publicUrl = await compressAndUpload(file, 'links', user.id, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 })
 
     const imageInput = document.getElementById('link-image')
     if (imageInput) imageInput.value = publicUrl
@@ -2477,7 +2477,7 @@ function bindEvents() {
     const originalHtml = btn?.innerHTML
     try {
       if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>' }
-      const publicUrl = await compressAndUpload(file, 'links', user.id, { maxWidth: 2000, maxHeight: 2000 })
+      const publicUrl = await compressAndUpload(file, 'links', user.id, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 })
       document.getElementById('new-link-image').value = publicUrl
     } catch (err) {
       console.error('Upload failed:', err)
