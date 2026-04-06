@@ -78,8 +78,8 @@ function setMetaTags(collection, profile) {
   descEl.setAttribute('content', description)
 }
 
-function imageTransformCSS(x = 50, y = 50, scale = 100) {
-  return `translate(${(x - 50) * 1.5}%, ${(y - 50) * 1.5}%) scale(${scale / 100})`
+function imageStyleAttrs(x = 50, y = 50, scale = 100) {
+  return `object-position: ${x}% ${y}%; transform: scale(${scale / 100}); transform-origin: ${x}% ${y}%;`
 }
 
 // ── Theme Normalization (matches editor.js) ──
@@ -389,7 +389,7 @@ function renderPage(collection, links, profile) {
             ` : links.map(link => {
               const pos = getDisplayImagePosition(link)
               const sc = getDisplayImageScale(link)
-              const imgTransform = imageTransformCSS(pos.x, pos.y, sc)
+              const imgStyle = imageStyleAttrs(pos.x, pos.y, sc)
               const linkImgUrl = getDisplayImageUrl(link)
               const linkTitle = getDisplayTitle(link) || 'Untitled'
 
@@ -400,7 +400,7 @@ function renderPage(collection, links, profile) {
                     <div class="public-link-image-wrapper">
                       <div class="public-link-image">
                         <img src="${escapeHtml(linkImgUrl)}" alt=""
-                             style="transform: ${imgTransform};"
+                             style="${imgStyle}"
                              onerror="this.parentElement.innerHTML='<i class=\\'fas fa-link\\' style=\\'color:#6b7280\\'></i>'">
                       </div>
                     </div>

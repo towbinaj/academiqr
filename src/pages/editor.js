@@ -68,8 +68,8 @@ function showSaveSuccess(buttonId) {
   setTimeout(() => { btn.textContent = orig }, 1500)
 }
 
-function imageTransformCSS(x = 50, y = 50, scale = 100) {
-  return `translate(${(x - 50) * 1.5}%, ${(y - 50) * 1.5}%) scale(${scale / 100})`
+function imageStyleAttrs(x = 50, y = 50, scale = 100) {
+  return `object-position: ${x}% ${y}%; transform: scale(${scale / 100}); transform-origin: ${x}% ${y}%;`
 }
 
 function setupSectionToggle(container) {
@@ -666,7 +666,7 @@ function renderDetailsTab(container) {
             ${currentImageUrl ? `
               <div class="image-preview" style="margin-top:12px;">
                 <img src="${escapeHtml(currentImageUrl)}" alt="Preview"
-                     style="transform: ${imageTransformCSS(imgPos.x, imgPos.y, imgScale)};"
+                     style="${imageStyleAttrs(imgPos.x, imgPos.y, imgScale)}"
                      onerror="this.style.display='none'">
               </div>
               ${!usingDefaults ? `
@@ -1094,7 +1094,7 @@ function updateLinkImagePreview() {
   // Update the inline preview (square crop — matches phone preview transform)
   const previewImg = document.querySelector('.image-preview img')
   if (previewImg) {
-    previewImg.style.transform = imageTransformCSS(x, y, scale)
+    previewImg.style.cssText = imageStyleAttrs(x, y, scale)
   }
 
   renderPreview()
@@ -1790,7 +1790,7 @@ function renderPreview(themeOverride) {
           // Calculate link image transform — use resolved values for library-linked links
           const pos = getDisplayImagePosition(link)
           const sc = getDisplayImageScale(link)
-          const imgTransform = imageTransformCSS(pos.x, pos.y, sc)
+          const imgStyle = imageStyleAttrs(pos.x, pos.y, sc)
           const linkImgUrl = getDisplayImageUrl(link)
           const linkTitle = getDisplayTitle(link) || 'Untitled'
 
@@ -1800,7 +1800,7 @@ function renderPreview(themeOverride) {
                 <div class="phone-link-image-wrapper">
                   <div class="phone-link-image">
                     <img src="${escapeHtml(linkImgUrl)}" alt=""
-                      style="transform: ${imgTransform};"
+                      style="${imgStyle}"
                       onerror="this.parentElement.innerHTML='<i class=\\'fas fa-link\\' style=\\'color:#6b7280\\'></i>'">
                   </div>
                 </div>
