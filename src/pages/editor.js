@@ -404,6 +404,7 @@ function renderLinksList() {
         ${getDisplayImageUrl(link) ? `
           <div class="link-thumb">
             <img src="${escapeHtml(getDisplayImageUrl(link))}" alt="" loading="lazy"
+                 style="${imageStyleAttrs(getDisplayImagePosition(link).x, getDisplayImagePosition(link).y, getDisplayImageScale(link))}"
                  onerror="this.parentElement.innerHTML='<i class=\\'fas fa-image\\'></i>'">
           </div>
         ` : `
