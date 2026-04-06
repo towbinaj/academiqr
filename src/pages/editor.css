@@ -1019,11 +1019,8 @@ select:focus {
   width: 100% !important;
   height: 100% !important;
   object-fit: cover !important;
-  transform-origin: center center !important;
   transition: transform 120ms ease !important;
   display: block !important;
-  max-width: 100% !important;
-  max-height: 100% !important;
 }
 
 .phone-link-text {
