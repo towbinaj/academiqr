@@ -424,7 +424,7 @@ import{s as T}from"./supabase-whCCoo43.js";/* empty css             */import{c a
               </div>
               <div class="form-group">
                 <label>Image Scale</label>
-                <input type="range" id="link-img-scale" min="100" max="300" value="${C}" class="range-input">
+                <input type="range" id="link-img-scale" min="50" max="300" value="${C}" class="range-input">
               </div>
               `}
             `:""}
