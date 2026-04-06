@@ -35,15 +35,6 @@ async function init() {
   // Bind events
   document.getElementById('new-collection-btn')?.addEventListener('click', createNewCollection)
 
-  // Template modal events
-  document.getElementById('template-modal-close')?.addEventListener('click', closeTemplateModal)
-  document.getElementById('template-modal')?.addEventListener('click', (e) => {
-    if (e.target.id === 'template-modal') closeTemplateModal()
-  })
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeTemplateModal()
-  })
-
   document.getElementById('collection-search')?.addEventListener('input', (e) => {
     searchQuery = e.target.value
     renderCollections()
@@ -305,35 +296,16 @@ function renderCollections() {
   }
 
   if (collections.length === 0) {
-    const topTemplates = TEMPLATES.filter(t => t.id !== 'blank').slice(0, 3)
     grid.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon"><i class="fas fa-rocket"></i></div>
         <h3>Welcome to AcademiQR</h3>
-        <p>Pick a template to create your first collection, or start from scratch.</p>
-        <div class="empty-templates">
-          ${topTemplates.map(t => `
-            <div class="template-card empty-template-card" data-template="${t.id}">
-              <div class="template-icon" style="background: ${t.theme.backgroundColor || '#f1f5f9'}; color: ${t.theme.textColor || '#1A2F5B'};">
-                <i class="fas ${t.icon}"></i>
-              </div>
-              <div class="template-name">${t.name}</div>
-              <div class="template-desc">${t.desc}</div>
-            </div>
-          `).join('')}
-        </div>
-        <button class="btn-secondary" id="empty-create-btn" style="margin-top: 12px;">
-          <i class="fas fa-plus"></i> Start from scratch
+        <p>Create your first collection to start sharing links with your audience.</p>
+        <button class="btn-primary" id="empty-create-btn">
+          <i class="fas fa-plus"></i> Create Collection
         </button>
       </div>
     `
-    grid.querySelectorAll('.empty-template-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const templateId = card.dataset.template
-        const template = TEMPLATES.find(t => t.id === templateId)
-        if (template) createCollectionFromTemplate(template.name + ' Collection', templateId)
-      })
-    })
     document.getElementById('empty-create-btn')?.addEventListener('click', createNewCollection)
     return
   }
@@ -607,124 +579,30 @@ function generateSlug(title) {
   return slug ? `${slug}-${Math.random().toString(36).substring(2, 6)}` : crypto.randomUUID().substring(0, 8)
 }
 
-// ── Collection Templates ──
-const TEMPLATES = [
-  {
-    id: 'blank',
-    name: 'Blank',
-    icon: 'fa-file',
-    desc: 'Start from scratch',
-    theme: {},
-    presentation: {},
-  },
-  {
-    id: 'conference',
-    name: 'Conference Talk',
-    icon: 'fa-microphone',
-    desc: 'Presentation with slides & resources',
-    theme: { backgroundColor: '#1A2F5B', textColor: '#ffffff', buttonStyle: 'filled', buttonBackgroundColor: '#3B5998', buttonTextColor: '#ffffff' },
-    presentation: { conference: '', location: '', date: '' },
-  },
-  {
-    id: 'workshop',
-    name: 'Workshop',
-    icon: 'fa-chalkboard-teacher',
-    desc: 'Hands-on session with materials',
-    theme: { backgroundColor: '#0f766e', textColor: '#ffffff', buttonStyle: 'filled', buttonBackgroundColor: '#14b8a6', buttonTextColor: '#ffffff' },
-    presentation: { conference: '', location: '' },
-  },
-  {
-    id: 'course',
-    name: 'Course / Lecture',
-    icon: 'fa-graduation-cap',
-    desc: 'Educational content & readings',
-    theme: { backgroundColor: '#7c3aed', textColor: '#ffffff', buttonStyle: 'filled', buttonBackgroundColor: '#8b5cf6', buttonTextColor: '#ffffff' },
-    presentation: {},
-  },
-  {
-    id: 'research',
-    name: 'Research Paper',
-    icon: 'fa-flask',
-    desc: 'Publications, data & supplemental materials',
-    theme: { backgroundColor: '#1e3a5f', textColor: '#ffffff', buttonStyle: 'outline', buttonBackgroundColor: '#ffffff', buttonTextColor: '#1e3a5f' },
-    presentation: {},
-  },
-  {
-    id: 'portfolio',
-    name: 'Portfolio',
-    icon: 'fa-briefcase',
-    desc: 'Professional links & projects',
-    theme: { backgroundColor: '#18181b', textColor: '#ffffff', buttonStyle: 'filled', buttonBackgroundColor: '#3b82f6', buttonTextColor: '#ffffff' },
-    presentation: {},
-  },
-]
-
-function openTemplateModal() {
-  const modal = document.getElementById('template-modal')
-  document.getElementById('new-coll-title').value = ''
-
-  const grid = document.getElementById('template-grid')
-  grid.innerHTML = TEMPLATES.map(t => `
-    <div class="template-card" data-template="${t.id}">
-      <div class="template-icon" style="background: ${t.theme.backgroundColor || '#f1f5f9'}; color: ${t.theme.textColor || '#1A2F5B'};">
-        <i class="fas ${t.icon}"></i>
-      </div>
-      <div class="template-name">${t.name}</div>
-      <div class="template-desc">${t.desc}</div>
-    </div>
-  `).join('')
-
-  grid.querySelectorAll('.template-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const title = document.getElementById('new-coll-title')?.value.trim()
-      if (!title) {
-        document.getElementById('new-coll-title')?.focus()
-        showToast('Please enter a title first.', 'warning')
-        return
-      }
-      createCollectionFromTemplate(title, card.dataset.template)
-    })
-  })
-
-  modal.style.display = 'flex'
-  document.getElementById('new-coll-title')?.focus()
-}
-
-function closeTemplateModal() {
-  document.getElementById('template-modal').style.display = 'none'
-}
-
-async function createCollectionFromTemplate(title, templateId) {
-  const template = TEMPLATES.find(t => t.id === templateId) || TEMPLATES[0]
-  const slug = generateSlug(title)
-  const maxOrder = collections.reduce((max, c) => Math.max(max, c.order_index || 0), 0)
+async function createNewCollection() {
+  const minOrder = collections.reduce((min, c) => Math.min(min, c.order_index ?? 0), 0)
 
   try {
+    const slug = generateSlug('untitled')
     const { data, error } = await supabase
       .from('link_lists')
       .insert({
         owner_id: user.id,
         slug,
         visibility: 'public',
-        theme: template.theme || {},
-        presentation_data: { title, ...template.presentation },
-        order_index: maxOrder + 100,
+        theme: {},
+        presentation_data: { title: 'Untitled Collection' },
+        order_index: minOrder - 100,
       })
       .select()
       .single()
 
     if (error) throw error
-    closeTemplateModal()
     goToEditor(data.id)
   } catch (error) {
     console.error('Failed to create collection:', error)
     showToast('Failed to create collection: ' + error.message, 'error')
   }
-}
-
-// Keep old function for backward compat (empty state button)
-async function createNewCollection() {
-  openTemplateModal()
 }
 
 async function duplicateCollection(id) {
