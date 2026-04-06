@@ -79,7 +79,8 @@ function setMetaTags(collection, profile) {
 }
 
 function imageStyleAttrs(x = 50, y = 50, scale = 100) {
-  return `object-position: ${x}% ${y}%; transform: scale(${scale / 100}); transform-origin: ${x}% ${y}%;`
+  const fit = scale < 100 ? 'contain' : 'cover'
+  return `object-fit: ${fit}; object-position: ${x}% ${y}%; transform: scale(${scale / 100}); transform-origin: ${x}% ${y}%;`
 }
 
 // ── Theme Normalization (matches editor.js) ──
