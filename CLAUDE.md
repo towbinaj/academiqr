@@ -1,53 +1,49 @@
-# AcademiQR - Claude Code Instructions
+# AcademiQR v1.1
 
-## Operating Modes
+## Commands
+npm run dev       # Vite dev server (port 3000)
+npm run build     # Production build to dist/
+npm run preview   # Preview production build
 
-### 1. Plan Mode Default
-- Enter plan mode for ANY non-trivial task (3+ steps or architectural decisions)
-- If something goes sideways, STOP and re-plan immediately - don't keep pushing
-- Use plan mode for verification steps, not just building
-- Write detailed specs upfront to reduce ambiguity
+## Architecture
+- Vanilla ES6+ modules, no framework — multi-page app (MPA) via Vite
+- Supabase backend: Auth (email + Google OAuth), PostgreSQL, Storage, RLS
+- Deployed to GoDaddy cPanel via git push → .cpanel.yml copies dist/ to public_html/
+- dist/ is committed to git (required for cPanel deploy)
 
-### 2. Subagent Strategy
-- Use subagents liberally to keep main context window clean
-- Offload research, exploration, and parallel analysis to subagents
-- For complex problems, throw more compute at it via subagents
-- One task per subagent for focused execution
+## Key Directories
+- `src/pages/` — Each page has its own .html/.js/.css (dashboard, editor, library, profile, login, public)
+- `src/shared/` — 13 utility modules (auth, state, supabase client, router, etc.)
+- `src/components/` — Reusable components (analytics-tab, qr-tab)
+- `src/styles/` — CSS custom properties in variables.css, global styles in base.css
+- `migrations/` — SQL schema migration files
+- `docs/` — architecture.md and state.md (read these for deep context)
 
-### 3. Self-Improvement Loop
-- After ANY correction from the user: update `tasks/lessons.md` with the pattern
-- Write rules for yourself that prevent the same mistake
-- Ruthlessly iterate on these lessons until mistake rate drops
-- Review lessons at session start for relevant project
+## Conventions
+- All pages import shared modules from `../../shared/`
+- State flows through `state.js` — no global variables
+- Auto-save uses debounced saves via `auto-save.js`
+- Links use a 3-tier resolution: library default → collection override → display
+- Tags are normalized (lowercase, trimmed) via `tag-utils.js`
+- Toast notifications via `toast.js` — never use alert()
+- Input sanitization via `security.js` — always sanitize user input before DOM insertion
+- Client-side rate limiting via `rate-limit.js` for auth attempts
 
-### 4. Verification Before Done
-- Never mark a task complete without proving it works
-- Diff behavior between main and your changes when relevant
-- Ask yourself: "Would a staff engineer approve this?"
-- Run tests, check logs, demonstrate correctness
+## URL Patterns
+- Public collections: `/u/{username}/{slug}` (Apache rewrite → public.html)
+- All authenticated pages: `/src/pages/{page}.html`
+- Login: `/` (index.html)
 
-### 5. Demand Elegance (Balanced)
-- For non-trivial changes: pause and ask "is there a more elegant way?"
-- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
-- Skip this for simple, obvious fixes - don't over-engineer
-- Challenge your own work before presenting it
+## Database Tables
+- `profiles` — user settings, theme, social links
+- `link_lists` — collections with title, slug, theme JSONB, passkey
+- `link_items` — links with library defaults + per-collection overrides
+- `analytics` — page views and link clicks
 
-### 6. Autonomous Bug Fixing
-- When given a bug report: just fix it. Don't ask for hand-holding
-- Point at logs, errors, failing tests - then resolve them
-- Zero context switching required from the user
-- Go fix failing CI tests without being told how
-
-## Task Management
-
-1. **Plan First**: Write plan to `tasks/todo.md` with checkable items
-2. **Verify Plan**: Check in before starting implementation
-3. **Track Progress**: Mark items complete as you go
-4. **Explain Changes**: High-level summary at each step
-5. **Document Results**: Add review section to `tasks/todo.md`
-6. **Capture Lessons**: Update `tasks/lessons.md` after corrections
-
-## Core Principles
-
-- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
-- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
+## Watch Out For
+- dist/ must be rebuilt and committed before deploy — `npm run build && git add dist/`
+- .htaccess in dist/ has security headers and URL rewrite rules — don't overwrite it
+- Passkeys are plain-text access codes for presentations, NOT security credentials
+- Auto-save has a known bug: captures stale form values (dirty tracking planned for v1.2)
+- CDN dependencies (Font Awesome, qrcode.min.js, Google Fonts) are loaded in HTML, not bundled
+- Vite config uses 8 MPA entry points — update rollupOptions.input if adding pages
