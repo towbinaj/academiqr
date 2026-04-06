@@ -79,7 +79,7 @@ function setMetaTags(collection, profile) {
 }
 
 function imageTransformCSS(x = 50, y = 50, scale = 100) {
-  return `translate(${(x - 50) * 0.6}%, ${(y - 50) * 0.6}%) scale(${scale / 100})`
+  return `translate(${(x - 50) * 1.5}%, ${(y - 50) * 1.5}%) scale(${scale / 100})`
 }
 
 // ── Theme Normalization (matches editor.js) ──

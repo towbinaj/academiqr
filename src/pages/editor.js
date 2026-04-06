@@ -69,7 +69,7 @@ function showSaveSuccess(buttonId) {
 }
 
 function imageTransformCSS(x = 50, y = 50, scale = 100) {
-  return `translate(${(x - 50) * 0.6}%, ${(y - 50) * 0.6}%) scale(${scale / 100})`
+  return `translate(${(x - 50) * 1.5}%, ${(y - 50) * 1.5}%) scale(${scale / 100})`
 }
 
 function setupSectionToggle(container) {
@@ -680,7 +680,7 @@ function renderDetailsTab(container) {
               </div>
               <div class="form-group">
                 <label>Image Scale</label>
-                <input type="range" id="link-img-scale" min="50" max="200" value="${imgScale}" class="range-input">
+                <input type="range" id="link-img-scale" min="100" max="300" value="${imgScale}" class="range-input">
               </div>
               ` : ''}
             ` : ''}
