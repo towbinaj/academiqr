@@ -906,6 +906,22 @@ function renderDetailsTab(container) {
       })
     })
 
+    // Link image URL manual input
+    document.getElementById('link-image')?.addEventListener('input', () => {
+      const url = document.getElementById('link-image')?.value.trim()
+      const link = links.find(l => l.id === linkId)
+      if (link) {
+        if (hasCustomOverrides(link)) {
+          link.custom_overrides.image_url = url || null
+        } else {
+          link.image_url = url || null
+        }
+        renderPreview()
+        renderLinksList()
+        linkSaver.trigger()
+      }
+    })
+
     // Link image position sliders
     ;['link-img-pos-x', 'link-img-pos-y', 'link-img-scale'].forEach(id => {
       document.getElementById(id)?.addEventListener('input', () => {
