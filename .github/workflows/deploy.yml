@@ -5,6 +5,8 @@ on:
     branches: [v1.1]
     paths:
       - 'dist/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
 
 jobs:
   deploy:
