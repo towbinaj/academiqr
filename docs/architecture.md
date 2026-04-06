@@ -18,6 +18,7 @@ AcademiQR is a link-in-bio platform for academics and conference presenters. Use
 | QR | qrcode.min.js (CDN) |
 | Export | SheetJS (XLSX) bundled via Vite |
 | Drag & Drop | SortableJS (dashboard collection reordering) |
+| CI/CD | GitHub Actions (FTP deploy to cPanel on push) |
 
 ## Project Structure
 
@@ -67,8 +68,9 @@ academiqr-v1/
 │   └── assets/                    # Vite-hashed JS/CSS bundles
 ├── migrations/                    # SQL schema changes
 ├── docs/                          # Project documentation
+├── .github/workflows/deploy.yml   # GitHub Actions FTP auto-deploy
 ├── CLAUDE.md                      # AI dev instructions
-├── DEPLOYMENT_GUIDE.md            # cPanel deploy procedure
+├── DEPLOYMENT_GUIDE.md            # Deploy procedure
 └── .env.local                     # Supabase keys (gitignored)
 ```
 
@@ -184,8 +186,13 @@ Tags are normalized to lowercase. The autocomplete pool is built dynamically fro
 ## Deployment Pipeline
 
 ```
-Local dev (src/) → npx vite build → dist/ → git push → cPanel pull → .cpanel.yml copies dist/* → public_html/
+npm run deploy
+  → vite build (src/ → dist/)
+  → git add dist/ && git commit && git push
+  → GitHub Actions FTPs dist/ to public_html/ via deploy@academiqr.com
 ```
+
+Fully automated — no manual cPanel steps needed. See `DEPLOYMENT_GUIDE.md` for details.
 
 ## Caching Strategy
 

@@ -1,6 +1,6 @@
 # AcademiQR v1.1 — Project State
 
-*Last updated: 2026-03-22*
+*Last updated: 2026-04-05*
 
 ## Current Version
 
@@ -21,7 +21,6 @@
 - Account deletion with full data cleanup
 - Dark/light mode toggle
 - PWA with service worker (offline asset caching)
-- Collection templates for quick creation
 - Passkey-protected collections (plain-text access codes for presentation sharing)
 - Rate-limited authentication (5 attempts/hour)
 - Drag-and-drop link reordering in editor (native HTML5)
@@ -40,6 +39,23 @@
 - Library tag column with inline tag management
 - Dashboard tag filtering (click tag to filter, disable drag-and-drop while filtered)
 - Console.log cleanup for production
+- Landing page with hero, feature cards, how-it-works, CTA
+- SEO: robots.txt, llms.txt, dynamic sitemap (PHP), SSR for search engines, JSON-LD, OG tags
+- Social links: website, Google Scholar, ORCID, ResearchGate (with drag-and-drop reordering)
+- Font Awesome deferred loading, logo preload
+- Database backup script (weekly pg_dump via launchd)
+
+### v1.1 Bug Fixes (2026-04-05)
+- New Collection skips template modal — goes straight to editor
+- New collections appear at top of dashboard (not bottom)
+- Removed unused template system (modal, TEMPLATES array, CSS)
+- Image URL text input now triggers save and preview update
+- Image upload resolution increased to 2000x2000 for better positioning
+- Image position/scale uses `object-position` instead of CSS transforms
+- Scale < 100 shows full image (`object-fit: contain`), >= 100 crops (`cover`)
+- Image positioning applied consistently across sidebar, editor preview, phone preview, and public page
+- Public page uses `100dvh` to account for mobile browser toolbars
+- Public page frame accounts for padding in viewport height calculation
 
 ### Pages
 - Login/Register (`/`)
@@ -62,13 +78,15 @@
 | `add_link_library_defaults.sql` | Added `source_link_id` and `use_library_defaults` to link_items |
 | `add_custom_overrides.sql` | Added `custom_overrides` JSONB to link_items |
 | `clean_stale_background_images.sql` | Cleanup: removed backgroundImage from theme when backgroundType != 'image' |
+| Social links columns | Added social_website, social_google_scholar, social_orcid, social_researchgate to profiles |
 
 ## Infrastructure
 
 - **Hosting**: GoDaddy cPanel
 - **Backend**: Supabase (project: `natzpfyxpuycsuuzbqrd`)
-- **Repo**: `github.com/towbinaj/academiqr` (public, branch `v1.0`)
-- **Deploy path**: `dist/` → cPanel Git pull → `.cpanel.yml` copies to `public_html/`
+- **Repo**: `github.com/towbinaj/academiqr` (public, branch `v1.1`)
+- **Deploy**: `npm run deploy` → GitHub Actions FTPs dist/ to public_html/ automatically
+- **Domains**: `academiqr.com` (primary), `academiqr.net` (301 redirect)
 - **Backups**: Weekly automated pg_dump via launchd (local, 30-day rotation)
 
 ## Feature Backlog
