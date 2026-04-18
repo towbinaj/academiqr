@@ -2,7 +2,7 @@ name: Deploy to Production
 
 on:
   push:
-    branches: [v1.1]
+    branches: [main]
     paths:
       - 'dist/**'
       - '.github/workflows/deploy.yml'
