@@ -2445,9 +2445,11 @@ async function saveNamedTheme() {
 
 // ── Event Binding ──
 function bindEvents() {
-  // Tab switching
+  // Tab switching — flush pending saves first so values are captured from the
+  // still-attached form before renderTabContent() tears down the DOM.
   document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
+    tab.addEventListener('click', async () => {
+      await flushAll()
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'))
       tab.classList.add('active')
       activeTab = tab.dataset.tab
@@ -2593,7 +2595,8 @@ function setupMobileUI() {
   document.body.appendChild(tabBar)
 
   tabBar.querySelectorAll('.mobile-tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
+      await flushAll()
       tabBar.querySelectorAll('.mobile-tab-btn').forEach(b => b.classList.remove('active'))
       btn.classList.add('active')
       activeTab = btn.dataset.tab

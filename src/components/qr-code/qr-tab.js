@@ -666,6 +666,9 @@ export function renderQRCodeTab(container, collection, user) {
 
   // Auto-save QR settings on any change
   const qrSaver = createAutoSaver(async () => {
+    // Abort if the QR form has been torn down (e.g., tab switched before debounce fired).
+    // Without this, getQRSettings would read null inputs and save defaults over real values.
+    if (!container.querySelector('#qr-color')) return false
     const ok = await saveQRSettings(collection.id, container)
     if (ok) {
       const s = getQRSettings(container)

@@ -107,6 +107,17 @@ body {
   }
 }
 
+/* Mobile: drop the phone-mockup decoration, go edge-to-edge.
+   !important overrides the inline frame background/box-shadow set by public.js. */
+@media (max-width: 479px) {
+  .public-frame {
+    padding: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
 /* ── Screen Content ── */
 .public-screen {
   height: calc(100dvh - 16px);
@@ -124,6 +135,14 @@ body {
     height: auto;
     min-height: 580px;
     padding: 24px 20px;
+  }
+}
+
+@media (max-width: 479px) {
+  .public-screen {
+    height: 100dvh;
+    border-radius: 0;
+    padding: 20px 16px;
   }
 }
 
