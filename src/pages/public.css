@@ -107,23 +107,12 @@ body {
   }
 }
 
-/* Mobile: drop the phone-mockup decoration, go edge-to-edge.
-   !important overrides the inline frame background/box-shadow set by public.js. */
-@media (max-width: 479px) {
-  .public-frame {
-    padding: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-  }
-}
-
 /* ── Screen Content ── */
 .public-screen {
   height: calc(100dvh - 16px);
   display: flex;
   flex-direction: column;
-  padding: 24px 16px;
+  padding: 20px;
   background: #ffffff;
   overflow-y: auto;
   border-radius: 16px;
@@ -134,15 +123,6 @@ body {
   .public-screen {
     height: auto;
     min-height: 580px;
-    padding: 24px 20px;
-  }
-}
-
-@media (max-width: 479px) {
-  .public-screen {
-    height: 100dvh;
-    border-radius: 0;
-    padding: 20px 16px;
   }
 }
 
@@ -234,7 +214,7 @@ body {
 /* ── Presentation Info ── */
 .public-presentation {
   text-align: left;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .public-info-field {
@@ -251,9 +231,9 @@ body {
 .public-links {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   flex: 1;
-  padding: 0 4px;
+  padding: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -261,7 +241,8 @@ body {
 .public-link-btn {
   display: flex;
   align-items: center;
-  padding: 12px 16px 12px 12px;
+  padding: 12px 16px 12px 20px;
+  min-height: 64px;
   border-radius: 8px;
   text-decoration: none;
   transition: all 0.2s ease;
@@ -271,7 +252,7 @@ body {
   min-width: 0;
   box-sizing: border-box;
   cursor: pointer;
-  gap: 12px;
+  font-size: 1.05rem;
 }
 
 .public-link-btn:hover {
@@ -296,14 +277,15 @@ body {
 
 /* Link image */
 .public-link-image-wrapper {
-  padding: 4px;
-  border-radius: 10px;
+  padding: 6px;
+  border-radius: 12px;
+  margin-right: 12px;
   flex-shrink: 0;
 }
 
 .public-link-image {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   border-radius: 8px;
   overflow: hidden;
   background: #e5e7eb;
@@ -322,7 +304,7 @@ body {
 }
 
 .public-link-text {
-  font-size: 1rem;
+  font-size: inherit;
   font-weight: 500;
   flex: 1;
   line-height: 1.3;
