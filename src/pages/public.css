@@ -69,9 +69,9 @@ body {
 }
 
 /* ── Phone Mockup Container ── */
+/* Mobile: fill the viewport (no max-width cap). Desktop: capped phone-card. */
 .public-wrapper {
   width: 100%;
-  max-width: 420px;
   min-height: 100vh;
   margin: 0 auto;
 }
@@ -84,6 +84,7 @@ body {
   }
 
   .public-wrapper {
+    max-width: 420px;
     min-height: auto;
     border-radius: 24px;
     overflow: hidden;
