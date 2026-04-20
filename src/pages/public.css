@@ -93,18 +93,21 @@ body {
 }
 
 /* ── Phone Frame (border effects) ── */
+/* Mobile: square corners so the gradient reaches the phone edge with no body
+   background visible at the corners. Desktop: rounded phone-card look. */
 .public-frame {
   width: 100%;
   min-height: 100dvh;
   padding: 8px;
   background: #1e293b;
-  border-radius: 24px;
+  border-radius: 0;
   box-sizing: border-box;
 }
 
 @media (min-width: 480px) {
   .public-frame {
     min-height: auto;
+    border-radius: 24px;
   }
 }
 
