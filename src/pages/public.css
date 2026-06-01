@@ -292,8 +292,8 @@ body {
 }
 
 .public-link-image {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: 8px;
   overflow: hidden;
   background: #e5e7eb;
