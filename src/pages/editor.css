@@ -942,9 +942,7 @@ select:focus {
   flex: 1;
   padding: 16px;
   padding-bottom: 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: block;
   background: transparent;
   overflow-y: auto;
   overflow-x: hidden;
@@ -961,6 +959,8 @@ select:focus {
   font-size: 1.14rem;
   transition: all 0.2s;
   min-height: 64px;
+  flex-shrink: 0;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   cursor: pointer;
