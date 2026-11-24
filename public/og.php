@@ -14,7 +14,7 @@
 
 // Supabase config
 $SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
-$SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjM2ODEwMDgsImV4cCI6MjAzOTI1NzAwOH0.oBMY_bAPdBSXrF-kOgKnqFT1sdVd9hUH7ECg0fL5P14';
+$SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
 
 // Detect user agent type
 $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
