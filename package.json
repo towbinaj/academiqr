@@ -15,8 +15,11 @@
     "write-excel-file": "4.1.1"
   },
   "devDependencies": {
-    "vite": "^5.4.21"
+    "vite": "^8.3.8"
   },
   "author": "Academiq Team",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": "^20.19.0 || >=22.12.0"
+  }
 }
