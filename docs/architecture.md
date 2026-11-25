@@ -18,7 +18,7 @@ AcademiQR is a link-in-bio platform for academics and conference presenters. Use
 | QR | qrcode.min.js (CDN) |
 | Export | write-excel-file (Excel, lazy-loaded) + built-in CSV writer |
 | Drag & Drop | SortableJS (dashboard collection reordering) |
-| CI/CD | GitHub Actions: PR checks (build, PHP lint, audit, dist freshness); build + FTP deploy to cPanel on push to main |
+| CI/CD | GitHub Actions: PR checks (audit, unit + Playwright browser tests, build, PHP lint); build + FTP deploy to cPanel on push to main; Dependabot weekly updates |
 
 ## Project Structure
 
@@ -54,7 +54,7 @@ academiqr-v1/
 │   └── styles/
 │       ├── base.css               # Global styles, nav, shared components
 │       └── variables.css          # CSS custom properties, dark mode overrides
-├── dist/                          # Built output (committed for cPanel deploy)
+├── dist/                          # Built output (gitignored; built by GitHub Actions)
 │   ├── index.html                 # Login entry point
 │   ├── public.html                # Public collection view
 │   ├── privacy.html               # Privacy policy
@@ -186,11 +186,11 @@ Tags are normalized to lowercase. The autocomplete pool is built dynamically fro
 ## Deployment Pipeline
 
 ```
+PR opened
+  → CI: npm audit, unit tests, build, php -l, Playwright browser tests
 PR merged to main
-  → (dist/ committed with the change; CI verified it matches a fresh build)
-  → git add dist/ && git commit && git push
-  → GitHub Actions rebuilds from source (npm ci && npm run build)
-  → FTPs the fresh dist/ to public_html/ via deploy@academiqr.com
+  → GitHub Actions: npm ci && npm test && npm run build
+  → FTPs dist/ to public_html/ via deploy@academiqr.com
 ```
 
 Fully automated — no manual cPanel steps needed. See `DEPLOYMENT_GUIDE.md` for details.

@@ -1,0 +1,27 @@
+# Weekly dependency update PRs; each one runs the full CI (audit, tests, build,
+# browser tests) before you merge. Security fixes are opened as soon as they exist.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # One PR for all minor/patch updates instead of one per package
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: deps
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      github-actions:
+        patterns: ['*']
+    commit-message:
+      prefix: ci

@@ -5,13 +5,14 @@ npm run dev       # Vite dev server (port 3000)
 npm run build     # Production build to dist/
 npm run preview   # Preview production build
 npm test          # Unit tests (node:test, tests/*.test.mjs)
-npm run check     # Tests + build + fail if dist/ needs committing
+npm run test:e2e  # Browser tests (Playwright) against the built dist/, Supabase mocked
+npm run check     # Unit tests + build + browser tests (run before pushing)
 
 ## Architecture
 - Vanilla ES6+ modules, no framework — multi-page app (MPA) via Vite
 - Supabase backend: Auth (email + Google OAuth), PostgreSQL, Storage, RLS
 - Deployed to GoDaddy cPanel: push to main → GitHub Actions builds from source and FTPs dist/ to public_html/
-- dist/ is still committed to git (keeps the .cpanel.yml fallback working); CI fails a PR if it is stale
+- dist/ is NOT committed (gitignored); only GitHub Actions builds it for production
 
 ## Key Directories
 - `src/pages/` — Each page has its own .html/.js/.css (dashboard, editor, library, profile, login, public)
@@ -44,8 +45,8 @@ npm run check     # Tests + build + fail if dist/ needs committing
 - `analytics` — page views and link clicks
 
 ## Watch Out For
-- Rebuild and commit dist/ with source changes — `npm run build && git add dist/` (CI checks it matches a fresh build)
-- .htaccess in dist/ has security headers and URL rewrite rules — don't overwrite it
+- Don't commit dist/ — it's build output. Edit `public/.htaccess` (copied into dist/ by the build); it has security headers and URL rewrite rules
+- Browser tests mock Supabase in `tests/e2e/supabase-mock.mjs`; add a test there when fixing a UI bug
 - Passkeys are plain-text access codes for presentations, NOT security credentials
 - CDN dependencies (Font Awesome, qrcode.min.js, Google Fonts) are loaded in HTML, not bundled
 - Vite 8 config uses 8 MPA entry points — update build.rolldownOptions.input if adding pages

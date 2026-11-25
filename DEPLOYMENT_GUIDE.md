@@ -10,16 +10,15 @@ Open a pull request and merge it to `main`. Before pushing, run:
 npm run check
 ```
 
-(unit tests + build; fails if dist/ changed and needs committing). Then commit dist/ along with your source changes.
+(unit tests + build + Playwright browser tests). dist/ is build output and is not committed.
 
-The PR flow: CI (`.github/workflows/ci.yml`) builds the site, checks PHP syntax, audits production dependencies, and fails if the committed dist/ doesn't match a fresh build. Merging to `main` deploys.
+The PR flow: CI (`.github/workflows/ci.yml`) audits production dependencies, runs unit tests, builds the site, checks PHP syntax, and runs the browser tests against the build (Supabase mocked). Merging to `main` deploys.
 
 ## How It Works
 
-1. `npm run build` — Vite builds src/ into dist/ with hashed filenames
-2. `git add dist/ && git commit` — commits the built files with the source change
-3. Open a PR → CI passes → merge to `main`
-4. GitHub Actions (`.github/workflows/deploy.yml`) — runs `npm ci && npm run build` (Node 22), checks PHP syntax, then FTPs the **fresh build** in dist/ to public_html/ via the `deploy@academiqr.com` FTP account. If the committed dist/ was stale it logs a warning but still deploys the fresh build.
+1. Commit source changes (not dist/) and open a PR
+2. CI passes → merge to `main`
+3. GitHub Actions (`.github/workflows/deploy.yml`) — runs `npm ci`, unit tests, `npm run build` (Node 22), checks PHP syntax, then FTPs dist/ to public_html/ via the `deploy@academiqr.com` FTP account.
 
 No manual steps in cPanel are needed.
 
@@ -43,8 +42,10 @@ The FTP account was created in cPanel > Files > FTP Accounts with access limited
 ## Manual Deploy (Fallback)
 
 If GitHub Actions fails (FTP timeout, etc.):
-1. Go to GitHub > Actions tab > re-run the failed workflow
-2. Or: cPanel > Git Version Control > Update from Remote > Deploy HEAD Commit
+1. GitHub > Actions > Deploy to Production > re-run the failed run, or "Run workflow" on `main`
+2. Last resort: locally `npm ci && npm run build` (with the `VITE_SUPABASE_*` values from deploy.yml in `.env.local`), then upload dist/ (including `.htaccess`) to public_html/ with cPanel File Manager or FTP
+
+(The old cPanel Git Version Control "Deploy HEAD Commit" path relied on a committed dist/ and `.cpanel.yml`; both were removed in Nov 2026.)
 
 ## Server Details
 
@@ -63,6 +64,6 @@ If GitHub Actions fails (FTP timeout, etc.):
 
 ## Important Notes
 
-- `dist/` is committed to git — the FTP deploy builds from source, but the `.cpanel.yml` fallback copies the committed dist/
-- Never modify `dist/.htaccess` without understanding the Apache rewrite rules and security headers
-- The `.cpanel.yml` deployment script copies dist/* to public_html/ (still works as a fallback)
+- `dist/` is not committed — GitHub Actions builds it on every deploy
+- Edit `public/.htaccess` (the build copies it to dist/), and understand the Apache rewrite rules and security headers first
+- Dependencies are kept current by Dependabot (`.github/dependabot.yml`): weekly grouped PRs, checked by CI
