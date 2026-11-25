@@ -186,8 +186,8 @@ Tags are normalized to lowercase. The autocomplete pool is built dynamically fro
 ## Deployment Pipeline
 
 ```
-npm run deploy
-  → vite build (src/ → dist/)
+PR merged to main
+  → (dist/ committed with the change; CI verified it matches a fresh build)
   → git add dist/ && git commit && git push
   → GitHub Actions rebuilds from source (npm ci && npm run build)
   → FTPs the fresh dist/ to public_html/ via deploy@academiqr.com

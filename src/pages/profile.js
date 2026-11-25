@@ -9,7 +9,7 @@ import { navigate } from '../shared/router.js'
 import { compressAndUpload, listUserImages, deleteUserImages } from '../shared/image-utils.js'
 import { initThemeToggle, toggleTheme, getCurrentTheme } from '../shared/theme-toggle.js'
 import { showToast } from '../shared/toast.js'
-import { createAutoSaver } from '../shared/auto-save.js'
+import { createAutoSaver, registerAutoSaver } from '../shared/auto-save.js'
 import Sortable from 'sortablejs'
 // write-excel-file is lazy-loaded only when the user exports to Excel
 let writeExcelFile = null
@@ -798,6 +798,7 @@ function bindEvents() {
     const result = await saveProfileData()
     return result
   }, { delay: 1500, statusSelector: '#profile-save-status' })
+  registerAutoSaver(profileSaver) // save pending edits when the tab is hidden
 
   const autoSaveFields = ['display-name', 'social-email', 'social-website', 'social-instagram', 'social-facebook', 'social-twitter', 'social-linkedin', 'social-youtube', 'social-tiktok', 'social-snapchat', 'social-google_scholar', 'social-orcid', 'social-researchgate']
   for (const id of autoSaveFields) {

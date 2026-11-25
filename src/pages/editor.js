@@ -11,6 +11,7 @@ import { resolveLibraryDefaults, hasCustomOverrides, getDisplayTitle, getDisplay
 import { initThemeToggle, toggleTheme, getCurrentTheme } from '../shared/theme-toggle.js'
 import { compressAndUpload, listUserImages } from '../shared/image-utils.js'
 import { createAutoSaver, registerAutoSaver, flushAll } from '../shared/auto-save.js'
+import { sanitizeSlugInput, slugFromField } from '../shared/slug-utils.js'
 import { showToast } from '../shared/toast.js'
 import { renderTagChips, normalizeTags, getAllUserTags, createTagInput, invalidateTagCache } from '../shared/tag-utils.js'
 
@@ -121,12 +122,11 @@ async function init() {
   setupMobileUI()
 
   // ── Initialize auto-savers ──
-  presentationSaver = createAutoSaver(async () => {
+  presentationSaver = createAutoSaver(async (presentationData) => {
     try {
-      updatePresentationDataLive()
       const { error } = await supabase
         .from('link_lists')
-        .update({ presentation_data: collection.presentation_data })
+        .update({ presentation_data: presentationData })
         .eq('id', collection.id)
       if (error) throw error
       renderSidebar()
@@ -135,13 +135,17 @@ async function init() {
       console.error('Auto-save presentation failed:', err)
       return false
     }
-  }, { statusSelector: '#presentation-save-status' })
+  }, {
+    statusSelector: '#presentation-save-status',
+    // Copy form values into state now, while the form is on screen
+    capture: () => {
+      updatePresentationDataLive()
+      return structuredClone(collection.presentation_data || {})
+    },
+  })
 
-  settingsSaver = createAutoSaver(async () => {
+  settingsSaver = createAutoSaver(async ({ visibility, newPasskey, slug }) => {
     try {
-      const visibility = document.getElementById('collection-visibility')?.value || 'public'
-      const newPasskey = document.getElementById('collection-passkey')?.value.trim()
-      const slug = document.getElementById('collection-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '') || collection.slug
       const updates = { visibility, slug }
       if (visibility === 'passkey' && newPasskey) {
         updates.passkey_hash = newPasskey
@@ -162,36 +166,32 @@ async function init() {
       console.error('Auto-save settings failed:', err)
       return false
     }
-  }, { statusSelector: '#settings-save-status' })
+  }, {
+    statusSelector: '#settings-save-status',
+    capture: () => {
+      const visibilityEl = document.getElementById('collection-visibility')
+      if (!visibilityEl) return null // settings form not on screen: never fall back to defaults
+      return {
+        visibility: visibilityEl.value || 'public',
+        newPasskey: document.getElementById('collection-passkey')?.value.trim(),
+        slug: slugFromField(document.getElementById('collection-slug')?.value ?? '', collection.slug),
+      }
+    },
+  })
 
-  linkSaver = createAutoSaver(async () => {
-    // Use the current selectedLinkId at save time
-    const linkId = selectedLinkId
-    if (!linkId) return false
+  linkSaver = createAutoSaver(async (snap) => {
+    const { linkId, title, url, imageUrl, imgPosX, imgPosY, imgScale, hasSource, isCustomizing, usingDefaults, useLibraryDefaults, tags } = snap
     try {
       const link = links.find(l => l.id === linkId)
-      if (!link) return false
-
-      const title = document.getElementById('link-title')?.value.trim()
-      const url = document.getElementById('link-url')?.value.trim()
-      const imageUrl = document.getElementById('link-image')?.value.trim()
-
-      const hasSource = !!link.source_link_id
-      const hasCustom = hasCustomOverrides(link)
-      const isCustomizing = hasSource ? !link.use_library_defaults : hasCustom
-      const usingDefaults = hasSource && link.use_library_defaults
-
-      const imgPosX = usingDefaults ? (link.image_position?.x ?? 50) : (parseInt(document.getElementById('link-img-pos-x')?.value) || 50)
-      const imgPosY = usingDefaults ? (link.image_position?.y ?? 50) : (parseInt(document.getElementById('link-img-pos-y')?.value) || 50)
-      const imgScale = usingDefaults ? (link.image_scale ?? 100) : (parseInt(document.getElementById('link-img-scale')?.value) || 100)
+      if (!link) return true // deleted meanwhile; nothing to save
 
       const updates = {
         url,
-        use_library_defaults: !!link.use_library_defaults,
+        use_library_defaults: useLibraryDefaults,
       }
       // Only include tags if they exist (column may not exist before migration)
-      if (link.tags && link.tags.length > 0) {
-        updates.tags = link.tags
+      if (tags && tags.length > 0) {
+        updates.tags = tags
       }
 
       if (isCustomizing && !hasSource) {
@@ -222,11 +222,38 @@ async function init() {
       console.error('Auto-save link failed:', err)
       return false
     }
-  }, { statusSelector: '#link-save-status' })
+  }, {
+    statusSelector: '#link-save-status',
+    // Snapshot the form now, tied to the link it belongs to. If the user switches to another
+    // link before the debounce fires, the pending edit is saved first instead of being lost.
+    capture: () => {
+      const linkId = selectedLinkId
+      const urlEl = document.getElementById('link-url')
+      if (!linkId || !urlEl) return null
+      const link = links.find(l => l.id === linkId)
+      if (!link) return null
+      const hasSource = !!link.source_link_id
+      const usingDefaults = hasSource && !!link.use_library_defaults
+      return {
+        linkId,
+        title: document.getElementById('link-title')?.value.trim(),
+        url: urlEl.value.trim(),
+        imageUrl: document.getElementById('link-image')?.value.trim(),
+        imgPosX: usingDefaults ? (link.image_position?.x ?? 50) : (parseInt(document.getElementById('link-img-pos-x')?.value) || 50),
+        imgPosY: usingDefaults ? (link.image_position?.y ?? 50) : (parseInt(document.getElementById('link-img-pos-y')?.value) || 50),
+        imgScale: usingDefaults ? (link.image_scale ?? 100) : (parseInt(document.getElementById('link-img-scale')?.value) || 100),
+        hasSource,
+        isCustomizing: hasSource ? !link.use_library_defaults : hasCustomOverrides(link),
+        usingDefaults,
+        useLibraryDefaults: !!link.use_library_defaults,
+        tags: link.tags ? [...link.tags] : link.tags,
+      }
+    },
+    keyOf: (snap) => snap.linkId,
+  })
 
-  themeSaver = createAutoSaver(async () => {
+  themeSaver = createAutoSaver(async (formTheme) => {
     try {
-      const formTheme = getThemeFromForm()
       const newTheme = { ...collection.theme, ...formTheme }
       const { error } = await supabase
         .from('link_lists')
@@ -240,7 +267,11 @@ async function init() {
       console.error('Auto-save theme failed:', err)
       return false
     }
-  }, { statusSelector: '#theme-save-status' })
+  }, {
+    statusSelector: '#theme-save-status',
+    // Theme form not on screen: skip rather than save getThemeFromForm()'s defaults
+    capture: () => (document.getElementById('theme-btn-bg') ? getThemeFromForm() : null),
+  })
 
   registerAutoSaver(presentationSaver)
   registerAutoSaver(settingsSaver)
@@ -430,6 +461,7 @@ function renderLinksList() {
   container.querySelectorAll('.link-item').forEach(item => {
     item.addEventListener('click', (e) => {
       if (e.target.closest('.link-toggle') || e.target.closest('.link-drag-handle')) return
+      linkSaver?.flush() // pending edits were captured for the previous link; save them now
       selectedLinkId = item.dataset.linkId
       renderLinksList()
       renderTabContent()
@@ -760,8 +792,8 @@ function renderDetailsTab(container) {
   // Slug input — live URL preview + sanitize + warning + auto-save with confirmation
   const originalSlug = collection.slug || ''
   document.getElementById('collection-slug')?.addEventListener('input', (e) => {
-    const val = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '')
-    e.target.value = val
+    const val = sanitizeSlugInput(e.target.value)
+    if (e.target.value !== val) e.target.value = val
     const preview = document.getElementById('public-link-preview')
     const status = document.getElementById('slug-status')
     if (preview && profile?.username && val) {
@@ -784,7 +816,7 @@ function renderDetailsTab(container) {
   })
   // On blur, if slug changed from original, confirm before saving
   document.getElementById('collection-slug')?.addEventListener('blur', () => {
-    const val = document.getElementById('collection-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '') || ''
+    const val = slugFromField(document.getElementById('collection-slug')?.value ?? '', originalSlug)
     if (originalSlug && val !== originalSlug && val) {
       const confirmed = confirm(
         'You are changing this collection\'s URL slug.\n\n' +
@@ -876,6 +908,7 @@ function renderDetailsTab(container) {
         renderTabContent()
         renderLinksList()
         renderPreview()
+        linkSaver.trigger() // persist the mode change (previously only saved with a later edit)
       })
     })
 
@@ -939,12 +972,15 @@ function renderDetailsTab(container) {
 // ── Presentation Data Helpers ──
 function updatePresentationDataLive() {
   const pd = collection.presentation_data || {}
-  pd.title = document.getElementById('info-title')?.value || ''
-  pd.conference = document.getElementById('info-conference')?.value || ''
-  pd.location = document.getElementById('info-location')?.value || ''
-  pd.date = document.getElementById('info-date')?.value || ''
-  pd.displayTitle = document.getElementById('display-title')?.checked ?? true
-  pd.displayConference = document.getElementById('display-conference')?.checked ?? true
+  // Only copy fields that are on screen; a missing field must not wipe the saved value
+  const val = (id) => document.getElementById(id)?.value
+  const chk = (id) => document.getElementById(id)?.checked
+  if (val('info-title') !== undefined) pd.title = val('info-title')
+  if (val('info-conference') !== undefined) pd.conference = val('info-conference')
+  if (val('info-location') !== undefined) pd.location = val('info-location')
+  if (val('info-date') !== undefined) pd.date = val('info-date')
+  if (chk('display-title') !== undefined) pd.displayTitle = chk('display-title')
+  if (chk('display-conference') !== undefined) pd.displayConference = chk('display-conference')
   collection.presentation_data = pd
 }
 
@@ -971,7 +1007,7 @@ async function savePresentationData() {
 async function saveCollectionSettings() {
   const visibility = document.getElementById('collection-visibility')?.value || 'public'
   const newPasskey = document.getElementById('collection-passkey')?.value.trim()
-  const slug = document.getElementById('collection-slug')?.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '') || collection.slug
+  const slug = slugFromField(document.getElementById('collection-slug')?.value ?? '', collection.slug)
 
   // Warn if slug is being changed
   if (slug !== collection.slug && collection.slug) {
@@ -1932,6 +1968,7 @@ async function saveAsNewLibraryLink(linkId) {
     if (error) throw error
 
     links.push(data)
+    linkSaver?.flush()
     selectedLinkId = data.id
     renderLinksList()
     renderTabContent()
@@ -1953,6 +1990,7 @@ async function deleteLink(linkId) {
     const { error } = await supabase.from('link_items').delete().eq('id', linkId).eq('list_id', collection.id)
     if (error) throw error
 
+    if (selectedLinkId === linkId) linkSaver?.cancel()
     links = links.filter(l => l.id !== linkId)
     selectedLinkId = null
     renderLinksList()
@@ -2028,6 +2066,7 @@ async function saveNewLink() {
     if (error) throw error
 
     links.push(data)
+    linkSaver?.flush()
     selectedLinkId = data.id
     closeNewLinkModal()
     renderLinksList()
@@ -2139,6 +2178,7 @@ async function addExistingLink(sourceLinkId) {
     data._resolved_image_position = sourceLink.image_position
     data._resolved_image_scale = sourceLink.image_scale
     links.push(data)
+    linkSaver?.flush()
     selectedLinkId = data.id
     closeExistingLinkModal()
     renderLinksList()

@@ -2,21 +2,23 @@
 
 *Last updated: 2026-11-25*
 
-## Deploy Command
+## How to Deploy
+
+Open a pull request and merge it to `main`. Before pushing, run:
 
 ```bash
-npm run deploy
+npm run check
 ```
 
-This single command: builds dist/ → commits → pushes to GitHub → GitHub Actions rebuilds from source and FTPs to cPanel automatically.
+(unit tests + build; fails if dist/ changed and needs committing). Then commit dist/ along with your source changes.
 
-Preferred: open a pull request. CI (`.github/workflows/ci.yml`) builds the site, checks PHP syntax, audits production dependencies, and fails if the committed dist/ doesn't match a fresh build. Merging to `main` deploys.
+The PR flow: CI (`.github/workflows/ci.yml`) builds the site, checks PHP syntax, audits production dependencies, and fails if the committed dist/ doesn't match a fresh build. Merging to `main` deploys.
 
 ## How It Works
 
 1. `npm run build` — Vite builds src/ into dist/ with hashed filenames
-2. `git add dist/ && git commit` — commits the built files
-3. `git push` — pushes to `main` (directly or by merging a PR)
+2. `git add dist/ && git commit` — commits the built files with the source change
+3. Open a PR → CI passes → merge to `main`
 4. GitHub Actions (`.github/workflows/deploy.yml`) — runs `npm ci && npm run build` (Node 22), checks PHP syntax, then FTPs the **fresh build** in dist/ to public_html/ via the `deploy@academiqr.com` FTP account. If the committed dist/ was stale it logs a warning but still deploys the fresh build.
 
 No manual steps in cPanel are needed.
