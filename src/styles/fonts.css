@@ -1,0 +1,16 @@
+/*
+ * Self-hosted fonts and icons (bundled by Vite; previously Google Fonts + cdnjs).
+ * @font-face rules only download a file when a page actually uses it, and the
+ * unicode-range subsets mean only Latin is fetched for English text.
+ */
+
+/* Inter — public collection page, legal pages, analytics chart */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+
+/* Font Awesome 6 Free — only the solid (fas) and brands (fab) styles are used */
+@import '@fortawesome/fontawesome-free/css/fontawesome.min.css';
+@import '@fortawesome/fontawesome-free/css/solid.min.css';
+@import '@fortawesome/fontawesome-free/css/brands.min.css';

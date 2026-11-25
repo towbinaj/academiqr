@@ -13,8 +13,8 @@ AcademiQR is a link-in-bio platform for academics and conference presenters. Use
 | Backend | Supabase (Auth, PostgreSQL, Storage, RLS) |
 | Auth | Email/password + Google OAuth via Supabase Auth |
 | Hosting | GoDaddy cPanel (Apache) |
-| Icons | Font Awesome 6.4.2 (CDN) |
-| Fonts | Inter (Google Fonts) |
+| Icons | Font Awesome Free 6 (npm, bundled; solid + brands) |
+| Fonts | Inter (@fontsource/inter, self-hosted; used on public/legal pages + analytics chart) |
 | QR | qrcode.min.js (CDN) |
 | Export | write-excel-file (Excel, lazy-loaded) + built-in CSV writer |
 | Drag & Drop | SortableJS (dashboard collection reordering) |
