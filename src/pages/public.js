@@ -486,7 +486,8 @@ async function resolveFromUrl() {
   const path = window.location.pathname
   const match = path.match(/^\/u\/([^/]+)\/([^/]+)\/?$/)
   if (match) {
-    const [, username, slug] = match
+    // pathname is percent-encoded (e.g. slugs with spaces -> %20); decode before lookup
+    const [username, slug] = match.slice(1).map(s => { try { return decodeURIComponent(s) } catch { return s } })
     // Look up user by username
     const { data: profileData } = await supabase
       .from('profiles')

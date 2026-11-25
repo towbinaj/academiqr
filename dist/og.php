@@ -33,6 +33,48 @@ function supabase_get(string $path): array {
     return (is_array($data) && array_is_list($data)) ? $data : [];
 }
 
+/**
+ * Active links of a collection with their display titles, resolved the same
+ * way as public.js / shared/link-utils.js:
+ *   title: custom_overrides.title > library source title (use_library_defaults)
+ *          > own title > 'Untitled';  url: the item's own url.
+ * Returns [['title' => string, 'url' => string], ...] in order_index order.
+ */
+function load_link_items(string $collectionId): array {
+    $rows = supabase_get('link_items?select=id,url,title,is_active,source_link_id,use_library_defaults,custom_overrides,order_index'
+        . '&list_id=eq.' . rawurlencode($collectionId) . '&order=order_index.asc');
+    $rows = array_values(array_filter($rows, fn($l) => ($l['is_active'] ?? null) !== false));
+
+    $sourceIds = [];
+    foreach ($rows as $l) {
+        if (!empty($l['use_library_defaults']) && !empty($l['source_link_id'])) {
+            $sourceIds[(string)$l['source_link_id']] = true;
+        }
+    }
+    $sourceTitles = [];
+    if ($sourceIds) {
+        $ids = implode(',', array_map('rawurlencode', array_keys($sourceIds)));
+        foreach (supabase_get("link_items?select=id,title&id=in.($ids)") as $src) {
+            $sourceTitles[$src['id']] = $src['title'] ?? null;
+        }
+    }
+
+    $items = [];
+    foreach ($rows as $l) {
+        $overrides = $l['custom_overrides'] ?? null;
+        $srcId = $l['source_link_id'] ?? null;
+        if (is_array($overrides) && array_key_exists('title', $overrides)) {
+            $title = (string)($overrides['title'] ?? '');
+        } elseif (!empty($l['use_library_defaults']) && $srcId && isset($sourceTitles[$srcId])) {
+            $title = (string)$sourceTitles[$srcId];
+        } else {
+            $title = (string)($l['title'] ?? '');
+        }
+        $items[] = ['title' => $title !== '' ? $title : 'Untitled', 'url' => (string)($l['url'] ?? '')];
+    }
+    return $items;
+}
+
 // Detect user agent type
 $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
@@ -136,7 +178,7 @@ if ($collectionId) {
 
         // Fetch link items for search engine rendering
         if ($isSearchEngine) {
-            $linkItems = supabase_get('link_items?select=title,url,sort_order,is_active&link_list_id=eq.' . rawurlencode($collectionId) . '&is_active=eq.true&order=sort_order.asc');
+            $linkItems = load_link_items($collectionId);
         }
     }
 }
