@@ -15,7 +15,7 @@ AcademiQR is a link-in-bio platform for academics and conference presenters. Use
 | Hosting | GoDaddy cPanel (Apache) |
 | Icons | Font Awesome Free 6 (npm, bundled; solid + brands) |
 | Fonts | Inter (@fontsource/inter, self-hosted; used on public/legal pages + analytics chart) |
-| QR | qrcode.min.js (CDN) |
+| QR | qrcode (npm, lazy-loaded on the editor's QR tab) |
 | Export | write-excel-file (Excel, lazy-loaded) + built-in CSV writer |
 | Drag & Drop | SortableJS (dashboard collection reordering) |
 | CI/CD | GitHub Actions: PR checks (audit, unit + Playwright browser tests, build, PHP lint); build + FTP deploy to cPanel on push to main; Dependabot weekly updates |

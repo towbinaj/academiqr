@@ -48,5 +48,5 @@ npm run check     # Unit tests + build + browser tests (run before pushing)
 - Don't commit dist/ — it's build output. Edit `public/.htaccess` (copied into dist/ by the build); it has security headers and URL rewrite rules
 - Browser tests mock Supabase in `tests/e2e/supabase-mock.mjs`; add a test there when fixing a UI bug
 - Passkeys are plain-text access codes for presentations, NOT security credentials
-- Fonts and icons are bundled via `src/styles/fonts.css` (@fontsource/inter, @fortawesome/fontawesome-free v6: solid + brands only). Only qrcode.min.js (editor) still loads from cdnjs. `public/404.html` is static (no Vite) — its icons are inline SVG
+- Fonts and icons are bundled via `src/styles/fonts.css` (@fontsource/inter, @fortawesome/fontawesome-free v6: solid + brands only). QR codes use the `qrcode` npm package (lazy-loaded on the QR tab). No CDN scripts/styles remain. `public/404.html` is static (no Vite) — its icons are inline SVG
 - Vite 8 config uses 8 MPA entry points — update build.rolldownOptions.input if adding pages
