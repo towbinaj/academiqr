@@ -31,7 +31,7 @@ echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     $slug = $coll['slug'] ?? null;
     if (!$username || !$slug) continue;
 
-    $loc = htmlspecialchars("https://academiqr.com/u/$username/$slug", ENT_XML1, 'UTF-8');
+    $loc = htmlspecialchars('https://academiqr.com/u/' . rawurlencode($username) . '/' . rawurlencode($slug), ENT_XML1, 'UTF-8');
     $lastmod = '';
     if (!empty($coll['updated_at'])) {
         $lastmod = date('Y-m-d', strtotime($coll['updated_at']));
