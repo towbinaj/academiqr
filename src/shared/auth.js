@@ -11,7 +11,8 @@ import { supabase } from './supabase.js'
 export async function getCurrentUser() {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error) {
-    console.error('Error getting current user:', error)
+    // No stored session is the normal signed-out state, not an error worth logging
+    if (error.name !== 'AuthSessionMissingError') console.error('Error getting current user:', error)
     return null
   }
   return user
@@ -102,14 +103,15 @@ export function onAuthStateChange(callback) {
 
 /**
  * Require authentication — redirects to login if not authenticated
- * Call this at the top of any protected page
- * @returns {Promise<object>} The authenticated user
+ * Call this at the top of any protected page: `user = await requireAuth(); if (!user) return`
+ * @returns {Promise<object|null>} The authenticated user, or null while redirecting to login
  */
 export async function requireAuth() {
   const user = await getCurrentUser()
   if (!user) {
-    window.location.href = '/index.html'
-    throw new Error('Not authenticated')
+    // replace(): the back button shouldn't return to a page that immediately redirects again
+    window.location.replace('/index.html')
+    return null
   }
   return user
 }

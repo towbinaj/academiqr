@@ -497,7 +497,7 @@ export function renderQRCodeTab(container, collection, user) {
           <div class="form-group">
             <label>Collection URL</label>
             <div class="qr-url-row">
-              <input type="text" id="qr-url" class="form-input" value="${escapeHtml(publicUrl)}" readonly>
+              <input type="text" id="qr-url" class="form-input" value="${escapeHtml(publicUrl)}" readonly aria-label="Link encoded in the QR code">
               <button id="qr-copy-url" class="btn-icon" title="Copy URL"><i class="fas fa-copy"></i></button>
             </div>
           </div>
@@ -507,15 +507,15 @@ export function renderQRCodeTab(container, collection, user) {
             <div class="qr-color-group">
               <label>QR Code Color</label>
               <div class="color-options">
-                <input type="color" id="qr-color" value="${savedColor}" class="color-picker">
-                <input type="text" id="qr-color-text" value="${savedColor}" class="color-input" maxlength="7">
+                <input type="color" id="qr-color" value="${savedColor}" class="color-picker" aria-label="QR code color">
+                <input type="text" id="qr-color-text" value="${savedColor}" class="color-input" maxlength="7" aria-label="QR code color (hex)">
               </div>
             </div>
             <div class="qr-color-group">
               <label>Background Color</label>
               <div class="color-options">
-                <input type="color" id="qr-bg-color" value="${savedBgColor}" class="color-picker">
-                <input type="text" id="qr-bg-color-text" value="${savedBgColor}" class="color-input" maxlength="7">
+                <input type="color" id="qr-bg-color" value="${savedBgColor}" class="color-picker" aria-label="QR background color">
+                <input type="text" id="qr-bg-color-text" value="${savedBgColor}" class="color-input" maxlength="7" aria-label="QR background color (hex)">
               </div>
             </div>
           </div>
@@ -596,7 +596,7 @@ export function renderQRCodeTab(container, collection, user) {
         <!-- Right: Preview + Download -->
         <div class="qr-preview-section">
           <div id="qr-code-container" class="qr-code-container">
-            <div style="text-align:center; color:#9ca3af;">
+            <div style="text-align:center; color:var(--text-muted);">
               <i class="fas fa-qrcode" style="font-size:2rem; margin-bottom:8px; display:block; opacity:0.3;"></i>
               <p style="font-size:0.85rem;">Generating...</p>
             </div>

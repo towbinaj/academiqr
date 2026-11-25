@@ -502,6 +502,9 @@ function renderTabContent() {
     case 'qr-code': renderQRCodeTab(content); break
     case 'analytics': renderAnalyticsTab(content); break
   }
+  // Screen-reader heading for the active tab, so the tab's section <h3>s nest under h1 > h2
+  const tabNames = { details: 'Collection details', appearance: 'Appearance', 'qr-code': 'QR code', analytics: 'Analytics' }
+  content.insertAdjacentHTML('afterbegin', `<h2 class="sr-only">${tabNames[activeTab] || ''}</h2>`)
 }
 
 function renderDetailsTab(container) {
@@ -579,12 +582,12 @@ function renderDetailsTab(container) {
             <span class="slug-prefix">${profile?.username ? `academiqr.com/u/${escapeHtml(profile.username)}/` : 'slug: '}</span>
             <input type="text" id="collection-slug" value="${escapeHtml(collection.slug || '')}" placeholder="my-collection" maxlength="60">
           </div>
-          <p id="slug-status" style="font-size:0.75rem; margin-top:4px; min-height:1.2em; color:#9ca3af;"></p>
+          <p id="slug-status" style="font-size:0.75rem; margin-top:4px; min-height:1.2em; color:var(--text-muted);"></p>
         </div>
         <div class="form-group">
           <label>Public Link</label>
           <div style="display:flex; align-items:center; gap:8px; background:#f8fafc; padding:10px 14px; border-radius:8px; border:1px solid #e2e8f0;">
-            <i class="fas fa-link" style="color:#9ca3af; font-size:0.75rem;"></i>
+            <i class="fas fa-link" style="color:var(--text-muted); font-size:0.75rem;"></i>
             <span id="public-link-preview" style="color:#64748b; font-size:0.8rem; word-break:break-all;">${profile?.username && collection.slug ? `academiqr.com/u/${escapeHtml(profile.username)}/${escapeHtml(collection.slug)}` : `academiqr.com/public.html?collection=${collection.id.substring(0, 8)}...`}</span>
             <button type="button" class="btn-ghost btn-sm" id="copy-link-btn" title="Copy link" style="margin-left:auto;"><i class="fas fa-copy"></i></button>
           </div>
@@ -742,7 +745,7 @@ function renderDetailsTab(container) {
     }
   } else {
     html += `
-    <div style="text-align:center; padding:24px; color:#9ca3af;">
+    <div style="text-align:center; padding:24px; color:var(--text-muted);">
       <i class="fas fa-mouse-pointer" style="font-size:1.5rem; opacity:0.3; margin-bottom:8px; display:block;"></i>
       <p style="font-size:0.875rem;">Select a link in the sidebar to edit it</p>
     </div>
@@ -1254,8 +1257,8 @@ function renderAppearanceTab(container) {
           <div id="bg-solid-group" style="display:${bgType === 'solid' ? 'block' : 'none'}">
             <div class="form-group">
               <div class="color-input-row">
-                <input type="color" id="theme-bg-color" value="${bgColor}">
-                <input type="text" id="theme-bg-color-text" value="${bgColor}" class="color-text">
+                <input type="color" id="theme-bg-color" value="${bgColor}" aria-label="Background color">
+                <input type="text" id="theme-bg-color-text" value="${bgColor}" class="color-text" aria-label="Background color (hex)">
               </div>
               ${colorPresetsHtml(bgColor)}
             </div>
@@ -1318,22 +1321,22 @@ function renderAppearanceTab(container) {
           <div class="form-group">
             <label>Profile and Presentation Information Text Color</label>
             <div class="color-input-row">
-              <input type="color" id="theme-presentation-text" value="${presentationTextColor}">
-              <input type="text" id="theme-presentation-text-val" value="${presentationTextColor}" class="color-text">
+              <input type="color" id="theme-presentation-text" value="${presentationTextColor}" aria-label="Text color">
+              <input type="text" id="theme-presentation-text-val" value="${presentationTextColor}" class="color-text" aria-label="Text color (hex)">
             </div>
             ${colorPresetsHtml(presentationTextColor)}
           </div>
           <div class="form-group">
             <label>Button Text Color</label>
             <div class="color-input-row">
-              <input type="color" id="theme-btn-text" value="${buttonTextColor}">
-              <input type="text" id="theme-btn-text-val" value="${buttonTextColor}" class="color-text">
+              <input type="color" id="theme-btn-text" value="${buttonTextColor}" aria-label="Button text color">
+              <input type="text" id="theme-btn-text-val" value="${buttonTextColor}" class="color-text" aria-label="Button text color (hex)">
             </div>
             ${colorPresetsHtml(buttonTextColor)}
           </div>
           <div class="form-group">
             <label>Button Style</label>
-            <select id="theme-button-style" class="form-select">
+            <select id="theme-button-style" class="form-select" aria-label="Button style">
               <option value="soft" ${buttonStyle === 'soft' ? 'selected' : ''}>Soft Glass</option>
               <option value="solid" ${buttonStyle === 'solid' ? 'selected' : ''}>Solid</option>
               <option value="outline" ${buttonStyle === 'outline' ? 'selected' : ''}>Outline</option>
@@ -1429,7 +1432,7 @@ function renderAppearanceTab(container) {
           <div class="form-group">
             <label>Saved Themes</label>
             <div id="saved-themes-list">
-              <p style="color:#9ca3af; font-size:0.875rem;">Loading...</p>
+              <p style="color:var(--text-muted); font-size:0.875rem;">Loading...</p>
             </div>
           </div>
         </div>
@@ -2129,8 +2132,8 @@ function renderExistingLinks(query) {
       <div class="existing-link-item" data-link-id="${link.id}">
         <div class="link-thumb">
           ${link.image_url
-            ? `<img src="${escapeHtml(link.image_url)}" alt="" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-link\\' style=\\'color:#9ca3af\\'></i>'">`
-            : '<i class="fas fa-link" style="color:#9ca3af"></i>'}
+            ? `<img src="${escapeHtml(link.image_url)}" alt="" onerror="this.parentElement.innerHTML='<i class=\\'fas fa-link\\' style=\\'color:var(--text-muted)\\'></i>'">`
+            : '<i class="fas fa-link" style="color:var(--text-muted)"></i>'}
         </div>
         <div class="link-info">
           <div class="link-title">${escapeHtml(link.title || 'Untitled')}</div>
@@ -2210,7 +2213,7 @@ async function openMediaLibrary(callback) {
 
   // Show loading
   content.innerHTML = `
-    <div style="text-align:center; padding:32px; color:#9ca3af;">
+    <div style="text-align:center; padding:32px; color:var(--text-muted);">
       <i class="fas fa-spinner fa-spin" style="font-size:1.5rem;"></i>
       <p style="margin-top:12px;">Loading your images...</p>
     </div>
@@ -2221,7 +2224,7 @@ async function openMediaLibrary(callback) {
 
     if (images.length === 0) {
       content.innerHTML = `
-        <div style="text-align:center; padding:32px; color:#9ca3af;">
+        <div style="text-align:center; padding:32px; color:var(--text-muted);">
           <i class="fas fa-images" style="font-size:2rem; opacity:0.3; margin-bottom:12px; display:block;"></i>
           <p>No uploaded images yet.</p>
           <p style="font-size:0.8rem;">Upload an image first, then it will appear here for reuse.</p>
@@ -2404,7 +2407,7 @@ async function loadSavedThemes() {
     if (error) throw error
 
     if (!data || data.length === 0) {
-      container.innerHTML = '<p style="color:#9ca3af; font-size:0.875rem;">No saved themes yet.</p>'
+      container.innerHTML = '<p style="color:var(--text-muted); font-size:0.875rem;">No saved themes yet.</p>'
       return
     }
 

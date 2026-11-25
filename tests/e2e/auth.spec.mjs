@@ -40,3 +40,16 @@ test('signed in: the home page sends you to the dashboard', async ({ page, conte
   await page.goto('/')
   await expect(page).toHaveURL(/dashboard\.html/)
 })
+
+test('signed-out redirect from protected pages logs no console errors', async ({ page, context }) => {
+  await mockSupabase(context)
+  const errors = []
+  page.on('console', m => { if (m.type() === 'error') errors.push(m.text()) })
+  page.on('pageerror', e => errors.push(e.message))
+  for (const p of ['dashboard', 'editor', 'library', 'profile']) {
+    await page.goto(`/src/pages/${p}.html`)
+    await expect(page).toHaveURL(/\/index\.html$/)
+    await page.waitForLoadState('networkidle')
+  }
+  expect(errors).toEqual([])
+})

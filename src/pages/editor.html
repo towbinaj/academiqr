@@ -21,7 +21,7 @@
     <!-- Editor: 3-column layout -->
     <div class="editor-layout">
       <!-- Left: Links list for this collection -->
-      <aside class="editor-sidebar">
+      <aside class="editor-sidebar" aria-label="Collection links">
         <div class="editor-sidebar-header">
           <a href="/src/pages/dashboard.html" class="back-link"><i class="fas fa-arrow-left"></i> My Collections</a>
           <h2 id="collection-title">Loading...</h2>
@@ -38,6 +38,7 @@
 
       <!-- Center: Editor panel -->
       <main class="editor-main">
+        <h1 class="sr-only">Edit collection</h1>
         <div class="tab-bar">
           <button class="tab active" data-tab="details">Collection</button>
           <button class="tab" data-tab="appearance">Appearance</button>
@@ -50,7 +51,7 @@
       </main>
 
       <!-- Right: Live preview -->
-      <aside class="editor-preview">
+      <aside class="editor-preview" aria-label="Live preview">
         <div class="preview-header">
           <span>Live Preview</span>
         </div>

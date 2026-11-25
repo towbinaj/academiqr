@@ -67,7 +67,7 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 0.875rem;
   pointer-events: none;
 }
@@ -176,7 +176,7 @@
 }
 
 .lib-link-image-empty {
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 0.875rem;
 }
 
@@ -197,14 +197,14 @@
 
 .lib-link-url {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .lib-link-url a {
-  color: #9ca3af;
+  color: var(--text-muted);
   text-decoration: none;
 }
 
@@ -241,7 +241,7 @@
 .btn-icon {
   background: none;
   border: none;
-  color: #9ca3af;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 6px 8px;
   border-radius: 6px;
@@ -285,7 +285,7 @@
   align-items: center;
   justify-content: center;
   padding: 64px 24px;
-  color: #9ca3af;
+  color: var(--text-muted);
   text-align: center;
 }
 
@@ -314,7 +314,7 @@
   justify-content: center;
   padding: 64px 24px;
   gap: 16px;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 .loading-spinner {
@@ -394,7 +394,7 @@
 .modal-close {
   background: none;
   border: none;
-  color: #9ca3af;
+  color: var(--text-muted);
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 6px;
@@ -675,7 +675,7 @@
 
 .atc-collection-item i {
   margin-right: 8px;
-  color: #9ca3af;
+  color: var(--text-muted);
 }
 
 /* ── Media Grid (library page) ── */

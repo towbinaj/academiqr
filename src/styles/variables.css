@@ -16,7 +16,7 @@
   --color-success-bg: rgba(34, 197, 94, 0.1);
   --color-warning: #f59e0b;
   --color-warning-bg: rgba(245, 158, 11, 0.1);
-  --color-danger: #ef4444;
+  --color-danger: #dc2626; /* white text 4.8:1 */
   --color-danger-bg: rgba(239, 68, 68, 0.1);
 
   /* ── Light Theme (matching v0.6.7) ── */

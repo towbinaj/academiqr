@@ -59,7 +59,7 @@ async function checkUsernameOnboarding() {
     banner.innerHTML = `
       <div class="onboarding-content">
         <div class="onboarding-text">
-          <h3><i class="fas fa-user-tag"></i> Set Your Username</h3>
+          <h2><i class="fas fa-user-tag"></i> Set Your Username</h2>
           <p>Choose a permanent username for your public collection URLs (e.g. academiqr.com/u/<strong>your-name</strong>/collection)</p>
         </div>
         <div class="onboarding-input">
@@ -300,7 +300,7 @@ function renderCollections() {
     grid.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon"><i class="fas fa-rocket"></i></div>
-        <h3>Welcome to AcademiQR</h3>
+        <h2>Welcome to AcademiQR</h2>
         <p>Create your first collection to start sharing links with your audience.</p>
         <button class="btn-primary" id="empty-create-btn">
           <i class="fas fa-plus"></i> Create Collection
@@ -318,7 +318,7 @@ function renderCollections() {
     grid.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon"><i class="fas fa-search"></i></div>
-        <h3>No matching collections</h3>
+        <h2>No matching collections</h2>
         <p>No collections match "${escapeHtml(searchQuery)}". Try a different search term.</p>
       </div>
     `
@@ -362,7 +362,7 @@ function renderCollections() {
             ${!isSearching ? '<span class="drag-handle" title="Drag to reorder"><i class="fas fa-grip-vertical"></i></span>' : ''}
             <div class="card-content">
               <div class="card-title-row">
-                <h3 class="card-title">${escapeHtml(title)}</h3>
+                <h2 class="card-title">${escapeHtml(title)}</h2>
                 <div class="card-actions">
                   <button class="btn-icon" title="Duplicate" data-action="duplicate" data-id="${collection.id}">
                     <i class="fas fa-copy"></i>
