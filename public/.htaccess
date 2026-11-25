@@ -19,6 +19,12 @@
 
   # Short URLs: /u/{username}/{slug} -> public.html (public.js resolves from the path)
   RewriteRule ^u/([^/]+)/([^/]+)/?$ /public.html [L,QSA]
+
+  # Anything that isn't a real file or directory -> 404.php (custom page, real 404 status).
+  # ErrorDocument below is ignored by this host, so don't rely on it.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ /404.php [L]
 </IfModule>
 
 # ── Cache Control ──
@@ -48,3 +54,11 @@ Options -Indexes
     Require all denied
   </IfModule>
 </FilesMatch>
+
+# Re-allow the web app manifest (linked from every page); later sections win,
+# so this overrides the .json block above for this one file only.
+<Files "manifest.json">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+</Files>
