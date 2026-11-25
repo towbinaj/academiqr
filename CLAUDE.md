@@ -4,6 +4,8 @@
 npm run dev       # Vite dev server (port 3000)
 npm run build     # Production build to dist/
 npm run preview   # Preview production build
+npm test          # Unit tests (node:test, tests/*.test.mjs)
+npm run check     # Tests + build + fail if dist/ needs committing
 
 ## Architecture
 - Vanilla ES6+ modules, no framework — multi-page app (MPA) via Vite
@@ -22,9 +24,10 @@ npm run preview   # Preview production build
 ## Conventions
 - All pages import shared modules from `../../shared/`
 - State flows through `state.js` — no global variables
-- Auto-save uses debounced saves via `auto-save.js`
+- Auto-save uses debounced saves via `auto-save.js`; pass `capture` to snapshot form values at change time (and `keyOf` for per-item savers) — never read the DOM inside the save callback
 - Links use a 3-tier resolution: library default → collection override → display
 - Tags are normalized (lowercase, trimmed) via `tag-utils.js`
+- Slugs go through `slug-utils.js` (`slugify`; `slugFromField` leaves untouched legacy slugs alone)
 - Toast notifications via `toast.js` — never use alert()
 - Input sanitization via `security.js` — always sanitize user input before DOM insertion
 - Client-side rate limiting via `rate-limit.js` for auth attempts
@@ -44,6 +47,5 @@ npm run preview   # Preview production build
 - Rebuild and commit dist/ with source changes — `npm run build && git add dist/` (CI checks it matches a fresh build)
 - .htaccess in dist/ has security headers and URL rewrite rules — don't overwrite it
 - Passkeys are plain-text access codes for presentations, NOT security credentials
-- Auto-save has a known bug: captures stale form values (dirty tracking planned for v1.2)
 - CDN dependencies (Font Awesome, qrcode.min.js, Google Fonts) are loaded in HTML, not bundled
 - Vite 8 config uses 8 MPA entry points — update build.rolldownOptions.input if adding pages

@@ -68,7 +68,7 @@
 
 ## Known Issues
 
-1. **Auto-save captures stale form values** — Auto-save doesn't track dirty fields, so it can persist values the user hasn't intentionally changed. Planned fix for v1.2.
+1. ~~**Auto-save captures stale form values**~~ — Fixed 2026-11: savers snapshot form values at change time (`capture`), per-link saves are keyed (`keyOf`), saves are serialized, and pending saves flush when the tab is hidden.
 
 ## Database Migrations Applied
 
@@ -85,7 +85,7 @@
 - **Hosting**: GoDaddy cPanel
 - **Backend**: Supabase (project: `natzpfyxpuycsuuzbqrd`)
 - **Repo**: `github.com/towbinaj/academiqr` (public, branch `v1.1`)
-- **Deploy**: `npm run deploy` → GitHub Actions FTPs dist/ to public_html/ automatically
+- **Deploy**: PR → CI → merge to main → GitHub Actions builds and FTPs to public_html/
 - **Domains**: `academiqr.com` (primary), `academiqr.net` (301 redirect)
 - **Backups**: Weekly automated pg_dump via launchd (local, 30-day rotation)
 

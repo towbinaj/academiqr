@@ -9,6 +9,7 @@ import Sortable from 'sortablejs'
 import { initThemeToggle, toggleTheme, getCurrentTheme } from '../shared/theme-toggle.js'
 import { showToast } from '../shared/toast.js'
 import { renderTagChips, normalizeTag, normalizeTags, getAllUserTags, createTagInput, invalidateTagCache } from '../shared/tag-utils.js'
+import { slugify } from '../shared/slug-utils.js'
 
 let user = null
 let collections = []
@@ -569,12 +570,7 @@ async function handleReorderEnd() {
 // ── Actions ──
 
 function generateSlug(title) {
-  let slug = title.toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')  // remove special chars
-    .replace(/\s+/g, '-')          // spaces to hyphens
-    .replace(/-+/g, '-')           // collapse multiple hyphens
-    .replace(/^-|-$/g, '')         // trim leading/trailing hyphens
-    .substring(0, 50)
+  const slug = slugify(title, 50)
   // Add short random suffix for uniqueness
   return slug ? `${slug}-${Math.random().toString(36).substring(2, 6)}` : crypto.randomUUID().substring(0, 8)
 }
@@ -612,7 +608,7 @@ async function duplicateCollection(id) {
   if (!confirm(`Duplicate "${original.presentation_data?.title || 'Untitled'}"?`)) return
 
   try {
-    const newSlug = crypto.randomUUID()
+    const newSlug = generateSlug((original.presentation_data?.title || 'untitled') + ' copy')
     const maxOrder = collections.reduce((max, c) => Math.max(max, c.order_index || 0), 0)
     const { data, error } = await supabase
       .from('link_lists')
