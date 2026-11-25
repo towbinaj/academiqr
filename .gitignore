@@ -6,8 +6,12 @@ node_modules/
 .env.local
 .env.production
 
-# Build output — NOT ignored because cPanel deploys from dist/
-# dist/
+# Build output — built and deployed by GitHub Actions (.github/workflows/deploy.yml)
+dist/
+
+# Playwright output
+test-results/
+playwright-report/
 
 # IDE & local dev
 .vscode/

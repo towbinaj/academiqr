@@ -33,11 +33,8 @@ jobs:
       - name: Check PHP syntax
         run: for f in public/*.php dist/*.php; do php -l "$f"; done
 
-      - name: Committed dist/ matches a fresh build
-        run: |
-          if [ -n "$(git status --porcelain -- dist)" ]; then
-            echo "::error::dist/ is out of date. Run 'npm run build' and commit dist/."
-            git status --short -- dist
-            git diff --stat -- dist
-            exit 1
-          fi
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser tests (built site, Supabase mocked)
+        run: npm run test:e2e
