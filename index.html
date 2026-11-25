@@ -60,6 +60,15 @@
     ]
   }
   </script>
+  <script>
+    // Before first paint: with no stored Supabase session (and no OAuth/reset tokens in the URL),
+    // show the landing page + login form immediately instead of a spinner that then gets pushed
+    // off-screen (layout shift). Signed-in visitors keep the spinner -> dashboard redirect.
+    try {
+      var hasSession = Object.keys(localStorage).some(function (k) { return /^sb-.*-auth-token$/.test(k) })
+      if (!hasSession && !/access_token=|type=recovery/.test(location.hash)) document.documentElement.classList.add('no-session')
+    } catch (e) { /* storage blocked: keep default behaviour */ }
+  </script>
 </head>
 <body>
   <!-- Landing Page -->
@@ -163,7 +172,7 @@
 
   </div>
 
-  <div id="app">
+  <main id="app">
 
     <!-- Loading Screen -->
     <div id="loading" class="loading-screen">
@@ -179,7 +188,7 @@
         <!-- Logo -->
         <div class="login-logo">
           <img id="login-logo-img" alt="AcademiQR" src="https://natzpfyxpuycsuuzbqrd.supabase.co/storage/v1/object/public/assets/AcademiQR_logo_blue.png"
-               style="max-height: 80px; width: auto;">
+               width="100" height="80" style="max-height: 80px; width: auto;">
           <p class="login-tagline">Share your work, instantly</p>
         </div>
         <p class="login-subtitle">Share your work, instantly</p>
@@ -260,7 +269,7 @@
       </div>
     </div>
 
-  </div>
+  </main>
   <script type="module" src="/src/pages/login.js"></script>
 </body>
 </html>

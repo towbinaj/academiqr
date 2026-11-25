@@ -28,7 +28,7 @@
 
   --text-primary: #1e293b;
   --text-secondary: #64748b;
-  --text-muted: #9ca3af;
+  --text-muted: #6b7280; /* 4.6:1 on --bg-primary (WCAG AA) */
   --text-heading: #1A2F5B;
 
   --border-color: #e2e8f0;
@@ -102,7 +102,7 @@
 
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-muted: #94a3b8; /* 6.9:1 on dark --bg-primary */
   --text-heading: #e2e8f0;
 
   --border-color: #334155;

@@ -37,6 +37,8 @@
   # CSS/JS with hashed filenames — cache aggressively
   ExpiresByType text/css "access plus 1 year"
   ExpiresByType application/javascript "access plus 1 year"
+  # Apache serves .js as text/javascript, which the line above never matched (JS was uncached)
+  ExpiresByType text/javascript "access plus 1 year"
   # Images
   ExpiresByType image/png "access plus 1 month"
   ExpiresByType image/jpeg "access plus 1 month"

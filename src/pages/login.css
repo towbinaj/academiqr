@@ -291,8 +291,15 @@ html { scroll-behavior: smooth; }
   padding: var(--space-6);
 }
 
+/* No stored session (set by the inline script in index.html before first paint):
+   show landing + login straight away, skip the spinner — avoids a full-page layout shift */
+html.no-session #landing.hidden { display: block !important; }
+html.no-session #login.hidden { display: flex !important; }
+html.no-session #loading { display: none !important; }
+
 /* When landing page is visible, login doesn't need full viewport height */
-.landing:not(.hidden) ~ #app .login-screen {
+.landing:not(.hidden) ~ #app .login-screen,
+html.no-session #app .login-screen {
   min-height: auto;
   padding: 48px 24px 80px;
 }

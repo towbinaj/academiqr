@@ -352,7 +352,7 @@ function renderPage(collection, links, profile) {
             <div class="public-profile">
               ${photoSrc ? `
                 <div class="public-avatar">
-                  <img src="${escapeHtml(photoSrc)}" alt="Profile"
+                  <img src="${escapeHtml(photoSrc)}" alt="Profile" fetchpriority="high" decoding="async"
                        style="transform: translate(${panX}%, ${panY}%) scale(${scaleVal}); transform-origin: center center;"
                        onerror="this.parentElement.style.display='none'">
                 </div>
@@ -400,7 +400,7 @@ function renderPage(collection, links, profile) {
                   ${linkImgUrl ? `
                     <div class="public-link-image-wrapper">
                       <div class="public-link-image">
-                        <img src="${escapeHtml(linkImgUrl)}" alt=""
+                        <img src="${escapeHtml(linkImgUrl)}" alt="" loading="lazy" decoding="async"
                              style="${imgStyle}"
                              onerror="this.parentElement.innerHTML='<i class=\\'fas fa-link\\' style=\\'color:#6b7280\\'></i>'">
                       </div>
