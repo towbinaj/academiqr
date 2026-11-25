@@ -16,6 +16,23 @@
 $SUPABASE_URL = 'https://natzpfyxpuycsuuzbqrd.supabase.co';
 $SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5hdHpwZnl4cHV5Y3N1dXpicXJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5NTExODQsImV4cCI6MjA3NjUyNzE4NH0.q06AAoHZrfS3-O7568VpikaOtn6qAlDyDM7VR6sgzeU';
 
+/**
+ * GET a Supabase REST path with the anon key. Returns the decoded JSON list,
+ * or [] on network error, timeout (5 s), HTTP error or a non-list response.
+ * Callers must rawurlencode() any value they put into $path.
+ */
+function supabase_get(string $path): array {
+    global $SUPABASE_URL, $SUPABASE_ANON_KEY;
+    $ctx = stream_context_create(['http' => [
+        'header'  => "apikey: $SUPABASE_ANON_KEY\r\nAuthorization: Bearer $SUPABASE_ANON_KEY",
+        'timeout' => 5,
+    ]]);
+    $json = @file_get_contents("$SUPABASE_URL/rest/v1/$path", false, $ctx);
+    if ($json === false) return [];
+    $data = json_decode($json, true);
+    return (is_array($data) && array_is_list($data)) ? $data : [];
+}
+
 // Detect user agent type
 $ua = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
@@ -54,26 +71,28 @@ $slug = null;
 $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 
 if (preg_match('#^/u/([^/]+)/([^/]+)/?$#', $path, $matches)) {
-    $username = $matches[1];
-    $slug = $matches[2];
+    $username = rawurldecode($matches[1]);
+    $slug = rawurldecode($matches[2]);
 
     // Look up user by username
-    $profileJson = file_get_contents("$SUPABASE_URL/rest/v1/profiles?username=eq.$username&select=id", false,
-        stream_context_create(['http' => ['header' => "apikey: $SUPABASE_ANON_KEY\r\nAuthorization: Bearer $SUPABASE_ANON_KEY"]]));
-    $profiles = json_decode($profileJson, true);
+    $profiles = supabase_get('profiles?username=eq.' . rawurlencode($username) . '&select=id');
 
     if ($profiles && count($profiles) > 0) {
         $ownerId = $profiles[0]['id'];
         // Look up collection by slug + owner
-        $collJson = file_get_contents("$SUPABASE_URL/rest/v1/link_lists?owner_id=eq.$ownerId&slug=eq.$slug&select=id", false,
-            stream_context_create(['http' => ['header' => "apikey: $SUPABASE_ANON_KEY\r\nAuthorization: Bearer $SUPABASE_ANON_KEY"]]));
-        $colls = json_decode($collJson, true);
+        $colls = supabase_get('link_lists?owner_id=eq.' . rawurlencode($ownerId) . '&slug=eq.' . rawurlencode($slug) . '&select=id');
         if ($colls && count($colls) > 0) {
             $collectionId = $colls[0]['id'];
         }
     }
 } else {
     $collectionId = $_GET['collection'] ?? null;
+}
+
+// Collection IDs are UUIDs; ignore anything else (it would otherwise be
+// spliced into the Supabase query string).
+if (!is_string($collectionId) || !preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $collectionId)) {
+    $collectionId = null;
 }
 
 // Default OG values
@@ -87,9 +106,7 @@ $linkItems = [];
 
 if ($collectionId) {
     // Fetch collection
-    $collJson = file_get_contents("$SUPABASE_URL/rest/v1/link_lists?id=eq.$collectionId&select=presentation_data,owner_id", false,
-        stream_context_create(['http' => ['header' => "apikey: $SUPABASE_ANON_KEY\r\nAuthorization: Bearer $SUPABASE_ANON_KEY"]]));
-    $collections = json_decode($collJson, true);
+    $collections = supabase_get('link_lists?id=eq.' . rawurlencode($collectionId) . '&select=presentation_data,owner_id');
 
     if ($collections && count($collections) > 0) {
         $coll = $collections[0];
@@ -102,9 +119,7 @@ if ($collectionId) {
 
         // Fetch profile for display name + photo
         $ownerId = $coll['owner_id'];
-        $profJson = file_get_contents("$SUPABASE_URL/rest/v1/profiles?id=eq.$ownerId&select=display_name,profile_photo", false,
-            stream_context_create(['http' => ['header' => "apikey: $SUPABASE_ANON_KEY\r\nAuthorization: Bearer $SUPABASE_ANON_KEY"]]));
-        $profs = json_decode($profJson, true);
+        $profs = supabase_get('profiles?id=eq.' . rawurlencode($ownerId) . '&select=display_name,profile_photo');
 
         if ($profs && count($profs) > 0) {
             if (!empty($profs[0]['display_name'])) {
@@ -121,12 +136,7 @@ if ($collectionId) {
 
         // Fetch link items for search engine rendering
         if ($isSearchEngine) {
-            $linksJson = file_get_contents(
-                "$SUPABASE_URL/rest/v1/link_items?select=title,url,sort_order,is_active&link_list_id=eq.$collectionId&is_active=eq.true&order=sort_order.asc",
-                false,
-                stream_context_create(['http' => ['header' => "apikey: $SUPABASE_ANON_KEY\r\nAuthorization: Bearer $SUPABASE_ANON_KEY"]])
-            );
-            $linkItems = json_decode($linksJson, true) ?? [];
+            $linkItems = supabase_get('link_items?select=title,url,sort_order,is_active&link_list_id=eq.' . rawurlencode($collectionId) . '&is_active=eq.true&order=sort_order.asc');
         }
     }
 }
@@ -173,7 +183,7 @@ if ($isSearchEngine) {
             ];
         }
     }
-    $jsonLdJson = json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    $jsonLdJson = json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_HEX_TAG | JSON_HEX_AMP);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -232,7 +242,8 @@ if ($isSearchEngine) {
   <ul>
 <?php foreach ($linkItems as $item):
     $linkTitle = htmlspecialchars($item['title'] ?? 'Untitled', ENT_QUOTES, 'UTF-8');
-    $linkUrl = htmlspecialchars($item['url'] ?? '#', ENT_QUOTES, 'UTF-8');
+    $rawUrl = (string)($item['url'] ?? '');
+    $linkUrl = preg_match('#^https?://#i', $rawUrl) ? htmlspecialchars($rawUrl, ENT_QUOTES, 'UTF-8') : '#';
 ?>
     <li><a href="<?= $linkUrl ?>"><?= $linkTitle ?></a></li>
 <?php endforeach; ?>
@@ -268,6 +279,6 @@ if ($isSearchEngine) {
 </head>
 <body>
   <p>Redirecting...</p>
-  <script>window.location.href = "<?= $ogUrl ?>";</script>
+  <script>window.location.href = <?= json_encode(html_entity_decode($ogUrl, ENT_QUOTES, 'UTF-8'), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;</script>
 </body>
 </html>
