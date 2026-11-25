@@ -532,7 +532,7 @@ button {
   border-radius: 50%;
   border: 1px dashed #d1d5db;
   background: none;
-  color: #9ca3af;
+  color: var(--text-muted);
   font-size: 0.5rem;
   cursor: pointer;
   transition: all 0.15s;

@@ -365,9 +365,9 @@ export function renderAnalyticsTab(container, collection, user) {
 
       <!-- Date Range Filter -->
       <div class="analytics-date-row">
-        <input type="date" id="analytics-date-from" class="form-input" value="${defaults.from}">
+        <input type="date" id="analytics-date-from" class="form-input" value="${defaults.from}" aria-label="Start date">
         <span class="analytics-date-sep">to</span>
-        <input type="date" id="analytics-date-to" class="form-input" value="${defaults.to}">
+        <input type="date" id="analytics-date-to" class="form-input" value="${defaults.to}" aria-label="End date">
         <button id="analytics-refresh" class="btn-primary btn-sm"><i class="fas fa-sync-alt"></i> Apply</button>
       </div>
 

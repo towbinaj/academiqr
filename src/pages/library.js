@@ -204,7 +204,7 @@ function renderLibrary() {
       </div>
     ` : ''}
     <div class="library-table-header">
-      <span><input type="checkbox" id="select-all-checkbox" ${filtered.length > 0 && filtered.every(l => selectedLinkIds.has(l.id)) ? 'checked' : ''}></span>
+      <span><input type="checkbox" id="select-all-checkbox" aria-label="Select all links" ${filtered.length > 0 && filtered.every(l => selectedLinkIds.has(l.id)) ? 'checked' : ''}></span>
       <span></span>
       <span class="sortable-header" data-sort-asc="title-asc" data-sort-desc="title-desc">Title / URL ${sortIcon('title-asc', 'title-desc')}</span>
       <span class="sortable-header" data-sort-asc="collection-asc" data-sort-desc="collection-desc">Collection ${sortIcon('collection-asc', 'collection-desc')}</span>
@@ -224,7 +224,7 @@ function renderLibrary() {
       return `
         <div class="library-link-row ${selectedLinkIds.has(link.id) ? 'row-selected' : ''}" data-link-id="${link.id}">
           <div class="lib-link-checkbox">
-            <input type="checkbox" class="link-select-checkbox" data-link-id="${link.id}" ${selectedLinkIds.has(link.id) ? 'checked' : ''}>
+            <input type="checkbox" class="link-select-checkbox" data-link-id="${link.id}" aria-label="Select ${escapeHtml(link.title || link.url || 'link')}" ${selectedLinkIds.has(link.id) ? 'checked' : ''}>
           </div>
           <div class="lib-link-image">
             ${link.image_url ? `
@@ -249,7 +249,7 @@ function renderLibrary() {
           </div>
           <div class="lib-link-actions">
             <label class="toggle-switch" title="${isActive ? 'Active — click to deactivate' : 'Inactive — click to activate'}">
-              <input type="checkbox" ${isActive ? 'checked' : ''} data-action="toggle-active" data-link-id="${link.id}">
+              <input type="checkbox" ${isActive ? 'checked' : ''} data-action="toggle-active" data-link-id="${link.id}" aria-label="Active">
               <span class="toggle-slider"></span>
             </label>
             <button class="btn-icon" title="Edit" data-action="edit" data-link-id="${link.id}"><i class="fas fa-pen"></i></button>
@@ -744,12 +744,12 @@ async function openMediaLibrary(callback) {
   if (!modal || !content) return
 
   modal.style.display = 'flex'
-  content.innerHTML = '<div style="text-align:center; padding:32px; color:#9ca3af;"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;"></i><p style="margin-top:12px;">Loading images...</p></div>'
+  content.innerHTML = '<div style="text-align:center; padding:32px; color:var(--text-muted);"><i class="fas fa-spinner fa-spin" style="font-size:1.5rem;"></i><p style="margin-top:12px;">Loading images...</p></div>'
 
   try {
     const images = await listUserImages(user.id)
     if (images.length === 0) {
-      content.innerHTML = '<div style="text-align:center; padding:32px; color:#9ca3af;"><i class="fas fa-images" style="font-size:2rem; opacity:0.3; display:block; margin-bottom:12px;"></i><p>No uploaded images yet.</p></div>'
+      content.innerHTML = '<div style="text-align:center; padding:32px; color:var(--text-muted);"><i class="fas fa-images" style="font-size:2rem; opacity:0.3; display:block; margin-bottom:12px;"></i><p>No uploaded images yet.</p></div>'
       return
     }
     content.innerHTML = `<div class="media-grid">${images.map(img => `
@@ -797,7 +797,7 @@ function openAddToCollectionModal(linkId) {
     }).join('')
 
   if (list.innerHTML === '') {
-    list.innerHTML = '<p style="color:#9ca3af; text-align:center; padding:16px;">No other collections available.</p>'
+    list.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:16px;">No other collections available.</p>'
   }
 
   // Bind clicks
