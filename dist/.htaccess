@@ -54,3 +54,11 @@ Options -Indexes
     Require all denied
   </IfModule>
 </FilesMatch>
+
+# Re-allow the web app manifest (linked from every page); later sections win,
+# so this overrides the .json block above for this one file only.
+<Files "manifest.json">
+  <IfModule mod_authz_core.c>
+    Require all granted
+  </IfModule>
+</Files>
