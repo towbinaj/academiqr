@@ -5,6 +5,10 @@
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set X-XSS-Protection "1; mode=block"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  # HSTS: browsers use HTTPS only for 1 year. No includeSubDomains (cPanel/webmail
+  # subdomains have their own certs). Keep the SSL cert renewed: with HSTS an
+  # expired cert can't be clicked through.
+  Header always set Strict-Transport-Security "max-age=31536000" "expr=%{HTTPS} == 'on'"
 </IfModule>
 
 # ── Force HTTPS ──
