@@ -19,6 +19,12 @@
 
   # Short URLs: /u/{username}/{slug} -> public.html (public.js resolves from the path)
   RewriteRule ^u/([^/]+)/([^/]+)/?$ /public.html [L,QSA]
+
+  # Anything that isn't a real file or directory -> 404.php (custom page, real 404 status).
+  # ErrorDocument below is ignored by this host, so don't rely on it.
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ /404.php [L]
 </IfModule>
 
 # ── Cache Control ──
