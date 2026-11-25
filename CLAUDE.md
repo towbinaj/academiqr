@@ -8,8 +8,8 @@ npm run preview   # Preview production build
 ## Architecture
 - Vanilla ES6+ modules, no framework — multi-page app (MPA) via Vite
 - Supabase backend: Auth (email + Google OAuth), PostgreSQL, Storage, RLS
-- Deployed to GoDaddy cPanel via git push → .cpanel.yml copies dist/ to public_html/
-- dist/ is committed to git (required for cPanel deploy)
+- Deployed to GoDaddy cPanel: push to main → GitHub Actions builds from source and FTPs dist/ to public_html/
+- dist/ is still committed to git (keeps the .cpanel.yml fallback working); CI fails a PR if it is stale
 
 ## Key Directories
 - `src/pages/` — Each page has its own .html/.js/.css (dashboard, editor, library, profile, login, public)
@@ -41,9 +41,9 @@ npm run preview   # Preview production build
 - `analytics` — page views and link clicks
 
 ## Watch Out For
-- dist/ must be rebuilt and committed before deploy — `npm run build && git add dist/`
+- Rebuild and commit dist/ with source changes — `npm run build && git add dist/` (CI checks it matches a fresh build)
 - .htaccess in dist/ has security headers and URL rewrite rules — don't overwrite it
 - Passkeys are plain-text access codes for presentations, NOT security credentials
 - Auto-save has a known bug: captures stale form values (dirty tracking planned for v1.2)
 - CDN dependencies (Font Awesome, qrcode.min.js, Google Fonts) are loaded in HTML, not bundled
-- Vite config uses 8 MPA entry points — update rollupOptions.input if adding pages
+- Vite 8 config uses 8 MPA entry points — update build.rolldownOptions.input if adding pages

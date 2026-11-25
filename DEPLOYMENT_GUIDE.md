@@ -1,6 +1,6 @@
 # AcademiQR — Deployment Guide
 
-*Last updated: 2026-04-05*
+*Last updated: 2026-11-25*
 
 ## Deploy Command
 
@@ -8,14 +8,16 @@
 npm run deploy
 ```
 
-This single command: builds dist/ → commits → pushes to GitHub → GitHub Actions FTPs to cPanel automatically.
+This single command: builds dist/ → commits → pushes to GitHub → GitHub Actions rebuilds from source and FTPs to cPanel automatically.
+
+Preferred: open a pull request. CI (`.github/workflows/ci.yml`) builds the site, checks PHP syntax, audits production dependencies, and fails if the committed dist/ doesn't match a fresh build. Merging to `main` deploys.
 
 ## How It Works
 
 1. `npm run build` — Vite builds src/ into dist/ with hashed filenames
 2. `git add dist/ && git commit` — commits the built files
-3. `git push` — pushes to GitHub (branch: v1.1)
-4. GitHub Actions (`.github/workflows/deploy.yml`) — FTPs dist/ to public_html/ via the `deploy@academiqr.com` FTP account
+3. `git push` — pushes to `main` (directly or by merging a PR)
+4. GitHub Actions (`.github/workflows/deploy.yml`) — runs `npm ci && npm run build` (Node 22), checks PHP syntax, then FTPs the **fresh build** in dist/ to public_html/ via the `deploy@academiqr.com` FTP account. If the committed dist/ was stale it logs a warning but still deploys the fresh build.
 
 No manual steps in cPanel are needed.
 
@@ -59,6 +61,6 @@ If GitHub Actions fails (FTP timeout, etc.):
 
 ## Important Notes
 
-- `dist/` is committed to git — required for both cPanel and FTP deploy
+- `dist/` is committed to git — the FTP deploy builds from source, but the `.cpanel.yml` fallback copies the committed dist/
 - Never modify `dist/.htaccess` without understanding the Apache rewrite rules and security headers
 - The `.cpanel.yml` deployment script copies dist/* to public_html/ (still works as a fallback)

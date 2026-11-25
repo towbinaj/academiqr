@@ -9,16 +9,16 @@ AcademiQR is a link-in-bio platform for academics and conference presenters. Use
 | Layer | Technology |
 |-------|-----------|
 | Frontend | Vanilla ES6+ modules, HTML5, CSS3 (custom properties) |
-| Build | Vite (code-splitting, asset hashing, MPA mode) |
+| Build | Vite 8 (code-splitting, asset hashing, MPA mode) |
 | Backend | Supabase (Auth, PostgreSQL, Storage, RLS) |
 | Auth | Email/password + Google OAuth via Supabase Auth |
 | Hosting | GoDaddy cPanel (Apache) |
 | Icons | Font Awesome 6.4.2 (CDN) |
 | Fonts | Inter (Google Fonts) |
 | QR | qrcode.min.js (CDN) |
-| Export | SheetJS (XLSX) bundled via Vite |
+| Export | write-excel-file (Excel, lazy-loaded) + built-in CSV writer |
 | Drag & Drop | SortableJS (dashboard collection reordering) |
-| CI/CD | GitHub Actions (FTP deploy to cPanel on push) |
+| CI/CD | GitHub Actions: PR checks (build, PHP lint, audit, dist freshness); build + FTP deploy to cPanel on push to main |
 
 ## Project Structure
 
@@ -189,7 +189,8 @@ Tags are normalized to lowercase. The autocomplete pool is built dynamically fro
 npm run deploy
   → vite build (src/ → dist/)
   → git add dist/ && git commit && git push
-  → GitHub Actions FTPs dist/ to public_html/ via deploy@academiqr.com
+  → GitHub Actions rebuilds from source (npm ci && npm run build)
+  → FTPs the fresh dist/ to public_html/ via deploy@academiqr.com
 ```
 
 Fully automated — no manual cPanel steps needed. See `DEPLOYMENT_GUIDE.md` for details.
