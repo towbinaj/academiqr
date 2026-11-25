@@ -11,11 +11,31 @@ import { initThemeToggle, toggleTheme, getCurrentTheme } from '../shared/theme-t
 import { showToast } from '../shared/toast.js'
 import { createAutoSaver } from '../shared/auto-save.js'
 import Sortable from 'sortablejs'
-// XLSX is lazy-loaded only when user exports (297KB library)
-let XLSX = null
-async function loadXLSX() {
-  if (!XLSX) XLSX = await import('xlsx')
-  return XLSX
+// write-excel-file is lazy-loaded only when the user exports to Excel
+let writeExcelFile = null
+async function loadExcelWriter() {
+  if (!writeExcelFile) writeExcelFile = (await import('write-excel-file/browser')).default
+  return writeExcelFile
+}
+
+/** Array of flat objects -> sheet rows: bold header row + one row per object. */
+function objectsToSheetData(rows) {
+  const headers = Object.keys(rows[0])
+  return [
+    headers.map(h => ({ value: h, fontWeight: 'bold' })),
+    ...rows.map(r => headers.map(h => (r[h] == null ? '' : String(r[h])))),
+  ]
+}
+
+/** Array of flat objects -> RFC 4180 CSV (CRLF line endings). */
+function objectsToCsv(rows, headers = Object.keys(rows[0] || {})) {
+  const cell = v => {
+    const s = v == null ? '' : String(v)
+    return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  }
+  return [headers, ...rows.map(r => headers.map(h => r[h]))]
+    .map(row => row.map(cell).join(','))
+    .join('\r\n') + '\r\n'
 }
 
 function escapeHtml(str) {
@@ -555,8 +575,11 @@ async function exportAsJson() {
 async function exportAsExcel() {
   await withExportSpinner(document.getElementById('export-excel-btn'), async () => {
     const data = await fetchAllUserData()
-    const xl = await loadXLSX()
-    const wb = xl.utils.book_new()
+    const write = await loadExcelWriter()
+    const sheets = []
+    const addSheet = (rows, name) => {
+      if (rows.length > 0) sheets.push({ data: objectsToSheetData(rows), sheet: name, stickyRowsCount: 1 })
+    }
 
     // Profile sheet
     if (data.profile) {
@@ -564,7 +587,7 @@ async function exportAsExcel() {
         Field: key,
         Value: typeof val === 'object' ? JSON.stringify(val) : String(val ?? ''),
       }))
-      xl.utils.book_append_sheet(wb, xl.utils.json_to_sheet(profileRows), 'Profile')
+      addSheet(profileRows, 'Profile')
     }
 
     // Collections sheet
@@ -579,7 +602,7 @@ async function exportAsExcel() {
         Slug: c.slug || '',
         Created: c.created_at || '',
       }))
-      xl.utils.book_append_sheet(wb, xl.utils.json_to_sheet(collRows), 'Collections')
+      addSheet(collRows, 'Collections')
     }
 
     // Links sheet
@@ -593,7 +616,7 @@ async function exportAsExcel() {
         'Collection ID': l.list_id || '',
         Created: l.created_at || '',
       }))
-      xl.utils.book_append_sheet(wb, xl.utils.json_to_sheet(linkRows), 'Links')
+      addSheet(linkRows, 'Links')
     }
 
     // Page Views sheet
@@ -604,7 +627,7 @@ async function exportAsExcel() {
         'Referrer': v.referrer || '',
         'Viewed At': v.viewed_at || v.created_at || '',
       }))
-      xl.utils.book_append_sheet(wb, xl.utils.json_to_sheet(viewRows), 'Page Views')
+      addSheet(viewRows, 'Page Views')
     }
 
     // Link Clicks sheet
@@ -615,11 +638,11 @@ async function exportAsExcel() {
         'Collection ID': c.list_id || '',
         'Clicked At': c.clicked_at || c.created_at || '',
       }))
-      xl.utils.book_append_sheet(wb, xl.utils.json_to_sheet(clickRows), 'Link Clicks')
+      addSheet(clickRows, 'Link Clicks')
     }
 
-    const wbOut = xl.write(wb, { bookType: 'xlsx', type: 'array' })
-    const blob = new Blob([wbOut], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    if (sheets.length === 0) sheets.push({ data: [[{ value: 'No data', fontWeight: 'bold' }]], sheet: 'Profile' })
+    const blob = await write(sheets).toBlob()
     downloadFile(blob, `academiqr-data-${new Date().toISOString().split('T')[0]}.xlsx`)
   })
 }
@@ -629,7 +652,6 @@ async function exportAsCsv() {
     const data = await fetchAllUserData()
 
     // Only export links as CSV (most useful single-sheet format)
-    const xl = await loadXLSX()
     const linkRows = data.links.map(l => ({
       Title: l.title || '',
       URL: l.url || '',
@@ -639,13 +661,9 @@ async function exportAsCsv() {
       Created: l.created_at || '',
     }))
 
-    const wb = xl.utils.book_new()
-    if (linkRows.length > 0) {
-      xl.utils.book_append_sheet(wb, xl.utils.json_to_sheet(linkRows), 'Links')
-    }
-
-    const csvOut = xl.write(wb, { bookType: 'csv', type: 'string' })
-    const blob = new Blob([csvOut], { type: 'text/csv' })
+    const headers = ['Title', 'URL', 'Image URL', 'Active', 'Collection ID', 'Created']
+    // Leading BOM so Excel opens the UTF-8 file with accents/emoji intact
+    const blob = new Blob(['\uFEFF' + objectsToCsv(linkRows, headers)], { type: 'text/csv;charset=utf-8' })
     downloadFile(blob, `academiqr-links-${new Date().toISOString().split('T')[0]}.csv`)
   })
 }

@@ -10,9 +10,9 @@
     "deploy": "vite build && git add dist/ && git commit -m 'build: update dist for deploy' && git push"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.75.1",
+    "@supabase/supabase-js": "2.119.2",
     "sortablejs": "^1.15.7",
-    "xlsx": "^0.18.5"
+    "write-excel-file": "4.1.1"
   },
   "devDependencies": {
     "vite": "^5.4.21"
