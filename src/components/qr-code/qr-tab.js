@@ -1,7 +1,7 @@
 /**
  * AcademiQR v1.0 — QR Code Tab Module
  * Generates, customizes, and downloads QR codes for collections.
- * Uses QRCode.js (CDN) for canvas-based QR generation.
+ * Uses the `qrcode` npm package (bundled, lazy-loaded) for canvas-based QR generation.
  */
 import { supabase } from '../../shared/supabase.js'
 import { getPublicUrl } from '../../shared/router.js'
@@ -14,6 +14,13 @@ const QR_PADDING = 16
 const BORDER_WIDTH = 8
 
 let currentQRCode = null
+
+// qrcode (~25 KB) is only needed on the QR tab, so load it on first use
+let qrLibPromise = null
+function loadQRCodeLib() {
+  qrLibPromise ??= import('qrcode').then(m => m.default || m)
+  return qrLibPromise
+}
 let currentQRLogo = null
 
 // ── Helpers ──
@@ -149,11 +156,6 @@ function applyLogo(ctx, logoSrc, qrX, qrY, qrSize) {
 // ── Core: Generate QR ──
 
 async function generateQR(container, publicUrl) {
-  if (typeof QRCode === 'undefined') {
-    console.error('[QR] QRCode.js library not loaded')
-    return
-  }
-
   const settings = getQRSettings(container)
   const qrContainer = container.querySelector('#qr-code-container')
   if (!qrContainer) return
@@ -167,33 +169,21 @@ async function generateQR(container, publicUrl) {
   const bw = settings.borderEnabled ? BORDER_WIDTH : 0
   const qrSize = CONTAINER_SIZE - (bw * 2) - (QR_PADDING * 2)
 
-  // Generate QR code into a hidden temp div
-  const tempDiv = document.createElement('div')
-  tempDiv.style.cssText = 'position:absolute; left:-9999px; top:-9999px;'
-  document.body.appendChild(tempDiv)
-
+  // Draw the bare QR code onto an off-screen canvas (no quiet zone: the
+  // composite below adds its own padding/border, as with the old QRCode.js)
+  const canvas = document.createElement('canvas')
   try {
-    currentQRCode = new QRCode(tempDiv, {
-      text: publicUrl,
+    const QRCode = await loadQRCodeLib()
+    await QRCode.toCanvas(canvas, publicUrl, {
       width: qrSize,
-      height: qrSize,
-      colorDark: settings.color,
-      colorLight: settings.bgColor,
-      correctLevel: QRCode.CorrectLevel.H
+      margin: 0,
+      errorCorrectionLevel: 'H', // high: survives the centre logo
+      color: { dark: settings.color, light: settings.bgColor },
     })
+    currentQRCode = canvas
   } catch (err) {
     console.error('[QR] Generation failed:', err)
     qrContainer.innerHTML = '<p style="color:#ef4444; font-size:0.8rem;">QR generation failed</p>'
-    document.body.removeChild(tempDiv)
-    return
-  }
-
-  // Wait for canvas to render
-  await new Promise(r => setTimeout(r, 100))
-
-  const canvas = tempDiv.querySelector('canvas')
-  if (!canvas) {
-    document.body.removeChild(tempDiv)
     return
   }
 
@@ -212,9 +202,6 @@ async function generateQR(container, publicUrl) {
   qrContainer.innerHTML = ''
   qrContainer.appendChild(img)
   qrContainer._compositeCanvas = composite
-
-  // Clean up temp div
-  document.body.removeChild(tempDiv)
 
   // Show download buttons
   const actions = container.querySelector('#qr-actions')
