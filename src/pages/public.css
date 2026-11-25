@@ -327,12 +327,11 @@ body {
 
 .public-footer-text {
   font-size: 0.625rem;
-  opacity: 0.7;
+  opacity: 0.85; /* was 0.7 (x0.8 on the link): below WCAG AA contrast */
 }
 
 .public-footer-text a {
   text-decoration: none;
-  opacity: 0.8;
   transition: opacity 0.2s;
 }
 

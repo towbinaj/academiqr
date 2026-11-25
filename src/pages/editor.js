@@ -9,7 +9,7 @@ import { renderQRCodeTab as renderQRTab } from '../components/qr-code/qr-tab.js'
 import { renderAnalyticsTab as renderAnalyticsModule } from '../components/analytics/analytics-tab.js'
 import { resolveLibraryDefaults, hasCustomOverrides, getDisplayTitle, getDisplayImageUrl, getDisplayImagePosition, getDisplayImageScale } from '../shared/link-utils.js'
 import { initThemeToggle, toggleTheme, getCurrentTheme } from '../shared/theme-toggle.js'
-import { compressAndUpload, listUserImages } from '../shared/image-utils.js'
+import { compressAndUpload, listUserImages, LINK_IMAGE_SIZE } from '../shared/image-utils.js'
 import { createAutoSaver, registerAutoSaver, flushAll } from '../shared/auto-save.js'
 import { sanitizeSlugInput, slugFromField } from '../shared/slug-utils.js'
 import { showToast } from '../shared/toast.js'
@@ -1084,7 +1084,7 @@ async function handleLinkImageUpload(e) {
     }
 
     // Compress and upload to Supabase Storage
-    const publicUrl = await compressAndUpload(file, 'links', user.id, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 })
+    const publicUrl = await compressAndUpload(file, 'links', user.id, LINK_IMAGE_SIZE)
 
     const imageInput = document.getElementById('link-image')
     if (imageInput) imageInput.value = publicUrl
@@ -2521,7 +2521,7 @@ function bindEvents() {
     const originalHtml = btn?.innerHTML
     try {
       if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>' }
-      const publicUrl = await compressAndUpload(file, 'links', user.id, { maxWidth: 1200, maxHeight: 1200, quality: 0.75 })
+      const publicUrl = await compressAndUpload(file, 'links', user.id, LINK_IMAGE_SIZE)
       document.getElementById('new-link-image').value = publicUrl
     } catch (err) {
       console.error('Upload failed:', err)

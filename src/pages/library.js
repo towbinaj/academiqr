@@ -6,7 +6,7 @@
 import { requireAuth, signOut } from '../shared/auth.js'
 import { supabase } from '../shared/supabase.js'
 import { navigate } from '../shared/router.js'
-import { compressAndUpload, listUserImages } from '../shared/image-utils.js'
+import { compressAndUpload, listUserImages, LINK_IMAGE_SIZE } from '../shared/image-utils.js'
 import { initThemeToggle, toggleTheme, getCurrentTheme } from '../shared/theme-toggle.js'
 import { showToast } from '../shared/toast.js'
 import { renderTagChips, normalizeTags, getAllUserTags, createTagInput, invalidateTagCache } from '../shared/tag-utils.js'
@@ -711,7 +711,7 @@ async function handleModalImageUpload(e) {
   const originalHtml = uploadBtn?.innerHTML
   try {
     if (uploadBtn) { uploadBtn.disabled = true; uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>' }
-    const publicUrl = await compressAndUpload(file, 'links', user.id, { maxWidth: 800, maxHeight: 800 })
+    const publicUrl = await compressAndUpload(file, 'links', user.id, LINK_IMAGE_SIZE)
     document.getElementById('modal-link-image').value = publicUrl
     updateModalImagePreview(publicUrl)
   } catch (error) {

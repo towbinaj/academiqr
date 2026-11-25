@@ -6,6 +6,9 @@ import { supabase } from './supabase.js'
 
 const STORAGE_BUCKET = 'link-images'
 
+/** Link thumbnails display at ~56–150 CSS px; 480 px covers 3x screens with room for zoom/pan. */
+export const LINK_IMAGE_SIZE = { maxWidth: 480, maxHeight: 480, quality: 0.8 }
+
 /**
  * Compress an image file using canvas
  * @param {File} file - Image file from <input type="file">
@@ -73,7 +76,8 @@ export async function compressImage(file, options = {}) {
 export async function uploadImage(blob, path, mimeType) {
   const { error } = await supabase.storage
     .from(STORAGE_BUCKET)
-    .upload(path, blob, { contentType: mimeType, upsert: false })
+    // Paths are unique (uuid + timestamp), so the file never changes: cache for a year
+    .upload(path, blob, { contentType: mimeType, upsert: false, cacheControl: '31536000' })
 
   if (error) throw new Error(`Upload failed: ${error.message}`)
 
