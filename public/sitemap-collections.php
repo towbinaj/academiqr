@@ -14,10 +14,14 @@ $SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // Fetch all public collections (passkey is null) with their owner's username
 $apiUrl = "$SUPABASE_URL/rest/v1/link_lists?select=slug,updated_at,owner_id,profiles!inner(username)&passkey=is.null&order=updated_at.desc";
 
-$json = file_get_contents($apiUrl, false,
-    stream_context_create(['http' => ['header' => "apikey: $SUPABASE_ANON_KEY\r\nAuthorization: Bearer $SUPABASE_ANON_KEY"]]));
+$json = @file_get_contents($apiUrl, false,
+    stream_context_create(['http' => [
+        'header'  => "apikey: $SUPABASE_ANON_KEY\r\nAuthorization: Bearer $SUPABASE_ANON_KEY",
+        'timeout' => 5,
+    ]]));
 
-$collections = json_decode($json, true) ?? [];
+$collections = ($json !== false) ? json_decode($json, true) : null;
+if (!is_array($collections) || !array_is_list($collections)) $collections = [];
 
 echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
 ?>
